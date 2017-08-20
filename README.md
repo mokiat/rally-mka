@@ -1,5 +1,7 @@
-# rally-mka
-Rally MKA
+# Rally MKA
+
+A really old game project of mine ported to Go for fun.
+
 
 ## Licensing
 
