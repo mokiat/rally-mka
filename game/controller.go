@@ -1,6 +1,8 @@
 package game
 
 import (
+	"path"
+
 	"github.com/go-gl/gl/v2.1/gl"
 	"github.com/mokiat/go-whiskey/math"
 	"github.com/mokiat/rally-mka/entities"
@@ -18,21 +20,23 @@ type Controller interface {
 	SetFrame(forward, back, left, right, brake bool)
 }
 
-func NewController() Controller {
+func NewController(assetsDir string) Controller {
 	return &controller{
-		renderer: render.NewRenderer(),
-		gameMap:  entities.NewMap(),
-		carMine:  entities.NewCarExtendedModel(),
+		assetsDir: assetsDir,
+		renderer:  render.NewRenderer(),
+		gameMap:   entities.NewMap(),
+		carMine:   entities.NewCarExtendedModel(),
 	}
 }
 
 type controller struct {
+	assetsDir string
+
 	renderer *render.Renderer
+	gameMap  entities.Map
+	carMine  *entities.CarExtendedModel
 
 	cameraPosition math.Vec3
-
-	gameMap entities.Map
-	carMine *entities.CarExtendedModel
 
 	goForward bool
 	goBack    bool
@@ -59,8 +63,8 @@ func (r *controller) InitScene() {
 		Z: -cameraDistance,
 	}
 
-	const track = "assets/tracks/forest/track.m3d"
-	const car = "assets/cars/suv/car.m3d"
+	track := path.Join(r.assetsDir, "tracks/forest/track.m3d")
+	car := path.Join(r.assetsDir, "cars/suv/car.m3d")
 
 	if err := r.gameMap.Load(track); err != nil {
 		panic(err)

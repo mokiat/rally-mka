@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+	"path"
 	"runtime"
 
 	"github.com/go-gl/gl/v2.1/gl"
@@ -33,7 +35,12 @@ func main() {
 		panic(err)
 	}
 
-	controller := game.NewController()
+	assetsDir := path.Join(path.Dir(os.Args[0]), "assets")
+	if !dirExists(assetsDir) {
+		assetsDir = "assets"
+	}
+
+	controller := game.NewController(assetsDir)
 	controller.InitScene()
 	controller.ResizeScene(width, height)
 
@@ -56,4 +63,12 @@ func main() {
 		window.SwapBuffers()
 		glfw.PollEvents()
 	}
+}
+
+func dirExists(path string) bool {
+	info, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+	return info.IsDir()
 }

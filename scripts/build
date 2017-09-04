@@ -1,0 +1,19 @@
+#!/bin/bash
+
+set -e -u
+
+project_dir=$(cd "$(dirname $0)/.."; pwd)
+target_dir="$project_dir/target"
+
+if [ -d $target_dir ]; then
+    rm -r $target_dir
+fi
+mkdir $target_dir
+
+app_name="RallyMKA"
+macos_dir="${target_dir}/${app_name}.app/Contents/MacOS"
+mkdir -p "$macos_dir"
+go build -o "$macos_dir/${app_name}" "$project_dir/main.go"
+
+assets_dir="$project_dir/assets"
+cp -r "$assets_dir" "$macos_dir/"
