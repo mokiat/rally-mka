@@ -11,9 +11,20 @@ fi
 mkdir $target_dir
 
 app_name="RallyMKA"
-macos_dir="${target_dir}/${app_name}.app/Contents/MacOS"
+
+contents_dir="$target_dir/${app_name}.app/Contents"
+mkdir -p "$contents_dir"
+
+src_bundle_dir="$project_dir/bundle"
+cp -r "$src_bundle_dir/" "$contents_dir"
+
+resources_dir="$contents_dir/Resources"
+mkdir -p "$resources_dir"
+
+src_assets_dir="$project_dir/assets"
+cp -r "$src_assets_dir" "$resources_dir"
+
+macos_dir="$contents_dir/MacOS"
 mkdir -p "$macos_dir"
 go build -o "$macos_dir/${app_name}" "$project_dir/main.go"
 
-assets_dir="$project_dir/assets"
-cp -r "$assets_dir" "$macos_dir/"

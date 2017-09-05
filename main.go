@@ -35,7 +35,7 @@ func main() {
 		panic(err)
 	}
 
-	assetsDir := path.Join(path.Dir(os.Args[0]), "assets")
+	assetsDir := path.Join(path.Dir(os.Args[0]), "..", "Resources", "assets")
 	if !dirExists(assetsDir) {
 		assetsDir = "assets"
 	}
