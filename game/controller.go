@@ -1,7 +1,9 @@
 package game
 
 import (
+	"math/rand"
 	"path"
+	"time"
 
 	"github.com/go-gl/gl/v2.1/gl"
 	"github.com/mokiat/go-whiskey/math"
@@ -11,6 +13,16 @@ import (
 
 const lapCount = 3
 const cameraDistance = 100.0
+
+var tracks = [...]string{
+	"tracks/forest/track.m3d",
+	"tracks/highway/track.m3d",
+}
+var cars = []string{
+	"cars/hatch/car.m3d",
+	"cars/suv/car.m3d",
+	"cars/truck/car.m3d",
+}
 
 type Controller interface {
 	InitScene()
@@ -63,8 +75,9 @@ func (r *controller) InitScene() {
 		Z: -cameraDistance,
 	}
 
-	track := path.Join(r.assetsDir, "tracks/forest/track.m3d")
-	car := path.Join(r.assetsDir, "cars/suv/car.m3d")
+	rand := rand.New(rand.NewSource(time.Now().Unix()))
+	track := path.Join(r.assetsDir, tracks[rand.Intn(len(tracks))])
+	car := path.Join(r.assetsDir, cars[rand.Intn(len(cars))])
 
 	if err := r.gameMap.Load(track); err != nil {
 		panic(err)
