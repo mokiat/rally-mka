@@ -8,11 +8,11 @@ import (
 
 const minTurn = -30
 const maxTurn = 30
-const maxAcceleration = 0.15
-const gravity = 0.15
+const maxAcceleration = 0.01
+const gravity = 0.01
 const rotationFriction = 60.0 / 100.0
 const rotationFriction2 = 1.0 - 60.0/100.0
-const suspensionLength = 4.0
+const suspensionLength = 0.25
 const speedFriction = 99.0 / 100.0
 const speedFriction2 = 1.0 - (99.0 / 100.0)
 const wheelFriction = 99.0 / 100.0
@@ -51,10 +51,10 @@ func (m *CarExtendedModel) Frame(forward, back, left, right, brake bool, gameMap
 	}
 	m.acceleration = 0.0
 	if forward {
-		m.acceleration = 0.15
+		m.acceleration = 0.01
 	}
 	if back {
-		m.acceleration = -0.1
+		m.acceleration = -0.005
 	}
 
 	m.CheckMove(gameMap, float32(m.turn), m.acceleration, brake)
@@ -121,24 +121,24 @@ func (s *CarModelSimple) Load(path string) error {
 	s.wheelBL = s.getElement(model, "LB")
 	s.wheelBR = s.getElement(model, "RB")
 
-	s.wheelFL.CheckX = math.Abs32(model.MaxX-s.wheelFL.Position.X) + 4.0
+	s.wheelFL.CheckX = math.Abs32(model.MaxX-s.wheelFL.Position.X) + 0.25
 	s.wheelFL.CheckY = math.Abs32(model.MinY - s.wheelFL.Position.Y)
-	s.wheelFL.CheckZ = math.Abs32(model.MinZ-s.wheelFL.Position.Z) + 4.0
+	s.wheelFL.CheckZ = math.Abs32(model.MinZ-s.wheelFL.Position.Z) + 0.25
 	s.wheelFL.TurnKoef = 180.0 / (float32(math.Pi) * s.wheelFL.CheckY)
 
-	s.wheelFR.CheckX = math.Abs32(model.MinX-s.wheelFR.Position.X) + 4.0
+	s.wheelFR.CheckX = math.Abs32(model.MinX-s.wheelFR.Position.X) + 0.25
 	s.wheelFR.CheckY = math.Abs32(model.MinY - s.wheelFR.Position.Y)
-	s.wheelFR.CheckZ = math.Abs32(model.MinZ-s.wheelFR.Position.Z) + 4.0
+	s.wheelFR.CheckZ = math.Abs32(model.MinZ-s.wheelFR.Position.Z) + 0.25
 	s.wheelFR.TurnKoef = 180.0 / (float32(math.Pi) * s.wheelFR.CheckY)
 
-	s.wheelBL.CheckX = math.Abs32(model.MaxX-s.wheelBL.Position.X) + 4.0
+	s.wheelBL.CheckX = math.Abs32(model.MaxX-s.wheelBL.Position.X) + 0.25
 	s.wheelBL.CheckY = math.Abs32(model.MinY - s.wheelBL.Position.Y)
-	s.wheelBL.CheckZ = math.Abs32(model.MaxZ-s.wheelBL.Position.Z) + 4.0
+	s.wheelBL.CheckZ = math.Abs32(model.MaxZ-s.wheelBL.Position.Z) + 0.25
 	s.wheelBL.TurnKoef = 180.0 / (float32(math.Pi) * s.wheelBL.CheckY)
 
-	s.wheelBR.CheckX = math.Abs32(model.MinX-s.wheelBR.Position.X) + 4.0
+	s.wheelBR.CheckX = math.Abs32(model.MinX-s.wheelBR.Position.X) + 0.25
 	s.wheelBR.CheckY = math.Abs32(model.MinY - s.wheelBR.Position.Y)
-	s.wheelBR.CheckZ = math.Abs32(model.MaxZ-s.wheelBR.Position.Z) + 4.0
+	s.wheelBR.CheckZ = math.Abs32(model.MaxZ-s.wheelBR.Position.Z) + 0.25
 	s.wheelBR.TurnKoef = 180.0 / (float32(math.Pi) * s.wheelBR.CheckY)
 
 	return nil
@@ -262,11 +262,11 @@ func (s *CarModelSimple) CheckMove(gameMap Map, turn, acceleration float32, brak
 	speed2 := backWheelSpeed + math.Vec3DotProduct(s.speed, s.vectorX)*math.Sin32(turn*math.Pi/180.0)
 	var doTurn float32
 	if !brake {
-		doTurn = turn * speed2 / (20.0 + 2.0*speed2*speed2)
+		doTurn = turn * speed2 / (20 + 2.0*speed2*speed2)
 	} else {
 		doTurn = 0
 	}
-	doTurn2 := turn * acceleration
+	doTurn2 := turn * acceleration / 0.06
 	doTurn = (doTurn + doTurn2) / 2.0
 
 	if (s.wheelFL.IsTouched || s.wheelFR.IsTouched) && (math.Abs32(doTurn) > 0.0001) {
@@ -327,7 +327,7 @@ func (s *CarModelSimple) checkCar(gameMap Map) {
 func (s *CarModelSimple) checkWheelCollision(gameMap Map, wheel *Element, dirX math.Vec3, dirZ math.Vec3) {
 	pa := wheel.Position.IncVec3(s.Position)
 	p2 := pa.DecVec3(dirX.Resize(wheel.CheckX))
-	p1 := pa.IncVec3(dirX.Resize(20.0))
+	p1 := pa.IncVec3(dirX.Resize(1.2))
 
 	result, active := gameMap.CheckCollisionWall(collision.MakeLine(p1, p2))
 	if active {
@@ -342,7 +342,7 @@ func (s *CarModelSimple) checkWheelCollision(gameMap Map, wheel *Element, dirX m
 	}
 
 	p2 = pa.IncVec3(dirZ.Resize(math.Abs32(wheel.CheckZ)))
-	p1 = pa.DecVec3(dirZ.Resize(20.0))
+	p1 = pa.DecVec3(dirZ.Resize(1.2))
 
 	result, active = gameMap.CheckCollisionWall(collision.MakeLine(p1, p2))
 	if active {
@@ -361,7 +361,7 @@ func (s *CarModelSimple) checkWheel(wheel *Element, gameMap Map, position math.V
 	wheel.IsTouched = false
 
 	pa := wheel.Position.IncVec3(position)
-	p1 := pa.IncVec3(s.vectorY.Resize(1000.0))
+	p1 := pa.IncVec3(s.vectorY.Resize(3.6))
 	p2 := pa.DecVec3(s.vectorY.Resize(wheel.CheckY + suspensionLength))
 
 	result, active := gameMap.CheckCollisionGround(collision.MakeLine(p1, p2))
@@ -371,18 +371,18 @@ func (s *CarModelSimple) checkWheel(wheel *Element, gameMap Map, position math.V
 	}
 
 	dis := result.Intersection().DecVec3(p1).Length()
-	if dis > 1000.0+wheel.CheckY {
-		wheel.Real = wheel.Location.DecCoords(0.0, dis-(1000.0+wheel.CheckY), 0.0)
+	if dis > 3.6+wheel.CheckY {
+		wheel.Real = wheel.Location.DecCoords(0.0, dis-(3.6+wheel.CheckY), 0.0)
 	} else {
 		wheel.Real = wheel.Location
 	}
 	wheel.IsTouched = true
 
-	if dis < 1000.0+wheel.CheckY {
+	if dis < 3.6+wheel.CheckY {
 		dis2 := math.Vec3DotProduct(result.Normal(), s.speed)
 		f := result.Normal().Resize(dis2)
 		s.speed = s.speed.DecVec3(f)
-		f = s.vectorY.Resize(1000.0 + wheel.CheckY - dis)
+		f = s.vectorY.Resize(3.6 + wheel.CheckY - dis)
 		s.translate(f)
 	}
 
@@ -402,7 +402,7 @@ func (s *CarModelSimple) checkWheel(wheel *Element, gameMap Map, position math.V
 	}
 
 	if math.Abs32(koef.X) > 0.0000001 {
-		cross = cross.Resize(koef.X * koef.X * (1.0 - (dis-(1000.0+wheel.CheckY))/suspensionLength) * 20)
+		cross = cross.Resize(koef.X * koef.X * (1.0 - (dis-(3.6+wheel.CheckY))/suspensionLength) * 20)
 		s.rotForce = s.rotForce.IncVec3(cross)
 		s.rotation = s.rotation.IncVec3(cross)
 	}

@@ -12,7 +12,7 @@ import (
 )
 
 const lapCount = 3
-const cameraDistance = 100.0
+const cameraDistance = 6.0
 
 var tracks = [...]string{
 	"tracks/forest/track.m3d",
@@ -71,7 +71,7 @@ func (r *controller) InitScene() {
 
 	r.cameraPosition = math.Vec3{
 		X: 0.0,
-		Y: 50.0,
+		Y: 3.0,
 		Z: -cameraDistance,
 	}
 
@@ -90,7 +90,7 @@ func (r *controller) InitScene() {
 	r.carMine.Generate()
 	r.carMine.Position = math.Vec3{
 		X: 0.0,
-		Y: 10.0,
+		Y: 0.6,
 		Z: 0.0,
 	}
 }
@@ -99,7 +99,7 @@ func (r *controller) ResizeScene(width, height int) {
 	// gl.Viewport(0, 0, int32(width), int32(height))
 	screenHalfWidth := float32(width) / float32(height)
 	screenHalfHeight := float32(1.0)
-	r.renderer.SetProjectionMatrix(math.PerspectiveMat4x4(-screenHalfWidth, screenHalfWidth, -screenHalfHeight, screenHalfHeight, 1.0, 5000.0))
+	r.renderer.SetProjectionMatrix(math.PerspectiveMat4x4(-screenHalfWidth, screenHalfWidth, -screenHalfHeight, screenHalfHeight, 1.0, 300.0))
 	r.renderer.SetModelMatrix(math.IdentityMat4x4())
 	r.renderer.SetViewMatrix(math.IdentityMat4x4())
 }
