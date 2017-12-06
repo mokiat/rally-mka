@@ -3,7 +3,7 @@ package m2d
 import (
 	"io"
 
-	"github.com/mokiat/rally-mka/data/storage"
+	"github.com/mokiat/go-whiskey/data/storage"
 )
 
 type Color struct {

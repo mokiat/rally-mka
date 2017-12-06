@@ -1,7 +1,7 @@
 package m3d
 
 import "io"
-import "github.com/mokiat/rally-mka/data/storage"
+import "github.com/mokiat/go-whiskey/data/storage"
 
 type Model struct {
 	Objects []*Object

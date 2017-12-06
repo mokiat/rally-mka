@@ -1,6 +1,6 @@
 package m3d
 
-import "github.com/mokiat/rally-mka/data/storage"
+import "github.com/mokiat/go-whiskey/data/storage"
 
 type Normal struct {
 	X float32
