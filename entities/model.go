@@ -2,7 +2,7 @@ package entities
 
 import (
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/mokiat/go-whiskey/math"
@@ -48,7 +48,7 @@ func (m *ExtendedModel) Load(modelPath string) error {
 		if _, ok := m.textures[filename]; ok {
 			continue
 		}
-		texturePath := path.Join(path.Dir(modelPath), filename)
+		texturePath := filepath.Join(filepath.Dir(modelPath), filename)
 		texture, err := loadTexture(texturePath)
 		if err != nil {
 			return err

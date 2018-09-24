@@ -2,7 +2,7 @@ package main
 
 import (
 	"os"
-	"path"
+	"path/filepath"
 	"runtime"
 
 	"github.com/go-gl/gl/v2.1/gl"
@@ -35,7 +35,7 @@ func main() {
 		panic(err)
 	}
 
-	assetsDir := path.Join(path.Dir(os.Args[0]), "..", "Resources", "assets")
+	assetsDir := filepath.Join(filepath.Dir(os.Args[0]), "..", "Resources", "assets")
 	if !dirExists(assetsDir) {
 		assetsDir = "assets"
 	}

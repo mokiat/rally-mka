@@ -2,7 +2,7 @@ package game
 
 import (
 	"math/rand"
-	"path"
+	"path/filepath"
 	"time"
 
 	"github.com/go-gl/gl/v2.1/gl"
@@ -76,8 +76,8 @@ func (r *controller) InitScene() {
 	}
 
 	rand := rand.New(rand.NewSource(time.Now().Unix()))
-	track := path.Join(r.assetsDir, tracks[rand.Intn(len(tracks))])
-	car := path.Join(r.assetsDir, cars[rand.Intn(len(cars))])
+	track := filepath.Join(r.assetsDir, tracks[rand.Intn(len(tracks))])
+	car := filepath.Join(r.assetsDir, cars[rand.Intn(len(cars))])
 
 	if err := r.gameMap.Load(track); err != nil {
 		panic(err)
