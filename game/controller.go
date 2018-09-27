@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/go-gl/gl/v2.1/gl"
+	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/mokiat/go-whiskey/math"
 	"github.com/mokiat/rally-mka/entities"
 	"github.com/mokiat/rally-mka/render"
@@ -58,11 +58,12 @@ type controller struct {
 }
 
 func (r *controller) InitScene() {
+	var vertexArrayID uint32
+	gl.GenVertexArrays(1, &vertexArrayID)
+	gl.BindVertexArray(vertexArrayID)
+
 	gl.Enable(gl.DEPTH_TEST)
 	gl.Enable(gl.CULL_FACE)
-
-	gl.Enable(gl.ALPHA_TEST)
-	gl.AlphaFunc(gl.GEQUAL, 0.8)
 
 	gl.Enable(gl.BLEND)
 	gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
@@ -96,7 +97,7 @@ func (r *controller) InitScene() {
 }
 
 func (r *controller) ResizeScene(width, height int) {
-	// gl.Viewport(0, 0, int32(width), int32(height))
+	gl.Viewport(0, 0, int32(width), int32(height))
 	screenHalfWidth := float32(width) / float32(height)
 	screenHalfHeight := float32(1.0)
 	r.renderer.SetProjectionMatrix(math.PerspectiveMat4x4(-screenHalfWidth, screenHalfWidth, -screenHalfHeight, screenHalfHeight, 1.0, 300.0))

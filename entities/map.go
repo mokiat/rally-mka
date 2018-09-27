@@ -3,7 +3,7 @@ package entities
 import (
 	"fmt"
 
-	"github.com/go-gl/gl/v2.1/gl"
+	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/mokiat/go-whiskey/math"
 	"github.com/mokiat/rally-mka/collision"
 	"github.com/mokiat/rally-mka/render"
@@ -154,9 +154,7 @@ func (m *gameMap) Draw(renderer *render.Renderer) {
 	for _, wall := range m.walls {
 		renderer.Render(wall.RenderMesh, renderer.TextureMaterial())
 	}
-	gl.Enable(gl.ALPHA_TEST)
 	for _, dummy := range m.dummies {
 		renderer.Render(dummy.RenderMesh, renderer.TextureMaterial())
 	}
-	gl.Disable(gl.ALPHA_TEST)
 }

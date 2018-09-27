@@ -4,16 +4,16 @@ func newTextureMaterial() *Material {
 	return newMaterial(textureVertexShader, textureFragmentShader)
 }
 
-const textureVertexShader string = `#version 120
+const textureVertexShader string = `#version 410
 
 uniform mat4 projectionMatrixIn;
 uniform mat4 modelMatrixIn;
 uniform mat4 viewMatrixIn;
 
-attribute vec3 coordIn;
-attribute vec2 texCoordIn;
+in vec3 coordIn;
+in vec2 texCoordIn;
 
-varying vec2 texCoordInOut;
+smooth out vec2 texCoordInOut;
 
 void main()
 {
@@ -22,14 +22,19 @@ void main()
 }
 `
 
-const textureFragmentShader string = `#version 120
+const textureFragmentShader string = `#version 410
 
 uniform sampler2D diffuseTextureIn;
 
-varying vec2 texCoordInOut;
+smooth in vec2 texCoordInOut;
+layout(location = 0) out vec4 fragmentColor;
 
 void main()
 {
-	gl_FragColor = texture2D(diffuseTextureIn, texCoordInOut);
+	vec4 color = texture(diffuseTextureIn, texCoordInOut);
+	if (color.a < 0.9) {
+		discard;
+	}
+	fragmentColor = color;
 }
 `

@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/go-gl/gl/v2.1/gl"
+	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.2/glfw"
 	"github.com/mokiat/rally-mka/game"
 )
@@ -20,17 +20,21 @@ func main() {
 	}
 	defer glfw.Terminate()
 
-	const width = 800
-	const height = 600
-	glfw.WindowHint(glfw.Resizable, glfw.False)
-	glfw.WindowHint(glfw.ContextVersionMajor, 2)
+	const width = 1024
+	const height = 576
+	glfw.WindowHint(glfw.ContextVersionMajor, 4)
 	glfw.WindowHint(glfw.ContextVersionMinor, 1)
+	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
+	glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
 	window, err := glfw.CreateWindow(width, height, "Rally MKA", nil, nil)
 	if err != nil {
 		panic(err)
 	}
+	defer window.Destroy()
 	window.MakeContextCurrent()
+	window.SetInputMode(glfw.CursorMode, glfw.CursorHidden)
 
+	glfw.SwapInterval(1)
 	if err := gl.Init(); err != nil {
 		panic(err)
 	}
@@ -42,7 +46,12 @@ func main() {
 
 	controller := game.NewController(assetsDir)
 	controller.InitScene()
-	controller.ResizeScene(width, height)
+
+	window.SetFramebufferSizeCallback(func(w *glfw.Window, width int, height int) {
+		controller.ResizeScene(width, height)
+	})
+	fbWidth, fbHeight := window.GetFramebufferSize()
+	controller.ResizeScene(fbWidth, fbHeight)
 
 	for !window.ShouldClose() {
 		isQuit := window.GetKey(glfw.KeyEscape) == glfw.Press

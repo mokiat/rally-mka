@@ -4,15 +4,15 @@ func newSkyboxMaterial() *Material {
 	return newMaterial(skyboxVertexShader, skyboxFragmentShader)
 }
 
-const skyboxVertexShader string = `#version 120
+const skyboxVertexShader string = `#version 410
 
 uniform mat4 projectionMatrixIn;
 uniform mat4 viewMatrixIn;
 
-attribute vec3 coordIn;
-attribute vec2 texCoordIn;
+in vec3 coordIn;
+in vec2 texCoordIn;
 
-varying vec2 texCoordInOut;
+smooth out vec2 texCoordInOut;
 
 void main()
 {
@@ -24,14 +24,15 @@ void main()
 }
 `
 
-const skyboxFragmentShader string = `#version 120
+const skyboxFragmentShader string = `#version 410
 
 uniform sampler2D diffuseTextureIn;
 
-varying vec2 texCoordInOut;
+smooth in vec2 texCoordInOut;
+layout(location = 0) out vec4 fragmentColor;
 
 void main()
 {
-	gl_FragColor = texture2D(diffuseTextureIn, texCoordInOut);
+	fragmentColor = texture(diffuseTextureIn, texCoordInOut);
 }
 `

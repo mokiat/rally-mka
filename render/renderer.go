@@ -1,7 +1,7 @@
 package render
 
 import (
-	"github.com/go-gl/gl/v2.1/gl"
+	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/mokiat/go-whiskey/math"
 )
 
@@ -67,6 +67,7 @@ func (r *Renderer) ViewMatrix() math.Mat4x4 {
 
 func (r *Renderer) Render(mesh *Mesh, material *Material) {
 	material.program.Use()
+	gl.BindFragDataLocation(material.program.ID, 0, gl.Str("fragmentColor\x00"))
 
 	if material.diffuseTextureLocation != -1 {
 		gl.ActiveTexture(gl.TEXTURE0)

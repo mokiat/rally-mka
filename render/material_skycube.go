@@ -4,14 +4,14 @@ func newSkycubeMaterial() *Material {
 	return newMaterial(skycubeVertexShader, skycubeFragmentShader)
 }
 
-const skycubeVertexShader string = `#version 120
+const skycubeVertexShader string = `#version 410
 
 uniform mat4 projectionMatrixIn;
 uniform mat4 viewMatrixIn;
 
-attribute vec3 coordIn;
+in vec3 coordIn;
 
-varying vec3 texCoordInOut;
+smooth out vec3 texCoordInOut;
 
 void main()
 {
@@ -30,16 +30,15 @@ void main()
 }
 `
 
-const skycubeFragmentShader string = `#version 120
+const skycubeFragmentShader string = `#version 410
 
 uniform samplerCube skycubeTextureIn;
 
-varying vec3 texCoordInOut;
+smooth in vec3 texCoordInOut;
+layout(location = 0) out vec4 fragmentColor;
 
 void main()
 {
-	// gl_FragColor = textureCube(skycubeTextureIn, texCoordInOut);
-	gl_FragColor = vec4(textureCube(skycubeTextureIn, texCoordInOut).rgb, 1.0);
-	// gl_FragColor = vec4(texCoordInOut, 1.0);
+	fragmentColor = vec4(texture(skycubeTextureIn, texCoordInOut).rgb, 1.0);
 }
 `
