@@ -9,6 +9,7 @@ import (
 	"github.com/mokiat/go-whiskey/math"
 	"github.com/mokiat/rally-mka/entities"
 	"github.com/mokiat/rally-mka/render"
+	"github.com/mokiat/rally-mka/scene"
 )
 
 const lapCount = 3
@@ -38,6 +39,7 @@ func NewController(assetsDir string) Controller {
 		renderer:  render.NewRenderer(),
 		gameMap:   entities.NewMap(),
 		carMine:   entities.NewCarExtendedModel(),
+		camera:    scene.NewCamera(),
 	}
 }
 
@@ -48,7 +50,8 @@ type controller struct {
 	gameMap  entities.Map
 	carMine  *entities.CarExtendedModel
 
-	cameraPosition math.Vec3
+	cameraAnchor math.Vec3
+	camera       *scene.Camera
 
 	goForward bool
 	goBack    bool
@@ -70,7 +73,7 @@ func (r *controller) InitScene() {
 
 	r.renderer.Generate()
 
-	r.cameraPosition = math.Vec3{
+	r.cameraAnchor = math.Vec3{
 		X: 0.0,
 		Y: 3.0,
 		Z: -cameraDistance,
@@ -101,8 +104,6 @@ func (r *controller) ResizeScene(width, height int) {
 	screenHalfWidth := float32(width) / float32(height)
 	screenHalfHeight := float32(1.0)
 	r.renderer.SetProjectionMatrix(math.PerspectiveMat4x4(-screenHalfWidth, screenHalfWidth, -screenHalfHeight, screenHalfHeight, 1.0, 300.0))
-	r.renderer.SetModelMatrix(math.IdentityMat4x4())
-	r.renderer.SetViewMatrix(math.IdentityMat4x4())
 }
 
 func (r *controller) UpdateScene() {
@@ -112,44 +113,38 @@ func (r *controller) UpdateScene() {
 		r.carMine.Frame(false, false, false, false, false, r.gameMap)
 	}
 
-	cameraVector := r.cameraPosition.DecVec3(r.carMine.Position)
-	cameraVector = cameraVector.Resize(cameraDistance)
-	r.cameraPosition = r.carMine.Position.IncVec3(cameraVector)
+	// we use a camera anchor to achieve the smooth effect of a
+	// camera following the car
+	anchorVector := r.cameraAnchor.DecVec3(r.carMine.Position)
+	anchorVector = anchorVector.Resize(cameraDistance)
+	r.cameraAnchor = r.carMine.Position.IncVec3(anchorVector)
+
+	// the following approach of creating the view matrix coordinates will fail
+	// if the camera is pointing directly up or down
+	cameraVectorZ := anchorVector
+	cameraVectorX := math.Vec3CrossProduct(math.BaseVec3Y(), cameraVectorZ)
+	cameraVectorY := math.Vec3CrossProduct(cameraVectorZ, cameraVectorX)
+	r.camera.SetViewMatrix(math.Mat4x4MulMany(
+		math.TranslationMat4x4(
+			r.carMine.Position.X,
+			r.carMine.Position.Y,
+			r.carMine.Position.Z,
+		),
+		math.VectorMat4x4(
+			cameraVectorX.Resize(1.0),
+			cameraVectorY.Resize(1.0),
+			cameraVectorZ.Resize(1.0),
+			math.NullVec3(),
+		),
+		math.RotationMat4x4(-25.0, 1.0, 0.0, 0.0),
+		math.TranslationMat4x4(0.0, 0.0, cameraDistance),
+	))
 }
 
 func (r *controller) RenderScene() {
+	r.renderer.SetViewMatrix(r.camera.InverseViewMatrix())
+
 	gl.Clear(gl.DEPTH_BUFFER_BIT)
-
-	r.renderer.SetViewMatrix(math.TranslationMat4x4(0.0, 0.0, -cameraDistance))
-
-	cameraVector := r.cameraPosition.DecVec3(r.carMine.Position)
-	koef := math.Vec2{
-		Y: cameraVector.Y,
-		X: math.Sqrt32(cameraDistance*cameraDistance - cameraVector.Y*cameraVector.Y),
-	}
-	koef = koef.Resize(1.0)
-
-	var angleX float32
-	if math.Abs32(koef.X) > 0.0000001 {
-		angleX = ((math.Atan32(koef.Y/koef.X)/math.Pi)*180.0 + 90.0*(1.0-math.Signum32(koef.X)))
-	} else {
-		angleX = 90.0 * math.Signum32(koef.Y)
-	}
-	r.renderer.SetViewMatrix(r.renderer.ViewMatrix().MulMat4x4(math.RotationMat4x4(25.0+angleX, 1.0, 0.0, 0.0)))
-
-	koef.X = cameraVector.Z
-	koef.Y = -cameraVector.X
-	koef = koef.Resize(1.0)
-
-	var angleY float32
-	if math.Abs32(koef.X) > 0.0000001 {
-		angleY = ((math.Atan32(koef.Y/koef.X)/math.Pi)*180.0 - 90.0*(1.0-math.Signum32(koef.X)))
-	} else {
-		angleY = 0.0
-	}
-	r.renderer.SetViewMatrix(r.renderer.ViewMatrix().MulMat4x4(math.RotationMat4x4(angleY, 0.0, 1.0, 0.0)))
-
-	r.renderer.SetModelMatrix(math.TranslationMat4x4(-r.carMine.Position.X, -r.carMine.Position.Y, -r.carMine.Position.Z))
 	r.gameMap.Draw(r.renderer)
 	r.carMine.DrawMe(r.renderer)
 }

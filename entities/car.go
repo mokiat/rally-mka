@@ -157,7 +157,7 @@ func (s *CarModelSimple) Draw(renderer *render.Renderer, turn float32) {
 		s.vectorX.Resize(1.0),
 		s.vectorY.Resize(1.0),
 		s.vectorZ.Resize(1.0),
-		math.NullVec3(),
+		s.Position,
 	)
 
 	// Car Body
