@@ -21,5 +21,5 @@ func (c *Camera) ViewMatrix() math.Mat4x4 {
 }
 
 func (c *Camera) InverseViewMatrix() math.Mat4x4 {
-	return c.viewMatrix.QuickInverse()
+	return c.viewMatrix.Inverse()
 }
