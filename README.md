@@ -1,6 +1,6 @@
 # Rally MKA
 
-A really old game project of mine ported to Go for fun.
+A really old game of mine ported to Go for fun.
 
 ![Screenshot](screenshot.png)
 
@@ -13,14 +13,28 @@ Being a port of a very old project of mine, some remarks are in place.
 * I have done little to no editing on the art. It is as it was modeled originally.
 * There is a lot of resource thrashing going on. I could have done a better job at OpenGL resource allocation and reuse but I wanted to get a working port as quickly as possible.
 
-## Running
+## Getting Started
+
+If you are using a MacOS system, the easiest way to get the game running is to download the app from the releases section of the GitHub project.
 
 If you want to compile the project and run it yourself, follow these steps.
 
-* Follow the steps on the [GLFW for Go](https://github.com/go-gl/glfw) project.
-* Make sure the [GLFW examples](https://github.com/go-gl/example) are running on your computer.
-* Do a `go get github.com/mokiat/rally-mka`.
-* Run the project via `cd $GOPATH/src/github.com/mokiat/rally-mka; go run main.go`. This assures that the current working directory is the project root folder, otherwise assets will not load.
+0. Follow the steps listed in the [GLFW for Go](https://github.com/go-gl/glfw) project.
+0. Make sure you can run the [GLFW examples](https://github.com/go-gl/example) on your computer.
+0. Clone the project somewhere on your filesystem.
+    ```bash
+    git clone https://github.com/mokiat/rally-mka
+    cd rally-mka
+    ```
+0. Download project dependencies
+    ```bash
+    go mod download
+    ```
+0. Run the game
+    ```bash
+    go run main.go
+    ```
+    Note: If you are running the latest version of MacOS, you may get warnings in the terminal. These warnings should not prevent the game from running.
 
 ## Licensing
 
@@ -30,4 +44,4 @@ All source code in this project is licensed under [Apache License v2](LICENSE).
 
 ### Assets
 
-All art assets (models, textures, etc.) are distributed under the [Creative Commons Attribution 4.0 International](http://creativecommons.org/licenses/by/4.0/) license.
+All art assets (images, models, textures, etc.) are distributed under the [Creative Commons Attribution 4.0 International](http://creativecommons.org/licenses/by/4.0/) license.
