@@ -45,3 +45,7 @@ All source code in this project is licensed under [Apache License v2](LICENSE).
 ### Assets
 
 All art assets (images, models, textures, etc.) are distributed under the [Creative Commons Attribution 4.0 International](http://creativecommons.org/licenses/by/4.0/) license.
+
+## Special Thanks
+
+* **[Bo0mer](https://github.com/Bo0mer)** for the original panoramic image that was used to generate the individual `city` skybox images.

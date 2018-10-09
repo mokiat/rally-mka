@@ -1,0 +1,14 @@
+#!/bin/bash
+
+set -e -u
+
+project_dir=$(cd "$(dirname $0)/.." && pwd)
+
+rff generate-cubemap \
+    "$project_dir/resources/skyboxes/city/front.png" \
+    "$project_dir/resources/skyboxes/city/back.png" \
+    "$project_dir/resources/skyboxes/city/left.png" \
+    "$project_dir/resources/skyboxes/city/right.png" \
+    "$project_dir/resources/skyboxes/city/top.png" \
+    "$project_dir/resources/skyboxes/city/bottom.png" \
+    "$project_dir/assets/skyboxes/city.dat"
