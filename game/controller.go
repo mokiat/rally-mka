@@ -2,18 +2,23 @@ package game
 
 import (
 	"math/rand"
+	"os"
 	"path/filepath"
 	"time"
 
 	"github.com/go-gl/gl/v4.1-core/gl"
+	"github.com/mokiat/go-whiskey-gl/texture"
 	"github.com/mokiat/go-whiskey/math"
+	"github.com/mokiat/rally-mka/data/cubemap"
 	"github.com/mokiat/rally-mka/entities"
 	"github.com/mokiat/rally-mka/render"
 	"github.com/mokiat/rally-mka/scene"
 )
 
 const lapCount = 3
-const cameraDistance = 6.0
+const cameraDistance = 8.0
+
+var skyboxPath = "skyboxes/city.dat"
 
 var tracks = [...]string{
 	"tracks/forest/track.m3d",
@@ -40,6 +45,7 @@ func NewController(assetsDir string) Controller {
 		gameMap:   entities.NewMap(),
 		carMine:   entities.NewCarExtendedModel(),
 		camera:    scene.NewCamera(),
+		stage:     scene.NewStage(),
 	}
 }
 
@@ -52,6 +58,9 @@ type controller struct {
 
 	cameraAnchor math.Vec3
 	camera       *scene.Camera
+	stage        *scene.Stage
+
+	vertexArrayID uint32
 
 	goForward bool
 	goBack    bool
@@ -61,9 +70,8 @@ type controller struct {
 }
 
 func (r *controller) InitScene() {
-	var vertexArrayID uint32
-	gl.GenVertexArrays(1, &vertexArrayID)
-	gl.BindVertexArray(vertexArrayID)
+	gl.GenVertexArrays(1, &r.vertexArrayID)
+	gl.BindVertexArray(r.vertexArrayID)
 
 	gl.Enable(gl.DEPTH_TEST)
 	gl.Enable(gl.CULL_FACE)
@@ -73,15 +81,10 @@ func (r *controller) InitScene() {
 
 	r.renderer.Generate()
 
-	r.cameraAnchor = math.Vec3{
-		X: 0.0,
-		Y: 3.0,
-		Z: -cameraDistance,
-	}
-
 	rand := rand.New(rand.NewSource(time.Now().Unix()))
 	track := filepath.Join(r.assetsDir, tracks[rand.Intn(len(tracks))])
 	car := filepath.Join(r.assetsDir, cars[rand.Intn(len(cars))])
+	skybox := filepath.Join(r.assetsDir, skyboxPath)
 
 	if err := r.gameMap.Load(track); err != nil {
 		panic(err)
@@ -97,13 +100,19 @@ func (r *controller) InitScene() {
 		Y: 0.6,
 		Z: 0.0,
 	}
+	r.cameraAnchor = r.carMine.Position.IncCoords(0.0, 0.0, -cameraDistance)
+
+	skyboxTexture := loadSkybox(skybox)
+	r.stage.Sky = &scene.Skybox{
+		Texture: skyboxTexture,
+	}
 }
 
 func (r *controller) ResizeScene(width, height int) {
 	gl.Viewport(0, 0, int32(width), int32(height))
 	screenHalfWidth := float32(width) / float32(height)
 	screenHalfHeight := float32(1.0)
-	r.renderer.SetProjectionMatrix(math.PerspectiveMat4x4(-screenHalfWidth, screenHalfWidth, -screenHalfHeight, screenHalfHeight, 1.0, 300.0))
+	r.renderer.SetProjectionMatrix(math.PerspectiveMat4x4(-screenHalfWidth, screenHalfWidth, -screenHalfHeight, screenHalfHeight, 1.5, 300.0))
 }
 
 func (r *controller) UpdateScene() {
@@ -142,11 +151,20 @@ func (r *controller) UpdateScene() {
 }
 
 func (r *controller) RenderScene() {
-	r.renderer.SetViewMatrix(r.camera.InverseViewMatrix())
+	// modern GPUs prefer that you clear all the buffers
+	// and it can be faster due to cache state
+	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-	gl.Clear(gl.DEPTH_BUFFER_BIT)
+	// TODO: This should slowly be moved as part of RenderScene
+	// in renderer
+	gl.BindVertexArray(r.vertexArrayID)
 	r.gameMap.Draw(r.renderer)
-	r.carMine.DrawMe(r.renderer)
+	r.carMine.Draw(r.renderer)
+
+	// it is more optimal to render front to back
+	// i.e. the skybox should be last and only unoccupied
+	// fragments should be drawn
+	r.renderer.RenderScene(r.stage, r.camera)
 }
 
 func (r *controller) SetFrame(forward, back, left, right, brake bool) {
@@ -155,4 +173,34 @@ func (r *controller) SetFrame(forward, back, left, right, brake bool) {
 	r.goLeft = left
 	r.goRight = right
 	r.goBrake = brake
+}
+
+func loadSkybox(path string) *texture.CubeTexture {
+	file, err := os.Open(path)
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+
+	decoder := &cubemap.Decoder{}
+	tex, err := decoder.Decode(file)
+	if err != nil {
+		panic(err)
+	}
+
+	skycubeTexture := texture.DedicatedRGBACubeDataPlayground(int(tex.Dimension))
+	skycubeTexture.SetData(texture.CubeSideFront, tex.Sides[cubemap.SideFront].Data)
+	skycubeTexture.SetData(texture.CubeSideBack, tex.Sides[cubemap.SideBack].Data)
+	skycubeTexture.SetData(texture.CubeSideLeft, tex.Sides[cubemap.SideLeft].Data)
+	skycubeTexture.SetData(texture.CubeSideRight, tex.Sides[cubemap.SideRight].Data)
+	skycubeTexture.SetData(texture.CubeSideTop, tex.Sides[cubemap.SideTop].Data)
+	skycubeTexture.SetData(texture.CubeSideBottom, tex.Sides[cubemap.SideBottom].Data)
+
+	skycubeTex := texture.NewCubeTexture()
+	if err := skycubeTex.Allocate(); err != nil {
+		panic(err)
+	}
+	skycubeTex.Bind()
+	skycubeTex.CreateData(skycubeTexture)
+	return skycubeTex
 }

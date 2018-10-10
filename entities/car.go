@@ -29,8 +29,8 @@ type CarExtendedModel struct {
 	acceleration float32
 }
 
-func (m *CarExtendedModel) DrawMe(renderer *render.Renderer) {
-	m.Draw(renderer, float32(m.turn))
+func (m *CarExtendedModel) Draw(renderer *render.Renderer) {
+	m.CarModelSimple.Draw(renderer, float32(m.turn))
 }
 
 func (m *CarExtendedModel) Frame(forward, back, left, right, brake bool, gameMap Map) {

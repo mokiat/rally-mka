@@ -3,7 +3,6 @@ package entities
 import (
 	"fmt"
 
-	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/mokiat/go-whiskey/math"
 	"github.com/mokiat/rally-mka/collision"
 	"github.com/mokiat/rally-mka/render"
@@ -22,7 +21,6 @@ func NewMap() Map {
 }
 
 type gameMap struct {
-	sky       Sky
 	walls     []Wall
 	grounds   []Ground
 	dummies   []Dummy
@@ -34,21 +32,11 @@ func (m *gameMap) Load(path string) error {
 	if err := model.Load(path); err != nil {
 		return err
 	}
-	m.loadSky(model)
 	m.loadGrounds(model)
 	m.loadWalls(model)
 	m.loadDummies(model)
 	m.loadWaypoints(model)
 	return nil
-}
-
-func (m *gameMap) loadSky(model *ExtendedModel) {
-	m.sky = Sky{}
-	if index := model.FindObjectIndex("Sky", 0, false); index >= 0 {
-		object := model.GetObjectIndex(index)
-		m.sky.Object = object
-		m.sky.RenderMesh = createRenderMesh(model, object)
-	}
 }
 
 func (m *gameMap) loadGrounds(model *ExtendedModel) {
@@ -98,7 +86,6 @@ func (m *gameMap) loadWaypoints(model *ExtendedModel) {
 }
 
 func (m *gameMap) Generate() {
-	m.sky.RenderMesh.Generate()
 	for _, ground := range m.grounds {
 		ground.RenderMesh.Generate()
 	}
@@ -143,11 +130,6 @@ func (m *gameMap) CheckCollisionWall(line collision.Line) (bestCollision collisi
 }
 
 func (m *gameMap) Draw(renderer *render.Renderer) {
-	gl.DepthFunc(gl.ALWAYS)
-	gl.DepthMask(false)
-	renderer.Render(m.sky.RenderMesh, renderer.SkyboxMaterial())
-	gl.DepthMask(true)
-	gl.DepthFunc(gl.LESS)
 	for _, ground := range m.grounds {
 		renderer.Render(ground.RenderMesh, renderer.TextureMaterial())
 	}
