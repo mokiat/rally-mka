@@ -17,6 +17,7 @@ import (
 
 const lapCount = 3
 const cameraDistance = 8.0
+const anchorDistance = 4.0
 
 var skyboxPath = "skyboxes/city.dat"
 
@@ -100,7 +101,7 @@ func (r *controller) InitScene() {
 		Y: 0.6,
 		Z: 0.0,
 	}
-	r.cameraAnchor = r.carMine.Position.IncCoords(0.0, 0.0, -cameraDistance)
+	r.cameraAnchor = r.carMine.Position.IncCoords(0.0, 0.0, -anchorDistance)
 
 	skyboxTexture := loadSkybox(skybox)
 	r.stage.Sky = &scene.Skybox{
@@ -125,7 +126,7 @@ func (r *controller) UpdateScene() {
 	// we use a camera anchor to achieve the smooth effect of a
 	// camera following the car
 	anchorVector := r.cameraAnchor.DecVec3(r.carMine.Position)
-	anchorVector = anchorVector.Resize(cameraDistance)
+	anchorVector = anchorVector.Resize(anchorDistance)
 	r.cameraAnchor = r.carMine.Position.IncVec3(anchorVector)
 
 	// the following approach of creating the view matrix coordinates will fail
