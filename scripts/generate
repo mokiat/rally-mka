@@ -4,6 +4,7 @@ set -e -u
 
 project_dir=$(cd "$(dirname $0)/.." && pwd)
 
+mkdir -p "$project_dir/assets/skyboxes"
 rff generate-cubemap \
     "$project_dir/resources/skyboxes/city/front.png" \
     "$project_dir/resources/skyboxes/city/back.png" \
