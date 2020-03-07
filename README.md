@@ -2,7 +2,7 @@
 
 A really old game of mine ported to Go for fun.
 
-![Screenshot](screenshot.png)
+![Game Screenshot](preview.png)
 
 ## Remarks
 
