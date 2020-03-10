@@ -4,9 +4,9 @@ import (
 	"github.com/mokiat/go-whiskey-gl/buffer"
 	"github.com/mokiat/go-whiskey-gl/texture"
 	"github.com/mokiat/go-whiskey/math"
-	"github.com/mokiat/rally-mka/collision"
+	"github.com/mokiat/rally-mka/cmd/rallymka/internal/collision"
+	"github.com/mokiat/rally-mka/cmd/rallymka/internal/render"
 	"github.com/mokiat/rally-mka/internal/data/m3d"
-	"github.com/mokiat/rally-mka/render"
 )
 
 func createCollisionMesh(obj *m3d.Object) *collision.Mesh {

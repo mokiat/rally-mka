@@ -21,7 +21,7 @@ If you want to compile the project and run it yourself, follow these steps.
 
 0. Follow the steps listed in the [GLFW for Go](https://github.com/go-gl/glfw) project.
 0. Make sure you can run the [GLFW examples](https://github.com/go-gl/example) on your computer.
-0. Clone the project somewhere on your filesystem.
+0. Clone the project somewhere on your filesystem (make sure you have Git LFS installed).
     ```bash
     git clone https://github.com/mokiat/rally-mka
     cd rally-mka
@@ -30,11 +30,18 @@ If you want to compile the project and run it yourself, follow these steps.
     ```bash
     go mod download
     ```
+0. Install Rally File Format Tool
+    ```bash
+    (cd cmd/rff && go install)
+    ```
+0. Generate all assets
+    ```bash
+    scripts/generate
+    ```
 0. Run the game
     ```bash
-    go run main.go
+    go run cmd/rallymka/main.go
     ```
-    Note: If you are running the latest version of MacOS, you may get warnings in the terminal. These warnings should not prevent the game from running.
 
 ## Licensing
 

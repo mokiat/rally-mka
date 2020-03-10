@@ -4,7 +4,7 @@ import (
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/mokiat/go-whiskey-gl/buffer"
 	"github.com/mokiat/go-whiskey/math"
-	"github.com/mokiat/rally-mka/scene"
+	"github.com/mokiat/rally-mka/cmd/rallymka/internal/scene"
 	"github.com/pkg/errors"
 )
 

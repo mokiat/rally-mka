@@ -9,10 +9,10 @@ import (
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/mokiat/go-whiskey-gl/texture"
 	"github.com/mokiat/go-whiskey/math"
-	"github.com/mokiat/rally-mka/entities"
+	"github.com/mokiat/rally-mka/cmd/rallymka/internal/entities"
+	"github.com/mokiat/rally-mka/cmd/rallymka/internal/render"
+	"github.com/mokiat/rally-mka/cmd/rallymka/internal/scene"
 	"github.com/mokiat/rally-mka/internal/data/cubemap"
-	"github.com/mokiat/rally-mka/render"
-	"github.com/mokiat/rally-mka/scene"
 )
 
 const lapCount = 3

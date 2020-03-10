@@ -4,7 +4,7 @@ import (
 	"log"
 	"runtime"
 
-	"github.com/mokiat/rally-mka/game"
+	"github.com/mokiat/rally-mka/cmd/rallymka/internal/game"
 )
 
 func init() {
