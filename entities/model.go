@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/mokiat/go-whiskey/math"
-	"github.com/mokiat/rally-mka/data/m2d"
-	"github.com/mokiat/rally-mka/data/m3d"
+	"github.com/mokiat/rally-mka/internal/data/m2d"
+	"github.com/mokiat/rally-mka/internal/data/m3d"
 )
 
 type ExtendedModel struct {

@@ -3,10 +3,11 @@ package command
 import (
 	"os"
 
-	"github.com/mokiat/rally-mka/cmd/rff/internal/imgutil"
-	"github.com/mokiat/rally-mka/data/cubemap"
 	"github.com/pkg/errors"
 	cli "gopkg.in/urfave/cli.v1"
+
+	"github.com/mokiat/rally-mka/cmd/rff/internal/imgutil"
+	"github.com/mokiat/rally-mka/internal/data/cubemap"
 )
 
 func GenerateCubemap() cli.Command {
