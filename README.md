@@ -32,13 +32,13 @@ If you want to compile the project and run it yourself, follow these steps.
     ```bash
     go mod download
     ```
-0. Install Rally File Format Tool
+0. Install Rally File Format Generator Tool
     ```bash
     (cd cmd/rallygen && go install)
     ```
 0. Generate all assets
     ```bash
-    scripts/generate
+    make assets
     ```
 0. Run the game
     ```bash
