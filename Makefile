@@ -3,9 +3,30 @@ ASSETS_DIR=assets
 
 SKYBOX_RESOURCES_DIR=$(RESOURCES_DIR)/skyboxes
 SKYBOX_ASSETS_DIR=$(ASSETS_DIR)/skyboxes
+SHADER_RESOURCES_DIR=$(RESOURCES_DIR)/shaders
+PROGRAM_ASSETS_DIR=$(ASSETS_DIR)/programs
 
 .PHONY: assets
-assets: skyboxes
+assets: programs skyboxes
+
+.PHONY: programs
+programs: \
+	$(PROGRAM_ASSETS_DIR) \
+	$(PROGRAM_ASSETS_DIR)/diffuse.dat \
+	$(PROGRAM_ASSETS_DIR)/skybox.dat
+
+$(PROGRAM_ASSETS_DIR):
+	mkdir -p "$(PROGRAM_ASSETS_DIR)"
+
+$(PROGRAM_ASSETS_DIR)/diffuse.dat: \
+	$(SHADER_RESOURCES_DIR)/diffuse.vert \
+	$(SHADER_RESOURCES_DIR)/diffuse.frag
+	rallygen program $+ $@
+
+$(PROGRAM_ASSETS_DIR)/skybox.dat: \
+	$(SHADER_RESOURCES_DIR)/skybox.vert \
+	$(SHADER_RESOURCES_DIR)/skybox.frag
+	rallygen program $+ $@
 
 .PHONY: skyboxes
 skyboxes: \

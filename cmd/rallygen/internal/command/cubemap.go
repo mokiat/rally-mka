@@ -4,19 +4,19 @@ import (
 	"os"
 
 	"github.com/pkg/errors"
-	cli "gopkg.in/urfave/cli.v1"
+	cli "github.com/urfave/cli/v2"
 
 	"github.com/mokiat/rally-mka/cmd/rallygen/internal/imgutil"
 	"github.com/mokiat/rally-mka/internal/data/cubemap"
 )
 
-func GenerateCubemap() cli.Command {
-	return cli.Command{
+func GenerateCubemap() *cli.Command {
+	return &cli.Command{
 		Name:      "generate-cubemap",
 		Usage:     "generates a cubemap texture",
 		UsageText: "generate-cubemap <front-image> <back-image> <left-image> <right-image> <top-image> <bottom-image> <output-file>",
 		Action: func(c *cli.Context) error {
-			if len(c.Args()) < 7 {
+			if c.Args().Len() < 7 {
 				return errors.New("insufficient arguments")
 			}
 			action := generateCubemapAction{
