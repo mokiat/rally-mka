@@ -4,9 +4,9 @@ import (
 	"log"
 	"os"
 
-	"github.com/mokiat/rally-mka/cmd/rff/internal/command"
-
 	cli "gopkg.in/urfave/cli.v1"
+
+	"github.com/mokiat/rally-mka/cmd/rallygen/internal/command"
 )
 
 func main() {

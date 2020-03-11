@@ -6,7 +6,7 @@ import (
 	"github.com/pkg/errors"
 	cli "gopkg.in/urfave/cli.v1"
 
-	"github.com/mokiat/rally-mka/cmd/rff/internal/imgutil"
+	"github.com/mokiat/rally-mka/cmd/rallygen/internal/imgutil"
 	"github.com/mokiat/rally-mka/internal/data/cubemap"
 )
 
