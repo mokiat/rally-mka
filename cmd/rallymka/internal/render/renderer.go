@@ -10,7 +10,7 @@ import (
 
 func NewRenderer() *Renderer {
 	return &Renderer{
-		skycubeMaterial:  newSkycubeMaterial(),
+		skyboxMaterial:   newSkyboxMaterial(),
 		textureMaterial:  newTextureMaterial(),
 		projectionMatrix: math.IdentityMat4x4(),
 		modelMatrix:      math.IdentityMat4x4(),
@@ -20,7 +20,7 @@ func NewRenderer() *Renderer {
 }
 
 type Renderer struct {
-	skycubeMaterial *Material
+	skyboxMaterial  *Material
 	textureMaterial *Material
 
 	projectionMatrix math.Mat4x4
@@ -36,7 +36,7 @@ func (r *Renderer) Generate() {
 	if err := r.generateSky(); err != nil {
 		panic(err)
 	}
-	if err := r.skycubeMaterial.Generate(); err != nil {
+	if err := r.skyboxMaterial.Generate(); err != nil {
 		panic(err)
 	}
 	if err := r.textureMaterial.Generate(); err != nil {
@@ -197,7 +197,7 @@ func (r *Renderer) generateSky() error {
 }
 
 func (r *Renderer) renderSky(sky *scene.Skybox) {
-	material := r.skycubeMaterial
+	material := r.skyboxMaterial
 	program := material.program
 
 	gl.DepthMask(false)
@@ -207,7 +207,7 @@ func (r *Renderer) renderSky(sky *scene.Skybox) {
 
 	gl.ActiveTexture(gl.TEXTURE0)
 	sky.Texture.Bind()
-	gl.Uniform1i(material.skycubeTextureLocation, 0)
+	gl.Uniform1i(material.skyboxTextureLocation, 0)
 
 	gl.UniformMatrix4fv(material.projectionMatrixLocation, 1, false, r.matrixToArray(r.projectionMatrix))
 	gl.UniformMatrix4fv(material.viewMatrixLocation, 1, false, r.matrixToArray(r.viewMatrix))

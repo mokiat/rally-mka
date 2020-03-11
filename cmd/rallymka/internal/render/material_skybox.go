@@ -1,10 +1,10 @@
 package render
 
-func newSkycubeMaterial() *Material {
-	return newMaterial(skycubeVertexShader, skycubeFragmentShader)
+func newSkyboxMaterial() *Material {
+	return newMaterial(skyboxVertexShader, skyboxFragmentShader)
 }
 
-const skycubeVertexShader string = `#version 410
+const skyboxVertexShader string = `#version 410
 
 uniform mat4 projectionMatrixIn;
 uniform mat4 viewMatrixIn;
@@ -31,15 +31,15 @@ void main()
 }
 `
 
-const skycubeFragmentShader string = `#version 410
+const skyboxFragmentShader string = `#version 410
 
-uniform samplerCube skycubeTextureIn;
+uniform samplerCube skyboxTextureIn;
 
 smooth in vec3 texCoordInOut;
 layout(location = 0) out vec4 fragmentColor;
 
 void main()
 {
-	fragmentColor = vec4(texture(skycubeTextureIn, texCoordInOut).rgb, 1.0);
+	fragmentColor = vec4(texture(skyboxTextureIn, texCoordInOut).rgb, 1.0);
 }
 `

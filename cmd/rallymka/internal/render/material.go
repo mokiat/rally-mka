@@ -16,7 +16,7 @@ type Material struct {
 	modelMatrixLocation      int32
 	viewMatrixLocation       int32
 	diffuseTextureLocation   int32
-	skycubeTextureLocation   int32
+	skyboxTextureLocation    int32
 }
 
 func newMaterial(vertexSrc, fragmentSrc string) *Material {
@@ -54,7 +54,7 @@ func (m *Material) Generate() error {
 	m.modelMatrixLocation = m.program.GetUniformLocation("modelMatrixIn")
 	m.viewMatrixLocation = m.program.GetUniformLocation("viewMatrixIn")
 	m.diffuseTextureLocation = m.program.GetUniformLocation("diffuseTextureIn")
-	m.skycubeTextureLocation = m.program.GetUniformLocation("skycubeTextureIn")
+	m.skyboxTextureLocation = m.program.GetUniformLocation("skyboxTextureIn")
 	return nil
 }
 
