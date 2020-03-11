@@ -1,5 +1,7 @@
 # Rally MKA
 
+**WARNING:** This repository is under heavy refactoring and master branch is not guaranteed to be stable, nor the documentation accurate!
+
 A really old game of mine ported to Go for fun.
 
 ![Game Screenshot](preview.png)
