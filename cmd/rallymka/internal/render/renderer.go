@@ -10,7 +10,6 @@ import (
 
 func NewRenderer() *Renderer {
 	return &Renderer{
-		skyboxMaterial:   newSkyboxMaterial(),
 		skycubeMaterial:  newSkycubeMaterial(),
 		textureMaterial:  newTextureMaterial(),
 		projectionMatrix: math.IdentityMat4x4(),
@@ -21,7 +20,6 @@ func NewRenderer() *Renderer {
 }
 
 type Renderer struct {
-	skyboxMaterial  *Material
 	skycubeMaterial *Material
 	textureMaterial *Material
 
@@ -38,19 +36,12 @@ func (r *Renderer) Generate() {
 	if err := r.generateSky(); err != nil {
 		panic(err)
 	}
-	if err := r.skyboxMaterial.Generate(); err != nil {
-		panic(err)
-	}
 	if err := r.skycubeMaterial.Generate(); err != nil {
 		panic(err)
 	}
 	if err := r.textureMaterial.Generate(); err != nil {
 		panic(err)
 	}
-}
-
-func (r *Renderer) SkyboxMaterial() *Material {
-	return r.skyboxMaterial
 }
 
 func (r *Renderer) TextureMaterial() *Material {
