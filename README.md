@@ -32,7 +32,7 @@ If you want to compile the project and run it yourself, follow these steps.
     ```
 0. Install Rally File Format Tool
     ```bash
-    (cd cmd/rff && go install)
+    (cd cmd/rallygen && go install)
     ```
 0. Generate all assets
     ```bash
