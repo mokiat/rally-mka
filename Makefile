@@ -1,15 +1,16 @@
 RESOURCES_DIR=resources
 ASSETS_DIR=assets
-
 SKYBOX_RESOURCES_DIR=$(RESOURCES_DIR)/skyboxes
 SKYBOX_ASSETS_DIR=$(ASSETS_DIR)/skyboxes
 SHADER_RESOURCES_DIR=$(RESOURCES_DIR)/shaders
 PROGRAM_ASSETS_DIR=$(ASSETS_DIR)/programs
+MODEL_RESOURCES_DIR=$(RESOURCES_DIR)/models
+MODEL_ASSETS_DIR=$(ASSETS_DIR)/models
 MESH_RESOURCES_DIR=$(RESOURCES_DIR)/meshes
 MESH_ASSETS_DIR=$(ASSETS_DIR)/meshes
 
 .PHONY: assets
-assets: programs meshes skyboxes
+assets: programs models meshes skyboxes
 
 .PHONY: programs
 programs: \
@@ -29,6 +30,43 @@ $(PROGRAM_ASSETS_DIR)/skybox.dat: \
 	$(SHADER_RESOURCES_DIR)/skybox.vert \
 	$(SHADER_RESOURCES_DIR)/skybox.frag
 	rallygen program $+ $@
+
+.PHONY: models
+models: \
+	$(MODEL_ASSETS_DIR) \
+	$(MODEL_ASSETS_DIR)/tree.dat \
+	$(MODEL_ASSETS_DIR)/lamp.dat \
+	$(MODEL_ASSETS_DIR)/finish.dat \
+	$(MODEL_ASSETS_DIR)/suv.dat \
+	$(MODEL_ASSETS_DIR)/hatch.dat \
+	$(MODEL_ASSETS_DIR)/truck.dat
+
+$(MODEL_ASSETS_DIR):
+	mkdir -p "$(MODEL_ASSETS_DIR)"
+
+$(MODEL_ASSETS_DIR)/tree.dat: \
+	$(MODEL_RESOURCES_DIR)/tree.json
+	rallygen model $+ $@
+
+$(MODEL_ASSETS_DIR)/lamp.dat: \
+	$(MODEL_RESOURCES_DIR)/lamp.json
+	rallygen model $+ $@
+
+$(MODEL_ASSETS_DIR)/finish.dat: \
+	$(MODEL_RESOURCES_DIR)/finish.json
+	rallygen model $+ $@
+
+$(MODEL_ASSETS_DIR)/hatch.dat: \
+	$(MODEL_RESOURCES_DIR)/hatch.json
+	rallygen model $+ $@
+
+$(MODEL_ASSETS_DIR)/suv.dat: \
+	$(MODEL_RESOURCES_DIR)/suv.json
+	rallygen model $+ $@
+
+$(MODEL_ASSETS_DIR)/truck.dat: \
+	$(MODEL_RESOURCES_DIR)/truck.json
+	rallygen model $+ $@
 
 .PHONY: meshes
 meshes: \

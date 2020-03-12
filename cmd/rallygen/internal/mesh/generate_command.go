@@ -41,7 +41,7 @@ func (a *generateMeshAction) Run() error {
 		return fmt.Errorf("failed to read mesh: %w", err)
 	}
 
-	assetMesh, err := a.convertResourceToAsset(resMesh)
+	assetMesh, err := ConvertResourceToAsset(resMesh)
 	if err != nil {
 		return fmt.Errorf("failed to convert resource mesh to asset: %w", err)
 	}
@@ -77,7 +77,7 @@ func (a *generateMeshAction) writeAssetMesh(path string, mesh *asset.Mesh) error
 	return nil
 }
 
-func (a *generateMeshAction) convertResourceToAsset(resMesh *resource.Mesh) (*asset.Mesh, error) {
+func ConvertResourceToAsset(resMesh *resource.Mesh) (*asset.Mesh, error) {
 	if len(resMesh.Coords) == 0 {
 		return nil, fmt.Errorf("missing coords")
 	}
@@ -88,7 +88,7 @@ func (a *generateMeshAction) convertResourceToAsset(resMesh *resource.Mesh) (*as
 		return nil, errors.New("coords values not multiple of three")
 	}
 	vertexCount := len(resMesh.Coords) / 3
-	layout := a.evaluateVertexLayout(resMesh)
+	layout := evaluateMeshVertexLayout(resMesh)
 	vertexData := data.Buffer(make([]byte, vertexCount*layout.Stride))
 	if len(resMesh.Coords) > 0 {
 		offset := layout.CoordOffset
@@ -141,7 +141,7 @@ func (a *generateMeshAction) convertResourceToAsset(resMesh *resource.Mesh) (*as
 	}, nil
 }
 
-func (a *generateMeshAction) evaluateVertexLayout(mesh *resource.Mesh) meshVertexLayout {
+func evaluateMeshVertexLayout(mesh *resource.Mesh) meshVertexLayout {
 	var layout meshVertexLayout
 	if len(mesh.Coords) > 0 {
 		layout.CoordOffset = layout.Stride

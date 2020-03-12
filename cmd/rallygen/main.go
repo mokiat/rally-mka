@@ -8,6 +8,7 @@ import (
 
 	"github.com/mokiat/rally-mka/cmd/rallygen/internal/command"
 	"github.com/mokiat/rally-mka/cmd/rallygen/internal/mesh"
+	"github.com/mokiat/rally-mka/cmd/rallygen/internal/model"
 	"github.com/mokiat/rally-mka/cmd/rallygen/internal/program"
 )
 
@@ -17,6 +18,7 @@ func main() {
 	app.Usage = "usage"
 	app.Commands = []*cli.Command{
 		program.GenerateCommand(),
+		model.GenerateCommand(),
 		mesh.GenerateCommand(),
 		command.GenerateCubemap(),
 	}
