@@ -57,6 +57,8 @@ func (a *generateMeshAction) readResourceMesh(path string) (*resource.Mesh, erro
 	if err != nil {
 		return nil, fmt.Errorf("failed to open file %q: %w", path, err)
 	}
+	defer file.Close()
+
 	mesh, err := resource.NewMeshDecoder().Decode(file)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode mesh: %w", err)

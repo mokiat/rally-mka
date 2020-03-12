@@ -56,6 +56,7 @@ func (a *generateLevelAction) readResourceLevel(path string) (*resource.Level, e
 	if err != nil {
 		return nil, fmt.Errorf("failed to open file: %w", err)
 	}
+	defer file.Close()
 
 	level, err := resource.NewLevelDecoder().Decode(file)
 	if err != nil {

@@ -56,6 +56,7 @@ func (a *generateModelAction) readResourceModel(path string) (*resource.Model, e
 	if err != nil {
 		return nil, fmt.Errorf("failed to open file %q: %w", path, err)
 	}
+	defer file.Close()
 
 	model, err := resource.NewModelDecoder().Decode(file)
 	if err != nil {
