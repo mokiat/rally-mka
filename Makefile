@@ -5,9 +5,11 @@ SKYBOX_RESOURCES_DIR=$(RESOURCES_DIR)/skyboxes
 SKYBOX_ASSETS_DIR=$(ASSETS_DIR)/skyboxes
 SHADER_RESOURCES_DIR=$(RESOURCES_DIR)/shaders
 PROGRAM_ASSETS_DIR=$(ASSETS_DIR)/programs
+MESH_RESOURCES_DIR=$(RESOURCES_DIR)/meshes
+MESH_ASSETS_DIR=$(ASSETS_DIR)/meshes
 
 .PHONY: assets
-assets: programs skyboxes
+assets: programs meshes skyboxes
 
 .PHONY: programs
 programs: \
@@ -27,6 +29,23 @@ $(PROGRAM_ASSETS_DIR)/skybox.dat: \
 	$(SHADER_RESOURCES_DIR)/skybox.vert \
 	$(SHADER_RESOURCES_DIR)/skybox.frag
 	rallygen program $+ $@
+
+.PHONY: meshes
+meshes: \
+	$(MESH_ASSETS_DIR) \
+	$(MESH_ASSETS_DIR)/quad.dat \
+	$(MESH_ASSETS_DIR)/skybox.dat
+
+$(MESH_ASSETS_DIR):
+	mkdir -p "$(MESH_ASSETS_DIR)"
+
+$(MESH_ASSETS_DIR)/quad.dat: \
+	$(MESH_RESOURCES_DIR)/quad.json
+	rallygen mesh $+ $@
+
+$(MESH_ASSETS_DIR)/skybox.dat: \
+	$(MESH_RESOURCES_DIR)/skybox.json
+	rallygen mesh $+ $@
 
 .PHONY: skyboxes
 skyboxes: \
