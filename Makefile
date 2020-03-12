@@ -2,6 +2,8 @@ RESOURCES_DIR=resources
 ASSETS_DIR=assets
 SKYBOX_RESOURCES_DIR=$(RESOURCES_DIR)/skyboxes
 SKYBOX_ASSETS_DIR=$(ASSETS_DIR)/skyboxes
+LEVEL_RESOURCES_DIR=$(RESOURCES_DIR)/levels
+LEVEL_ASSETS_DIR=$(ASSETS_DIR)/levels
 SHADER_RESOURCES_DIR=$(RESOURCES_DIR)/shaders
 PROGRAM_ASSETS_DIR=$(ASSETS_DIR)/programs
 MODEL_RESOURCES_DIR=$(RESOURCES_DIR)/models
@@ -10,7 +12,29 @@ MESH_RESOURCES_DIR=$(RESOURCES_DIR)/meshes
 MESH_ASSETS_DIR=$(ASSETS_DIR)/meshes
 
 .PHONY: assets
-assets: programs models meshes skyboxes
+assets: levels programs models meshes skyboxes
+
+.PHONY: levels
+levels: \
+	$(LEVEL_ASSETS_DIR) \
+	$(LEVEL_ASSETS_DIR)/forest.dat \
+	$(LEVEL_ASSETS_DIR)/highway.dat \
+	$(LEVEL_ASSETS_DIR)/playground.dat
+
+$(LEVEL_ASSETS_DIR):
+	mkdir -p $(LEVEL_ASSETS_DIR)
+
+$(LEVEL_ASSETS_DIR)/forest.dat: \
+	$(LEVEL_RESOURCES_DIR)/forest.json
+	rallygen level $+ $@
+
+$(LEVEL_ASSETS_DIR)/highway.dat: \
+	$(LEVEL_RESOURCES_DIR)/highway.json
+	rallygen level $+ $@
+
+$(LEVEL_ASSETS_DIR)/playground.dat: \
+	$(LEVEL_RESOURCES_DIR)/playground.json
+	rallygen level $+ $@
 
 .PHONY: programs
 programs: \
