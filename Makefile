@@ -10,9 +10,11 @@ MODEL_RESOURCES_DIR=$(RESOURCES_DIR)/models
 MODEL_ASSETS_DIR=$(ASSETS_DIR)/models
 MESH_RESOURCES_DIR=$(RESOURCES_DIR)/meshes
 MESH_ASSETS_DIR=$(ASSETS_DIR)/meshes
+CUBE_TEX_RESOURCES_DIR=$(RESOURCES_DIR)/textures/cube
+CUBE_TEX_ASSETS_DIR=$(ASSETS_DIR)/textures/cube
 
 .PHONY: assets
-assets: levels programs models meshes skyboxes
+assets: levels programs models meshes cubetextures skyboxes
 
 .PHONY: levels
 levels: \
@@ -108,6 +110,23 @@ $(MESH_ASSETS_DIR)/quad.dat: \
 $(MESH_ASSETS_DIR)/skybox.dat: \
 	$(MESH_RESOURCES_DIR)/skybox.json
 	rallygen mesh $+ $@
+
+.PHONY: cubetextures
+cubetextures:	\
+	$(CUBE_TEX_ASSETS_DIR) \
+	$(CUBE_TEX_ASSETS_DIR)/city.dat
+
+$(CUBE_TEX_ASSETS_DIR):
+	mkdir -p "$(CUBE_TEX_ASSETS_DIR)"
+
+$(CUBE_TEX_ASSETS_DIR)/city.dat: \
+	$(CUBE_TEX_RESOURCES_DIR)/city_front.png \
+	$(CUBE_TEX_RESOURCES_DIR)/city_back.png \
+	$(CUBE_TEX_RESOURCES_DIR)/city_left.png \
+	$(CUBE_TEX_RESOURCES_DIR)/city_right.png \
+	$(CUBE_TEX_RESOURCES_DIR)/city_top.png \
+	$(CUBE_TEX_RESOURCES_DIR)/city_bottom.png
+	rallygen cubetex --dimension 512 $+ $@
 
 .PHONY: skyboxes
 skyboxes: \

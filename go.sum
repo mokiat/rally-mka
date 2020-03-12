@@ -24,6 +24,8 @@ github.com/mokiat/go-whiskey v0.0.0-20190102190501-4db4b9c90766 h1:aCB5IYguov1FA
 github.com/mokiat/go-whiskey v0.0.0-20190102190501-4db4b9c90766/go.mod h1:sKasKDB0Pv2UV3oDBj+/dxzBor7kIeiHZbrK5iozA9c=
 github.com/mokiat/go-whiskey-gl v0.0.0-20180927130448-6a0c17c77157 h1:N5t54K/NgfZEKVpEyPCvgTAzNIVHBRZHwvBBC4OyH5Y=
 github.com/mokiat/go-whiskey-gl v0.0.0-20180927130448-6a0c17c77157/go.mod h1:Vu7GSrTR6AphNKoDmtPRZfDWwUFv7kiValL37N9Kqxg=
+github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646 h1:zYyBkD/k9seD2A7fsi6Oo2LfFZAehjjQMERAvZLEDnQ=
+github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646/go.mod h1:jpp1/29i3P1S/RLdc7JQKbRpFeM1dOBd8T9ki5s+AY8=
 github.com/onsi/ginkgo v1.6.0 h1:Ix8l273rp3QzYgXSR+c8d1fTG7UPgYkOSELPhiY/YGw=
 github.com/onsi/ginkgo v1.6.0/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=
 github.com/onsi/gomega v1.4.2 h1:3mYCb7aPxS/RU7TI1y4rkEn1oKmPRjNJLNEXgw7MH2I=
