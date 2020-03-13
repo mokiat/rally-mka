@@ -37,6 +37,7 @@ type Controller interface {
 	UpdateScene()
 	RenderScene()
 	SetFrame(forward, back, left, right, brake bool)
+	SetFreeze(bool)
 }
 
 func NewController(assetsDir string) Controller {
@@ -68,6 +69,7 @@ type controller struct {
 	goLeft    bool
 	goRight   bool
 	goBrake   bool
+	goFreeze  bool
 }
 
 func (r *controller) InitScene() {
@@ -117,6 +119,10 @@ func (r *controller) ResizeScene(width, height int) {
 }
 
 func (r *controller) UpdateScene() {
+	if r.goFreeze {
+		return
+	}
+
 	if r.carMine.Laps <= lapCount {
 		r.carMine.Frame(r.goForward, r.goBack, r.goLeft, r.goRight, r.goBrake, r.gameMap)
 	} else {
@@ -174,6 +180,10 @@ func (r *controller) SetFrame(forward, back, left, right, brake bool) {
 	r.goLeft = left
 	r.goRight = right
 	r.goBrake = brake
+}
+
+func (c *controller) SetFreeze(frozen bool) {
+	c.goFreeze = frozen
 }
 
 func loadSkybox(path string) *texture.CubeTexture {

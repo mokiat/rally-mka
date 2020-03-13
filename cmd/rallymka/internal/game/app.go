@@ -65,7 +65,9 @@ func (a Application) Run() error {
 		isLeft := window.GetKey(glfw.KeyLeft) == glfw.Press
 		isRight := window.GetKey(glfw.KeyRight) == glfw.Press
 		isBrake := window.GetKey(glfw.KeyEnter) == glfw.Press
+		isFreeze := window.GetKey(glfw.KeyF) == glfw.Press
 		controller.SetFrame(isForward, isBack, isLeft, isRight, isBrake)
+		controller.SetFreeze(isFreeze)
 
 		controller.UpdateScene()
 		controller.RenderScene()
