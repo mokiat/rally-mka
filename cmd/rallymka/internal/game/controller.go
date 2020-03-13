@@ -31,17 +31,8 @@ var cars = []string{
 	"cars/truck/car.m3d",
 }
 
-type Controller interface {
-	InitScene()
-	ResizeScene(int, int)
-	UpdateScene()
-	RenderScene()
-	SetFrame(forward, back, left, right, brake bool)
-	SetFreeze(bool)
-}
-
-func NewController(assetsDir string) Controller {
-	return &controller{
+func NewController(assetsDir string) *Controller {
+	return &Controller{
 		assetsDir: assetsDir,
 		renderer:  render.NewRenderer(),
 		gameMap:   entities.NewMap(),
@@ -51,7 +42,7 @@ func NewController(assetsDir string) Controller {
 	}
 }
 
-type controller struct {
+type Controller struct {
 	assetsDir string
 
 	renderer *render.Renderer
@@ -72,7 +63,7 @@ type controller struct {
 	goFreeze  bool
 }
 
-func (r *controller) InitScene() {
+func (r *Controller) InitScene() {
 	gl.GenVertexArrays(1, &r.vertexArrayID)
 	gl.BindVertexArray(r.vertexArrayID)
 
@@ -111,14 +102,14 @@ func (r *controller) InitScene() {
 	}
 }
 
-func (r *controller) ResizeScene(width, height int) {
+func (r *Controller) ResizeScene(width, height int) {
 	gl.Viewport(0, 0, int32(width), int32(height))
 	screenHalfWidth := float32(width) / float32(height)
 	screenHalfHeight := float32(1.0)
 	r.renderer.SetProjectionMatrix(math.PerspectiveMat4x4(-screenHalfWidth, screenHalfWidth, -screenHalfHeight, screenHalfHeight, 1.5, 300.0))
 }
 
-func (r *controller) UpdateScene() {
+func (r *Controller) UpdateScene() {
 	if r.goFreeze {
 		return
 	}
@@ -157,7 +148,7 @@ func (r *controller) UpdateScene() {
 	))
 }
 
-func (r *controller) RenderScene() {
+func (r *Controller) RenderScene() {
 	// modern GPUs prefer that you clear all the buffers
 	// and it can be faster due to cache state
 	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
@@ -174,7 +165,7 @@ func (r *controller) RenderScene() {
 	r.renderer.RenderScene(r.stage, r.camera)
 }
 
-func (r *controller) SetFrame(forward, back, left, right, brake bool) {
+func (r *Controller) SetFrame(forward, back, left, right, brake bool) {
 	r.goForward = forward
 	r.goBack = back
 	r.goLeft = left
@@ -182,7 +173,7 @@ func (r *controller) SetFrame(forward, back, left, right, brake bool) {
 	r.goBrake = brake
 }
 
-func (c *controller) SetFreeze(frozen bool) {
+func (c *Controller) SetFreeze(frozen bool) {
 	c.goFreeze = frozen
 }
 
