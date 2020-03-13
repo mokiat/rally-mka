@@ -1,16 +1,32 @@
 package render
 
 import (
+	"os"
+	"path/filepath"
+
 	"github.com/go-gl/gl/v4.1-core/gl"
+	"github.com/pkg/errors"
+
 	"github.com/mokiat/go-whiskey-gl/buffer"
 	"github.com/mokiat/go-whiskey/math"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/scene"
-	"github.com/pkg/errors"
+	"github.com/mokiat/rally-mka/internal/data/asset"
 )
 
-func NewRenderer() *Renderer {
+func NewRenderer(assetsDir string) *Renderer {
+	skyboxProgramPath := filepath.Join(assetsDir, "programs", "skybox.dat")
+	skyboxProgramFile, err := os.Open(skyboxProgramPath)
+	if err != nil {
+		panic(err)
+	}
+	defer skyboxProgramFile.Close()
+	skyboxProgram, err := asset.NewProgramDecoder().Decode(skyboxProgramFile)
+	if err != nil {
+		panic(err)
+	}
+
 	return &Renderer{
-		skyboxMaterial:   newSkyboxMaterial(),
+		skyboxMaterial:   newMaterial(skyboxProgram.VertexSourceCode, skyboxProgram.FragmentSourceCode),
 		textureMaterial:  newTextureMaterial(),
 		projectionMatrix: math.IdentityMat4x4(),
 		modelMatrix:      math.IdentityMat4x4(),

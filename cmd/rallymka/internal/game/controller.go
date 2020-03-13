@@ -34,7 +34,7 @@ var cars = []string{
 func NewController(assetsDir string) *Controller {
 	return &Controller{
 		assetsDir: assetsDir,
-		renderer:  render.NewRenderer(),
+		renderer:  render.NewRenderer(assetsDir),
 		gameMap:   entities.NewMap(),
 		carMine:   entities.NewCarExtendedModel(),
 		camera:    scene.NewCamera(),
