@@ -4,6 +4,7 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/go-gl/gl/v4.1-core/gl"
@@ -33,6 +34,7 @@ var cars = []string{
 
 func NewController(assetsDir string) *Controller {
 	return &Controller{
+		lock:      &sync.Mutex{},
 		assetsDir: assetsDir,
 		renderer:  render.NewRenderer(assetsDir),
 		gameMap:   entities.NewMap(),
@@ -43,6 +45,7 @@ func NewController(assetsDir string) *Controller {
 }
 
 type Controller struct {
+	lock      *sync.Mutex
 	assetsDir string
 
 	renderer *render.Renderer
@@ -63,7 +66,58 @@ type Controller struct {
 	goFreeze  bool
 }
 
-func (r *Controller) InitScene() {
+func (c *Controller) OnInit() {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
+}
+
+func (r *Controller) OnUpdate(elapsedSeconds float32) {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+
+	if r.goFreeze {
+		return
+	}
+
+	if r.carMine.Laps <= lapCount {
+		r.carMine.Frame(elapsedSeconds, r.goForward, r.goBack, r.goLeft, r.goRight, r.goBrake, r.gameMap)
+	} else {
+		r.carMine.Frame(elapsedSeconds, false, false, false, false, false, r.gameMap)
+	}
+
+	// we use a camera anchor to achieve the smooth effect of a
+	// camera following the car
+	anchorVector := r.cameraAnchor.DecVec3(r.carMine.Position)
+	anchorVector = anchorVector.Resize(anchorDistance)
+	r.cameraAnchor = r.carMine.Position.IncVec3(anchorVector)
+
+	// the following approach of creating the view matrix coordinates will fail
+	// if the camera is pointing directly up or down
+	cameraVectorZ := anchorVector
+	cameraVectorX := math.Vec3CrossProduct(math.BaseVec3Y(), cameraVectorZ)
+	cameraVectorY := math.Vec3CrossProduct(cameraVectorZ, cameraVectorX)
+	r.camera.SetViewMatrix(math.Mat4x4MulMany(
+		math.TranslationMat4x4(
+			r.carMine.Position.X,
+			r.carMine.Position.Y,
+			r.carMine.Position.Z,
+		),
+		math.VectorMat4x4(
+			cameraVectorX.Resize(1.0),
+			cameraVectorY.Resize(1.0),
+			cameraVectorZ.Resize(1.0),
+			math.NullVec3(),
+		),
+		math.RotationMat4x4(-25.0, 1.0, 0.0, 0.0),
+		math.TranslationMat4x4(0.0, 0.0, cameraDistance),
+	))
+}
+
+func (r *Controller) OnGLInit() {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+
 	gl.GenVertexArrays(1, &r.vertexArrayID)
 	gl.BindVertexArray(r.vertexArrayID)
 
@@ -102,53 +156,20 @@ func (r *Controller) InitScene() {
 	}
 }
 
-func (r *Controller) ResizeScene(width, height int) {
+func (r *Controller) OnGLResize(width, height int) {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+
 	gl.Viewport(0, 0, int32(width), int32(height))
 	screenHalfWidth := float32(width) / float32(height)
 	screenHalfHeight := float32(1.0)
 	r.renderer.SetProjectionMatrix(math.PerspectiveMat4x4(-screenHalfWidth, screenHalfWidth, -screenHalfHeight, screenHalfHeight, 1.5, 300.0))
 }
 
-func (r *Controller) UpdateScene() {
-	if r.goFreeze {
-		return
-	}
+func (r *Controller) OnGLDraw() {
+	r.lock.Lock()
+	defer r.lock.Unlock()
 
-	if r.carMine.Laps <= lapCount {
-		r.carMine.Frame(r.goForward, r.goBack, r.goLeft, r.goRight, r.goBrake, r.gameMap)
-	} else {
-		r.carMine.Frame(false, false, false, false, false, r.gameMap)
-	}
-
-	// we use a camera anchor to achieve the smooth effect of a
-	// camera following the car
-	anchorVector := r.cameraAnchor.DecVec3(r.carMine.Position)
-	anchorVector = anchorVector.Resize(anchorDistance)
-	r.cameraAnchor = r.carMine.Position.IncVec3(anchorVector)
-
-	// the following approach of creating the view matrix coordinates will fail
-	// if the camera is pointing directly up or down
-	cameraVectorZ := anchorVector
-	cameraVectorX := math.Vec3CrossProduct(math.BaseVec3Y(), cameraVectorZ)
-	cameraVectorY := math.Vec3CrossProduct(cameraVectorZ, cameraVectorX)
-	r.camera.SetViewMatrix(math.Mat4x4MulMany(
-		math.TranslationMat4x4(
-			r.carMine.Position.X,
-			r.carMine.Position.Y,
-			r.carMine.Position.Z,
-		),
-		math.VectorMat4x4(
-			cameraVectorX.Resize(1.0),
-			cameraVectorY.Resize(1.0),
-			cameraVectorZ.Resize(1.0),
-			math.NullVec3(),
-		),
-		math.RotationMat4x4(-25.0, 1.0, 0.0, 0.0),
-		math.TranslationMat4x4(0.0, 0.0, cameraDistance),
-	))
-}
-
-func (r *Controller) RenderScene() {
 	// modern GPUs prefer that you clear all the buffers
 	// and it can be faster due to cache state
 	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
@@ -166,6 +187,9 @@ func (r *Controller) RenderScene() {
 }
 
 func (r *Controller) SetFrame(forward, back, left, right, brake bool) {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+
 	r.goForward = forward
 	r.goBack = back
 	r.goLeft = left
@@ -174,6 +198,9 @@ func (r *Controller) SetFrame(forward, back, left, right, brake bool) {
 }
 
 func (c *Controller) SetFreeze(frozen bool) {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
 	c.goFreeze = frozen
 }
 

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.3/glfw"
@@ -46,13 +47,22 @@ func (a Application) Run() error {
 	}
 
 	controller := NewController(assetsDir)
-	controller.InitScene()
+	controller.OnGLInit()
+
+	go func() {
+		controller.OnInit()
+		lastTick := time.Now()
+		for currentTime := range time.Tick(16 * time.Millisecond) {
+			controller.OnUpdate(float32(currentTime.Sub(lastTick).Seconds()))
+			lastTick = currentTime
+		}
+	}()
 
 	window.SetFramebufferSizeCallback(func(w *glfw.Window, width int, height int) {
-		controller.ResizeScene(width, height)
+		controller.OnGLResize(width, height)
 	})
 	fbWidth, fbHeight := window.GetFramebufferSize()
-	controller.ResizeScene(fbWidth, fbHeight)
+	controller.OnGLResize(fbWidth, fbHeight)
 
 	for !window.ShouldClose() {
 		isQuit := window.GetKey(glfw.KeyEscape) == glfw.Press
@@ -68,9 +78,7 @@ func (a Application) Run() error {
 		isFreeze := window.GetKey(glfw.KeyF) == glfw.Press
 		controller.SetFrame(isForward, isBack, isLeft, isRight, isBrake)
 		controller.SetFreeze(isFreeze)
-
-		controller.UpdateScene()
-		controller.RenderScene()
+		controller.OnGLDraw()
 
 		window.SwapBuffers()
 		glfw.PollEvents()

@@ -33,7 +33,7 @@ func (m *CarExtendedModel) Draw(renderer *render.Renderer) {
 	m.CarModelSimple.Draw(renderer, float32(m.turn))
 }
 
-func (m *CarExtendedModel) Frame(forward, back, left, right, brake bool, gameMap Map) {
+func (m *CarExtendedModel) Frame(elapsedSeconds float32, forward, back, left, right, brake bool, gameMap Map) {
 	if left && (m.turn < maxTurn) {
 		m.turn += 2
 	}
@@ -51,10 +51,10 @@ func (m *CarExtendedModel) Frame(forward, back, left, right, brake bool, gameMap
 	}
 	m.acceleration = 0.0
 	if forward {
-		m.acceleration = 0.01
+		m.acceleration = 0.01 * elapsedSeconds * 60
 	}
 	if back {
-		m.acceleration = -0.005
+		m.acceleration = -0.005 * elapsedSeconds * 60
 	}
 
 	m.CheckMove(gameMap, float32(m.turn), m.acceleration, brake)
