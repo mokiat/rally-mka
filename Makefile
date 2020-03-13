@@ -12,9 +12,11 @@ MESH_RESOURCES_DIR=$(RESOURCES_DIR)/meshes
 MESH_ASSETS_DIR=$(ASSETS_DIR)/meshes
 CUBE_TEX_RESOURCES_DIR=$(RESOURCES_DIR)/textures/cube
 CUBE_TEX_ASSETS_DIR=$(ASSETS_DIR)/textures/cube
+TWOD_TEX_RESOURCES_DIR=$(RESOURCES_DIR)/textures/twod
+TWOD_TEX_ASSETS_DIR=$(ASSETS_DIR)/textures/twod
 
 .PHONY: assets
-assets: levels programs models meshes cubetextures skyboxes
+assets: levels programs models meshes cubetextures twodtextures skyboxes
 
 .PHONY: levels
 levels: \
@@ -127,6 +129,88 @@ $(CUBE_TEX_ASSETS_DIR)/city.dat: \
 	$(CUBE_TEX_RESOURCES_DIR)/city_top.png \
 	$(CUBE_TEX_RESOURCES_DIR)/city_bottom.png
 	rallygen cubetex --dimension 512 $+ $@
+
+.PHONY: twodtextures
+twodtextures: \
+	$(TWOD_TEX_ASSETS_DIR) \
+	$(TWOD_TEX_ASSETS_DIR)/loading.dat \
+	$(TWOD_TEX_ASSETS_DIR)/tree.dat \
+	$(TWOD_TEX_ASSETS_DIR)/lamp.dat \
+	$(TWOD_TEX_ASSETS_DIR)/finish.dat \
+	$(TWOD_TEX_ASSETS_DIR)/hatch_body.dat \
+	$(TWOD_TEX_ASSETS_DIR)/hatch_wheel.dat \
+	$(TWOD_TEX_ASSETS_DIR)/suv_body.dat \
+	$(TWOD_TEX_ASSETS_DIR)/suv_wheel.dat \
+	$(TWOD_TEX_ASSETS_DIR)/truck_body.dat \
+	$(TWOD_TEX_ASSETS_DIR)/truck_wheel.dat \
+	$(TWOD_TEX_ASSETS_DIR)/concrete.dat \
+	$(TWOD_TEX_ASSETS_DIR)/road.dat \
+	$(TWOD_TEX_ASSETS_DIR)/barrier.dat \
+	$(TWOD_TEX_ASSETS_DIR)/grass.dat \
+	$(TWOD_TEX_ASSETS_DIR)/gravel.dat
+
+$(TWOD_TEX_ASSETS_DIR):
+	mkdir -p "$(TWOD_TEX_ASSETS_DIR)"
+
+$(TWOD_TEX_ASSETS_DIR)/loading.dat: \
+	$(TWOD_TEX_RESOURCES_DIR)/loading.png
+	rallygen twodtex $+ $@
+
+$(TWOD_TEX_ASSETS_DIR)/tree.dat: \
+	$(TWOD_TEX_RESOURCES_DIR)/tree.png
+	rallygen twodtex $+ $@
+
+$(TWOD_TEX_ASSETS_DIR)/lamp.dat: \
+	$(TWOD_TEX_RESOURCES_DIR)/lamp.png
+	rallygen twodtex $+ $@
+
+$(TWOD_TEX_ASSETS_DIR)/finish.dat: \
+	$(TWOD_TEX_RESOURCES_DIR)/finish.png
+	rallygen twodtex $+ $@
+
+$(TWOD_TEX_ASSETS_DIR)/hatch_body.dat: \
+	$(TWOD_TEX_RESOURCES_DIR)/hatch_body.png
+	rallygen twodtex $+ $@
+
+$(TWOD_TEX_ASSETS_DIR)/hatch_wheel.dat: \
+	$(TWOD_TEX_RESOURCES_DIR)/hatch_wheel.png
+	rallygen twodtex $+ $@
+
+$(TWOD_TEX_ASSETS_DIR)/suv_body.dat: \
+	$(TWOD_TEX_RESOURCES_DIR)/suv_body.png
+	rallygen twodtex $+ $@
+
+$(TWOD_TEX_ASSETS_DIR)/suv_wheel.dat: \
+	$(TWOD_TEX_RESOURCES_DIR)/suv_wheel.png
+	rallygen twodtex $+ $@
+
+$(TWOD_TEX_ASSETS_DIR)/truck_body.dat: \
+	$(TWOD_TEX_RESOURCES_DIR)/truck_body.png
+	rallygen twodtex $+ $@
+
+$(TWOD_TEX_ASSETS_DIR)/truck_wheel.dat: \
+	$(TWOD_TEX_RESOURCES_DIR)/truck_wheel.png
+	rallygen twodtex $+ $@
+
+$(TWOD_TEX_ASSETS_DIR)/concrete.dat: \
+	$(TWOD_TEX_RESOURCES_DIR)/concrete.png
+	rallygen twodtex $+ $@
+
+$(TWOD_TEX_ASSETS_DIR)/road.dat: \
+	$(TWOD_TEX_RESOURCES_DIR)/road.png
+	rallygen twodtex $+ $@
+
+$(TWOD_TEX_ASSETS_DIR)/barrier.dat: \
+	$(TWOD_TEX_RESOURCES_DIR)/barrier.png
+	rallygen twodtex $+ $@
+
+$(TWOD_TEX_ASSETS_DIR)/grass.dat: \
+	$(TWOD_TEX_RESOURCES_DIR)/grass.png
+	rallygen twodtex $+ $@
+
+$(TWOD_TEX_ASSETS_DIR)/gravel.dat: \
+	$(TWOD_TEX_RESOURCES_DIR)/gravel.png
+	rallygen twodtex $+ $@
 
 .PHONY: skyboxes
 skyboxes: \

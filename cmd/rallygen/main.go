@@ -12,6 +12,7 @@ import (
 	"github.com/mokiat/rally-mka/cmd/rallygen/internal/mesh"
 	"github.com/mokiat/rally-mka/cmd/rallygen/internal/model"
 	"github.com/mokiat/rally-mka/cmd/rallygen/internal/program"
+	"github.com/mokiat/rally-mka/cmd/rallygen/internal/twodtex"
 )
 
 func main() {
@@ -24,6 +25,7 @@ func main() {
 		model.GenerateCommand(),
 		mesh.GenerateCommand(),
 		cubetex.GenerateCommand(),
+		twodtex.GenerateCommand(),
 		command.GenerateCubemap(),
 	}
 	if err := app.Run(os.Args); err != nil {

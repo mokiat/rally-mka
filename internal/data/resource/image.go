@@ -66,6 +66,24 @@ func (i *Image) RGBData() []byte {
 	return data
 }
 
+func (i *Image) RGBAData() []byte {
+	width := i.Width()
+	height := i.Height()
+	data := make([]byte, 4*width*height)
+	offset := 0
+	for y := 0; y < height; y++ {
+		for x := 0; x < width; x++ {
+			texel := i.Texel(x, height-y-1)
+			data[offset+0] = texel.R
+			data[offset+1] = texel.G
+			data[offset+2] = texel.B
+			data[offset+3] = texel.A
+			offset += 4
+		}
+	}
+	return data
+}
+
 func NewImageDecoder() *ImageDecoder {
 	return &ImageDecoder{}
 }

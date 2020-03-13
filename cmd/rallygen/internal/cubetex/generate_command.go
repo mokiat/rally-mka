@@ -4,11 +4,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/mokiat/rally-mka/internal/data/resource"
-
 	cli "github.com/urfave/cli/v2"
 
 	"github.com/mokiat/rally-mka/internal/data/asset"
+	"github.com/mokiat/rally-mka/internal/data/resource"
 )
 
 func GenerateCommand() *cli.Command {
