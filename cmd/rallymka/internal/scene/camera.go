@@ -3,13 +3,23 @@ package scene
 import "github.com/mokiat/go-whiskey/math"
 
 type Camera struct {
-	viewMatrix math.Mat4x4
+	projectionMatrix math.Mat4x4
+	viewMatrix       math.Mat4x4
 }
 
 func NewCamera() *Camera {
 	return &Camera{
-		viewMatrix: math.IdentityMat4x4(),
+		projectionMatrix: math.IdentityMat4x4(),
+		viewMatrix:       math.IdentityMat4x4(),
 	}
+}
+
+func (c *Camera) SetProjectionMatrix(matrix math.Mat4x4) {
+	c.projectionMatrix = matrix
+}
+
+func (c *Camera) ProjectionMatrix() math.Mat4x4 {
+	return c.projectionMatrix
 }
 
 func (c *Camera) SetViewMatrix(matrix math.Mat4x4) {
