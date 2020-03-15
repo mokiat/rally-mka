@@ -45,9 +45,7 @@ func (r *Renderer) BeginPipeline() *Pipeline {
 func (r *Renderer) EndPipeline(pipeline *Pipeline) {
 	select {
 	case r.queuedPipeline <- pipeline:
-		// we managed to schedule it
 	default:
-		// try and place it back in free
 		select {
 		case r.freePipeline <- pipeline:
 		default:
@@ -63,7 +61,6 @@ func (r *Renderer) Render() {
 		r.freePipeline <- r.activePipeline
 		r.activePipeline = pipeline
 	default:
-		// draw active pipeline again
 	}
 	r.renderPipeline(r.activePipeline)
 }
