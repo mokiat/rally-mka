@@ -29,11 +29,31 @@ type Renderer struct {
 }
 
 func (r *Renderer) BeginPipeline() *Pipeline {
-	return <-r.freePipeline
+	select {
+	case pipeline := <-r.freePipeline:
+		return pipeline
+	default:
+		select {
+		case pipeline := <-r.queuedPipeline:
+			return pipeline
+		default:
+			return <-r.freePipeline
+		}
+	}
 }
 
 func (r *Renderer) EndPipeline(pipeline *Pipeline) {
-	r.queuedPipeline <- pipeline
+	select {
+	case r.queuedPipeline <- pipeline:
+		// we managed to schedule it
+	default:
+		// try and place it back in free
+		select {
+		case r.freePipeline <- pipeline:
+		default:
+			r.queuedPipeline <- pipeline
+		}
+	}
 }
 
 func (r *Renderer) Render() {
