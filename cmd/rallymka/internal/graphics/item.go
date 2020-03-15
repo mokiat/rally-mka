@@ -15,12 +15,12 @@ func createItem() Item {
 
 type Item struct {
 	Primitive      RenderPrimitive
-	Program        Program
+	Program        *Program
 	ModelMatrix    math.Mat4x4
-	SkyboxTexture  uint32
-	DiffuseTexture uint32
-	VertexArrayID  uint32
-	IndexCount     int
+	SkyboxTexture  *CubeTexture
+	DiffuseTexture *TwoDTexture
+	VertexArray    *VertexArray
+	IndexCount     int32
 }
 
 func (i *Item) reset() {

@@ -105,13 +105,13 @@ func (r *Renderer) renderItem(sequence Sequence, item Item) {
 	textureIndex := uint32(0)
 	if item.Program.DiffuseTextureLocation != -1 {
 		gl.ActiveTexture(gl.TEXTURE0 + textureIndex)
-		gl.BindTexture(gl.TEXTURE_2D, item.DiffuseTexture)
+		gl.BindTexture(gl.TEXTURE_2D, item.DiffuseTexture.ID)
 		gl.Uniform1i(item.Program.DiffuseTextureLocation, int32(textureIndex))
 		textureIndex++
 	}
 	if item.Program.SkyboxTextureLocation != -1 {
 		gl.ActiveTexture(gl.TEXTURE0 + textureIndex)
-		gl.BindTexture(gl.TEXTURE_CUBE_MAP, item.SkyboxTexture)
+		gl.BindTexture(gl.TEXTURE_CUBE_MAP, item.SkyboxTexture.ID)
 		gl.Uniform1i(item.Program.SkyboxTextureLocation, int32(textureIndex))
 		textureIndex++
 	}
@@ -126,13 +126,13 @@ func (r *Renderer) renderItem(sequence Sequence, item Item) {
 		gl.UniformMatrix4fv(item.Program.ModelMatrixLocation, 1, false, r.matrixToArray(item.ModelMatrix))
 	}
 
-	gl.BindVertexArray(item.VertexArrayID)
+	gl.BindVertexArray(item.VertexArray.ID)
 	switch item.Primitive {
 	case RenderPrimitiveTriangles:
-		gl.DrawElements(gl.TRIANGLES, int32(item.IndexCount), gl.UNSIGNED_SHORT, gl.PtrOffset(0))
+		gl.DrawElements(gl.TRIANGLES, item.IndexCount, gl.UNSIGNED_SHORT, gl.PtrOffset(0))
 	case RenderPrimitiveLines:
 		gl.LineWidth(2)
-		gl.DrawElements(gl.LINES, int32(item.IndexCount), gl.UNSIGNED_SHORT, gl.PtrOffset(0))
+		gl.DrawElements(gl.LINES, item.IndexCount, gl.UNSIGNED_SHORT, gl.PtrOffset(0))
 	}
 }
 
