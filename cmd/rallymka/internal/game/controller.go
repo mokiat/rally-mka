@@ -10,15 +10,27 @@ import (
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/mokiat/go-whiskey-gl/texture"
 	"github.com/mokiat/go-whiskey/math"
+
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/entities"
+	"github.com/mokiat/rally-mka/cmd/rallymka/internal/game/loading"
+	"github.com/mokiat/rally-mka/cmd/rallymka/internal/graphics"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/render"
+	"github.com/mokiat/rally-mka/cmd/rallymka/internal/resource"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/scene"
+	"github.com/mokiat/rally-mka/cmd/rallymka/internal/stream"
 	"github.com/mokiat/rally-mka/internal/data/cubemap"
 )
 
 const lapCount = 3
 const cameraDistance = 8.0
 const anchorDistance = 4.0
+
+const (
+	maxPrograms     = 1024
+	maxCubeTextures = 1024
+	maxTwoDTextures = 1024
+	maxMeshes       = 1024
+)
 
 var skyboxPath = "skyboxes/city.dat"
 
@@ -32,21 +44,46 @@ var cars = []string{
 	"cars/truck/car.m3d",
 }
 
+type View interface {
+	Resize(width, height int)
+	Update(elapsedSeconds float32)
+	Render(pipeline *graphics.Pipeline)
+}
+
 func NewController(assetsDir string) *Controller {
+	gfxWorker := graphics.NewWorker()
+
+	locator := resource.FileLocator{}
+	worker := resource.NewWorker()
+	go worker.Work()
+	registry := resource.NewRegistry(locator, worker)
+	registry.RegisterResource(stream.NewProgramController(maxPrograms, gfxWorker))
+	registry.RegisterResource(stream.NewCubeTextureController(maxCubeTextures, gfxWorker))
+	registry.RegisterResource(stream.NewTwoDTextureController(maxTwoDTextures, gfxWorker))
+	registry.RegisterResource(stream.NewMeshController(maxMeshes, gfxWorker))
+
 	return &Controller{
-		lock:      &sync.Mutex{},
-		assetsDir: assetsDir,
-		renderer:  render.NewRenderer(assetsDir),
-		gameMap:   entities.NewMap(),
-		carMine:   entities.NewCarExtendedModel(),
-		camera:    scene.NewCamera(),
-		stage:     scene.NewStage(),
+		lock:       &sync.Mutex{},
+		assetsDir:  assetsDir,
+		renderer:   render.NewRenderer(assetsDir),
+		gameMap:    entities.NewMap(),
+		carMine:    entities.NewCarExtendedModel(),
+		camera:     scene.NewCamera(),
+		stage:      scene.NewStage(),
+		gfxWorker:  gfxWorker,
+		glRenderer: graphics.NewRenderer(),
+
+		registry:   registry,
+		activeView: loading.NewView(registry),
 	}
 }
 
 type Controller struct {
 	lock      *sync.Mutex
 	assetsDir string
+
+	registry   *resource.Registry
+	activeView View
 
 	renderer *render.Renderer
 	gameMap  entities.Map
@@ -55,6 +92,9 @@ type Controller struct {
 	cameraAnchor math.Vec3
 	camera       *scene.Camera
 	stage        *scene.Stage
+
+	gfxWorker  *graphics.Worker
+	glRenderer *graphics.Renderer
 
 	vertexArrayID uint32
 
@@ -73,6 +113,13 @@ func (c *Controller) OnInit() {
 }
 
 func (r *Controller) OnUpdate(elapsedSeconds float32) {
+	r.registry.Update()
+	r.activeView.Update(elapsedSeconds)
+
+	pipeline := r.glRenderer.BeginPipeline()
+	r.activeView.Render(pipeline)
+	r.glRenderer.EndPipeline(pipeline)
+
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
@@ -115,14 +162,15 @@ func (r *Controller) OnUpdate(elapsedSeconds float32) {
 }
 
 func (r *Controller) OnGLInit() {
+	// TODO: Move in render pipeline / sequence
+	gl.Enable(gl.DEPTH_TEST)
+	gl.Enable(gl.CULL_FACE)
+
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
 	gl.GenVertexArrays(1, &r.vertexArrayID)
 	gl.BindVertexArray(r.vertexArrayID)
-
-	gl.Enable(gl.DEPTH_TEST)
-	gl.Enable(gl.CULL_FACE)
 
 	gl.Enable(gl.BLEND)
 	gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
@@ -160,15 +208,20 @@ func (r *Controller) OnGLResize(width, height int) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
+	r.activeView.Resize(width, height)
+
 	gl.Viewport(0, 0, int32(width), int32(height))
 	screenHalfWidth := float32(width) / float32(height)
 	screenHalfHeight := float32(1.0)
-	r.renderer.SetProjectionMatrix(math.PerspectiveMat4x4(-screenHalfWidth, screenHalfWidth, -screenHalfHeight, screenHalfHeight, 1.5, 300.0))
+	r.camera.SetProjectionMatrix(math.PerspectiveMat4x4(-screenHalfWidth, screenHalfWidth, -screenHalfHeight, screenHalfHeight, 1.5, 300.0))
+	r.renderer.SetProjectionMatrix(r.camera.ProjectionMatrix())
 }
 
 func (r *Controller) OnGLDraw() {
 	r.lock.Lock()
 	defer r.lock.Unlock()
+
+	r.gfxWorker.Work()
 
 	// modern GPUs prefer that you clear all the buffers
 	// and it can be faster due to cache state
@@ -184,6 +237,8 @@ func (r *Controller) OnGLDraw() {
 	// i.e. the skybox should be last and only unoccupied
 	// fragments should be drawn
 	r.renderer.RenderScene(r.stage, r.camera)
+
+	r.glRenderer.Render()
 }
 
 func (r *Controller) SetFrame(forward, back, left, right, brake bool) {
