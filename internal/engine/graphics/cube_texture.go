@@ -22,7 +22,7 @@ type CubeTextureData struct {
 
 func (t *CubeTexture) Allocate(data CubeTextureData) error {
 	gl.GenTextures(1, &t.ID)
-	if int32(t.ID) == 0 {
+	if t.ID == 0 {
 		return fmt.Errorf("failed to allocate texture")
 	}
 	gl.BindTexture(gl.TEXTURE_CUBE_MAP, t.ID)

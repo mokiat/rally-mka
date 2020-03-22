@@ -56,6 +56,7 @@ func (o *CubeTextureOperator) Allocate(registry *resource.Registry, name string)
 
 	gfxTask := o.gfxWorker.Schedule(func() error {
 		return texture.Allocate(graphics.CubeTextureData{
+			Dimension:      int32(texAsset.Dimension),
 			FrontSideData:  texAsset.Sides[asset.TextureSideFront].Data,
 			BackSideData:   texAsset.Sides[asset.TextureSideBack].Data,
 			LeftSideData:   texAsset.Sides[asset.TextureSideLeft].Data,
@@ -67,7 +68,7 @@ func (o *CubeTextureOperator) Allocate(registry *resource.Registry, name string)
 	if err := gfxTask.Wait(); err != nil {
 		return nil, fmt.Errorf("failed to allocate gfx cube texture: %w", err)
 	}
-	return nil, nil
+	return texture, nil
 }
 
 func (o *CubeTextureOperator) Release(registry *resource.Registry, resource resource.Resource) error {
