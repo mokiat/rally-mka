@@ -2,21 +2,19 @@ package game
 
 import (
 	"math/rand"
-	"os"
 	"path/filepath"
 	"sync"
 	"time"
 
 	"github.com/go-gl/gl/v4.1-core/gl"
-	"github.com/mokiat/go-whiskey-gl/texture"
 	"github.com/mokiat/go-whiskey/math"
 
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/entities"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/game/loading"
+	"github.com/mokiat/rally-mka/cmd/rallymka/internal/game/simulation"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/render"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/scene"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/stream"
-	"github.com/mokiat/rally-mka/internal/data/cubemap"
 	"github.com/mokiat/rally-mka/internal/engine/graphics"
 	"github.com/mokiat/rally-mka/internal/engine/resource"
 )
@@ -30,8 +28,6 @@ const (
 	maxResources       = 1024
 	maxEvents          = 64
 )
-
-var skyboxPath = "skyboxes/city.dat"
 
 var tracks = [...]string{
 	"tracks/forest/track.m3d",
@@ -66,6 +62,9 @@ func NewController(assetsDir string) *Controller {
 	meshOperator := stream.NewMeshOperator(locator, gfxWorker)
 	meshOperator.Register(registry)
 
+	gameData := scene.NewData(registry)
+	gameData.Request()
+
 	return &Controller{
 		lock:       &sync.Mutex{},
 		assetsDir:  assetsDir,
@@ -78,6 +77,7 @@ func NewController(assetsDir string) *Controller {
 		glRenderer: graphics.NewRenderer(),
 
 		registry:   registry,
+		gameData:   gameData,
 		activeView: loading.NewView(registry),
 	}
 }
@@ -87,6 +87,7 @@ type Controller struct {
 	assetsDir string
 
 	registry   *resource.Registry
+	gameData   *scene.Data
 	activeView View
 
 	renderer *render.Renderer
@@ -117,15 +118,21 @@ func (c *Controller) OnInit() {
 }
 
 func (r *Controller) OnUpdate(elapsedSeconds float32) {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+
+	if r.gameData.IsAvailable() {
+		r.stage.Init(r.gameData)
+		r.activeView = &simulation.View{}
+	}
+
 	r.registry.Update()
 	r.activeView.Update(elapsedSeconds)
 
 	pipeline := r.glRenderer.BeginPipeline()
 	r.activeView.Render(pipeline)
+	r.stage.Render(pipeline, r.camera)
 	r.glRenderer.EndPipeline(pipeline)
-
-	r.lock.Lock()
-	defer r.lock.Unlock()
 
 	if r.goFreeze {
 		return
@@ -184,7 +191,6 @@ func (r *Controller) OnGLInit() {
 	rand := rand.New(rand.NewSource(time.Now().Unix()))
 	track := filepath.Join(r.assetsDir, tracks[rand.Intn(len(tracks))])
 	car := filepath.Join(r.assetsDir, cars[rand.Intn(len(cars))])
-	skybox := filepath.Join(r.assetsDir, skyboxPath)
 
 	if err := r.gameMap.Load(track); err != nil {
 		panic(err)
@@ -201,11 +207,6 @@ func (r *Controller) OnGLInit() {
 		Z: 0.0,
 	}
 	r.cameraAnchor = r.carMine.Position.IncCoords(0.0, 0.0, -anchorDistance)
-
-	skyboxTexture := loadSkybox(skybox)
-	r.stage.Sky = &scene.Skybox{
-		Texture: skyboxTexture,
-	}
 }
 
 func (r *Controller) OnGLResize(width, height int) {
@@ -231,8 +232,6 @@ func (r *Controller) OnGLDraw() {
 	// and it can be faster due to cache state
 	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-	// TODO: This should slowly be moved as part of RenderScene
-	// in renderer
 	gl.BindVertexArray(r.vertexArrayID)
 	r.gameMap.Draw(r.renderer)
 	r.carMine.Draw(r.renderer)
@@ -261,34 +260,4 @@ func (c *Controller) SetFreeze(frozen bool) {
 	defer c.lock.Unlock()
 
 	c.goFreeze = frozen
-}
-
-func loadSkybox(path string) *texture.CubeTexture {
-	file, err := os.Open(path)
-	if err != nil {
-		panic(err)
-	}
-	defer file.Close()
-
-	decoder := &cubemap.Decoder{}
-	tex, err := decoder.Decode(file)
-	if err != nil {
-		panic(err)
-	}
-
-	skycubeTexture := texture.DedicatedRGBACubeDataPlayground(int(tex.Dimension))
-	skycubeTexture.SetData(texture.CubeSideFront, tex.Sides[cubemap.SideFront].Data)
-	skycubeTexture.SetData(texture.CubeSideBack, tex.Sides[cubemap.SideBack].Data)
-	skycubeTexture.SetData(texture.CubeSideLeft, tex.Sides[cubemap.SideLeft].Data)
-	skycubeTexture.SetData(texture.CubeSideRight, tex.Sides[cubemap.SideRight].Data)
-	skycubeTexture.SetData(texture.CubeSideTop, tex.Sides[cubemap.SideTop].Data)
-	skycubeTexture.SetData(texture.CubeSideBottom, tex.Sides[cubemap.SideBottom].Data)
-
-	skycubeTex := texture.NewCubeTexture()
-	if err := skycubeTex.Allocate(); err != nil {
-		panic(err)
-	}
-	skycubeTex.Bind()
-	skycubeTex.CreateData(skycubeTexture)
-	return skycubeTex
 }

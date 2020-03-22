@@ -1,32 +1,16 @@
 package render
 
 import (
-	"os"
-	"path/filepath"
-
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/pkg/errors"
 
 	"github.com/mokiat/go-whiskey-gl/buffer"
 	"github.com/mokiat/go-whiskey/math"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/scene"
-	"github.com/mokiat/rally-mka/internal/data/asset"
 )
 
 func NewRenderer(assetsDir string) *Renderer {
-	skyboxProgramPath := filepath.Join(assetsDir, "programs", "skybox.dat")
-	skyboxProgramFile, err := os.Open(skyboxProgramPath)
-	if err != nil {
-		panic(err)
-	}
-	defer skyboxProgramFile.Close()
-	skyboxProgram, err := asset.NewProgramDecoder().Decode(skyboxProgramFile)
-	if err != nil {
-		panic(err)
-	}
-
 	return &Renderer{
-		skyboxMaterial:   newMaterial(skyboxProgram.VertexSourceCode, skyboxProgram.FragmentSourceCode),
 		textureMaterial:  newTextureMaterial(),
 		projectionMatrix: math.IdentityMat4x4(),
 		modelMatrix:      math.IdentityMat4x4(),
@@ -36,7 +20,6 @@ func NewRenderer(assetsDir string) *Renderer {
 }
 
 type Renderer struct {
-	skyboxMaterial  *Material
 	textureMaterial *Material
 
 	projectionMatrix math.Mat4x4
@@ -50,9 +33,6 @@ type Renderer struct {
 
 func (r *Renderer) Generate() {
 	if err := r.generateSky(); err != nil {
-		panic(err)
-	}
-	if err := r.skyboxMaterial.Generate(); err != nil {
 		panic(err)
 	}
 	if err := r.textureMaterial.Generate(); err != nil {
@@ -146,9 +126,6 @@ func (r *Renderer) Render(mesh *Mesh, material *Material) {
 
 func (r *Renderer) RenderScene(stage *scene.Stage, camera *scene.Camera) {
 	r.SetViewMatrix(camera.InverseViewMatrix())
-	if sky, found := stage.GetSky(camera); found {
-		r.renderSky(sky)
-	}
 }
 
 func (r *Renderer) generateSky() error {
@@ -210,33 +187,6 @@ func (r *Renderer) generateSky() error {
 
 	gl.BindVertexArray(0)
 	return nil
-}
-
-func (r *Renderer) renderSky(sky *scene.Skybox) {
-	material := r.skyboxMaterial
-	program := material.program
-
-	gl.DepthMask(false)
-	gl.DepthFunc(gl.LEQUAL)
-
-	program.Use()
-
-	gl.ActiveTexture(gl.TEXTURE0)
-	sky.Texture.Bind()
-	gl.Uniform1i(material.skyboxTextureLocation, 0)
-
-	gl.UniformMatrix4fv(material.projectionMatrixLocation, 1, false, r.matrixToArray(r.projectionMatrix))
-	gl.UniformMatrix4fv(material.viewMatrixLocation, 1, false, r.matrixToArray(r.viewMatrix))
-
-	gl.BindVertexArray(r.skyVertexArrayID)
-	gl.Enable(gl.PRIMITIVE_RESTART)
-	gl.PrimitiveRestartIndex(99)
-	gl.DrawElements(gl.TRIANGLE_STRIP, 17, gl.UNSIGNED_SHORT, gl.PtrOffset(0))
-	gl.Disable(gl.PRIMITIVE_RESTART)
-
-	gl.BindVertexArray(0)
-	gl.UseProgram(0)
-	gl.DepthMask(true)
 }
 
 // NOTE: Use this method only as short-lived function argument
