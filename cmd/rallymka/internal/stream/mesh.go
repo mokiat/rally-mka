@@ -3,78 +3,72 @@ package stream
 import (
 	"fmt"
 
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/graphics"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/resource"
 	"github.com/mokiat/rally-mka/internal/data/asset"
+	"github.com/mokiat/rally-mka/internal/engine/graphics"
+	"github.com/mokiat/rally-mka/internal/engine/resource"
 )
 
 const meshResourceType = "mesh"
 
-func GetMesh(registry *resource.Registry, name string) *Mesh {
-	return registry.ResourceType(meshResourceType).Resource(name).(*Mesh)
+func GetMesh(registry *resource.Registry, name string) MeshHandle {
+	return MeshHandle{
+		Handle: registry.Type(meshResourceType).Resource(name),
+	}
+}
+
+type MeshHandle struct {
+	resource.Handle
+}
+
+func (h MeshHandle) Get() *Mesh {
+	return h.Handle.Get().(*Mesh)
 }
 
 type Mesh struct {
-	*resource.Handle
-	gfxVertexArray *graphics.VertexArray
-	subMeshes      []SubMesh
+	VertexArray *graphics.VertexArray
+	SubMeshes   []SubMesh
 }
 
 type SubMesh struct {
 	IndexOffset    int
-	IndexCount     int
-	DiffuseTexture *TwoDTexture
+	IndexCount     int32
+	DiffuseTexture *TwoDTextureHandle
 }
 
-func (m *Mesh) Gfx() *graphics.VertexArray {
-	return m.gfxVertexArray
-}
-
-func (m *Mesh) SubMeshes() []SubMesh {
-	return m.subMeshes
-}
-
-func NewMeshController(capacity int, gfxWorker *graphics.Worker) MeshController {
-	return MeshController{
-		meshes:    make([]Mesh, capacity),
+func NewMeshOperator(locator resource.Locator, gfxWorker *graphics.Worker) *MeshOperator {
+	return &MeshOperator{
+		locator:   locator,
 		gfxWorker: gfxWorker,
 	}
 }
 
-type MeshController struct {
-	meshes    []Mesh
+type MeshOperator struct {
+	locator   resource.Locator
 	gfxWorker *graphics.Worker
 }
 
-func (c MeshController) ResourceTypeName() string {
-	return meshResourceType
+func (o *MeshOperator) Register(registry *resource.Registry) {
+	registry.RegisterType(meshResourceType, o)
 }
 
-func (c MeshController) Init(index int, handle *resource.Handle) resource.Resource {
-	c.meshes[index] = Mesh{
-		Handle:         handle,
-		gfxVertexArray: &graphics.VertexArray{},
-		subMeshes:      make([]SubMesh, 0),
+func (o *MeshOperator) Allocate(registry *resource.Registry, name string) (resource.Resource, error) {
+	mesh := &Mesh{
+		VertexArray: &graphics.VertexArray{},
 	}
-	return &c.meshes[index]
-}
 
-func (c MeshController) Load(index int, locator resource.Locator, registry *resource.Registry) error {
-	mesh := &c.meshes[index]
-
-	in, err := locator.Open("assets", "meshes", mesh.Name())
+	in, err := o.locator.Open("assets", "meshes", name)
 	if err != nil {
-		return fmt.Errorf("failed to open mesh asset %q: %w", mesh.Name(), err)
+		return nil, fmt.Errorf("failed to open mesh asset %q: %w", name, err)
 	}
 	defer in.Close()
 
 	meshAsset, err := asset.NewMeshDecoder().Decode(in)
 	if err != nil {
-		return fmt.Errorf("failed to decode mesh asset %q: %w", mesh.Name(), err)
+		return nil, fmt.Errorf("failed to decode mesh asset %q: %w", name, err)
 	}
 
-	gfxTask := func() error {
-		return mesh.gfxVertexArray.Allocate(graphics.VertexArrayData{
+	gfxTask := o.gfxWorker.Schedule(func() error {
+		return mesh.VertexArray.Allocate(graphics.VertexArrayData{
 			VertexData:     meshAsset.VertexData,
 			VertexStride:   int32(meshAsset.VertexStride),
 			CoordOffset:    int(meshAsset.CoordOffset),
@@ -82,41 +76,41 @@ func (c MeshController) Load(index int, locator resource.Locator, registry *reso
 			TexCoordOffset: int(meshAsset.TexCoordOffset),
 			IndexData:      meshAsset.IndexData,
 		})
-	}
-	if err := c.gfxWorker.Run(gfxTask); err != nil {
-		return fmt.Errorf("failed to allocate gfx vertex array: %w", err)
-	}
-
-	mesh.subMeshes = make([]SubMesh, len(meshAsset.SubMeshes))
-	for i := range mesh.subMeshes {
-		mesh.subMeshes[i] = SubMesh{
-			IndexOffset: int(meshAsset.SubMeshes[i].IndexOffset),
-			IndexCount:  int(meshAsset.SubMeshes[i].IndexCount),
-		}
-		if meshAsset.SubMeshes[i].DiffuseTexture != "" {
-			diffuseTextire := GetTwoDTexture(registry, meshAsset.SubMeshes[i].DiffuseTexture)
-			diffuseTextire.Request()
-			mesh.subMeshes[i].DiffuseTexture = diffuseTextire
-		}
+	})
+	if err := gfxTask.Wait(); err != nil {
+		return nil, fmt.Errorf("failed to allocate gfx vertex array: %w", err)
 	}
 
-	return nil
+	mesh.SubMeshes = make([]SubMesh, len(meshAsset.SubMeshes))
+	for i := range mesh.SubMeshes {
+		subMeshAsset := meshAsset.SubMeshes[i]
+		subMesh := SubMesh{
+			IndexOffset: int(subMeshAsset.IndexOffset),
+			IndexCount:  int32(subMeshAsset.IndexCount),
+		}
+		if subMeshAsset.DiffuseTexture != "" {
+			diffuseTexture := GetTwoDTexture(registry, subMeshAsset.DiffuseTexture)
+			registry.Request(diffuseTexture.Handle)
+			subMesh.DiffuseTexture = &diffuseTexture
+		}
+		mesh.SubMeshes[i] = subMesh
+	}
+	return mesh, nil
 }
 
-func (c MeshController) Unload(index int) error {
-	mesh := &c.meshes[index]
+func (o *MeshOperator) Release(registry *resource.Registry, resource resource.Resource) error {
+	mesh := resource.(*Mesh)
 
-	for _, subMesh := range mesh.subMeshes {
+	for _, subMesh := range mesh.SubMeshes {
 		if subMesh.DiffuseTexture != nil {
-			subMesh.DiffuseTexture.Dismiss()
+			registry.Dismiss(subMesh.DiffuseTexture.Handle)
 		}
 	}
-	mesh.subMeshes = make([]SubMesh, 0)
 
-	gfxTask := func() error {
-		return mesh.gfxVertexArray.Release()
-	}
-	if err := c.gfxWorker.Run(gfxTask); err != nil {
+	gfxTask := o.gfxWorker.Schedule(func() error {
+		return mesh.VertexArray.Release()
+	})
+	if err := gfxTask.Wait(); err != nil {
 		return fmt.Errorf("failed to release gfx vertex array: %w", err)
 	}
 	return nil

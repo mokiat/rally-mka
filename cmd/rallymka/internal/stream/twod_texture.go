@@ -3,85 +3,78 @@ package stream
 import (
 	"fmt"
 
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/graphics"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/resource"
 	"github.com/mokiat/rally-mka/internal/data/asset"
+	"github.com/mokiat/rally-mka/internal/engine/graphics"
+	"github.com/mokiat/rally-mka/internal/engine/resource"
 )
 
 const twodTextureResourceType = "twod_texture"
 
-func GetTwoDTexture(registry *resource.Registry, name string) *TwoDTexture {
-	return registry.ResourceType(twodTextureResourceType).Resource(name).(*TwoDTexture)
+func GetTwoDTexture(registry *resource.Registry, name string) TwoDTextureHandle {
+	return TwoDTextureHandle{
+		Handle: registry.Type(twodTextureResourceType).Resource(name),
+	}
 }
 
-type TwoDTexture struct {
-	*resource.Handle
-	gfxTexture *graphics.TwoDTexture
+type TwoDTextureHandle struct {
+	resource.Handle
 }
 
-func (t *TwoDTexture) Gfx() *graphics.TwoDTexture {
-	return t.gfxTexture
+func (h TwoDTextureHandle) Get() *graphics.TwoDTexture {
+	return h.Handle.Get().(*graphics.TwoDTexture)
 }
 
-func NewTwoDTextureController(capacity int, gfxWorker *graphics.Worker) TwoDTextureController {
-	return TwoDTextureController{
-		textures:  make([]TwoDTexture, capacity),
+func NewTwoDTextureOperator(locator resource.Locator, gfxWorker *graphics.Worker) *TwoDTextureOperator {
+	return &TwoDTextureOperator{
+		locator:   locator,
 		gfxWorker: gfxWorker,
 	}
 }
 
-type TwoDTextureController struct {
-	textures  []TwoDTexture
+type TwoDTextureOperator struct {
+	locator   resource.Locator
 	gfxWorker *graphics.Worker
 }
 
-func (c TwoDTextureController) ResourceTypeName() string {
-	return twodTextureResourceType
+func (o *TwoDTextureOperator) Register(registry *resource.Registry) {
+	registry.RegisterType(twodTextureResourceType, o)
 }
 
-func (c TwoDTextureController) Init(index int, handle *resource.Handle) resource.Resource {
-	c.textures[index] = TwoDTexture{
-		Handle:     handle,
-		gfxTexture: &graphics.TwoDTexture{},
-	}
-	return &c.textures[index]
-}
+func (o *TwoDTextureOperator) Allocate(registry *resource.Registry, name string) (resource.Resource, error) {
+	texture := &graphics.TwoDTexture{}
 
-func (c TwoDTextureController) Load(index int, locator resource.Locator, registry *resource.Registry) error {
-	texture := &c.textures[index]
-
-	in, err := locator.Open("assets", "textures", "twod", texture.Name())
+	in, err := o.locator.Open("assets", "textures", "twod", name)
 	if err != nil {
-		return fmt.Errorf("failed to open twod texture asset %q: %w", texture.Name(), err)
+		return nil, fmt.Errorf("failed to open twod texture asset %q: %w", name, err)
 	}
 	defer in.Close()
 
 	texAsset, err := asset.NewTwoDTextureDecoder().Decode(in)
 	if err != nil {
-		return fmt.Errorf("failed to decode twod texture asset %q: %w", texture.Name(), err)
+		return nil, fmt.Errorf("failed to decode twod texture asset %q: %w", name, err)
 	}
 
-	gfxTask := func() error {
-		return texture.gfxTexture.Allocate(graphics.TwoDTextureData{
+	gfxTask := o.gfxWorker.Schedule(func() error {
+		return texture.Allocate(graphics.TwoDTextureData{
 			Width:  int32(texAsset.Width),
 			Height: int32(texAsset.Height),
 			Data:   texAsset.Data,
 		})
+	})
+	if err := gfxTask.Wait(); err != nil {
+		return nil, fmt.Errorf("failed to allocate two dimensional gfx texture: %w", err)
 	}
-	if err := c.gfxWorker.Run(gfxTask); err != nil {
-		return fmt.Errorf("failed to allocate gfx two dimensional texture: %w", err)
-	}
-	return nil
+	return texture, nil
 }
 
-func (c TwoDTextureController) Unload(index int) error {
-	texture := &c.textures[index]
+func (o *TwoDTextureOperator) Release(registry *resource.Registry, resource resource.Resource) error {
+	texture := resource.(*graphics.TwoDTexture)
 
-	gfxTask := func() error {
-		return texture.gfxTexture.Release()
-	}
-	if err := c.gfxWorker.Run(gfxTask); err != nil {
-		return fmt.Errorf("failed to release gfx two dimensional texture: %w", err)
+	gfxTask := o.gfxWorker.Schedule(func() error {
+		return texture.Release()
+	})
+	if err := gfxTask.Wait(); err != nil {
+		return fmt.Errorf("failed to release two dimensional gfx texture: %w", err)
 	}
 	return nil
 }

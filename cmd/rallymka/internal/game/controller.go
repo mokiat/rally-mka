@@ -13,12 +13,12 @@ import (
 
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/entities"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/game/loading"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/graphics"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/render"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/resource"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/scene"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/stream"
 	"github.com/mokiat/rally-mka/internal/data/cubemap"
+	"github.com/mokiat/rally-mka/internal/engine/graphics"
+	"github.com/mokiat/rally-mka/internal/engine/resource"
 )
 
 const lapCount = 3
@@ -26,10 +26,9 @@ const cameraDistance = 8.0
 const anchorDistance = 4.0
 
 const (
-	maxPrograms     = 1024
-	maxCubeTextures = 1024
-	maxTwoDTextures = 1024
-	maxMeshes       = 1024
+	maxQueuedResources = 64
+	maxResources       = 1024
+	maxEvents          = 64
 )
 
 var skyboxPath = "skyboxes/city.dat"
@@ -51,16 +50,21 @@ type View interface {
 }
 
 func NewController(assetsDir string) *Controller {
-	gfxWorker := graphics.NewWorker()
+	ioWorker := resource.NewWorker(maxQueuedResources)
+	go ioWorker.Work() // TODO: Schedule more concurrent routines
+	registry := resource.NewRegistry(ioWorker, maxResources, maxEvents)
 
 	locator := resource.FileLocator{}
-	worker := resource.NewWorker()
-	go worker.Work()
-	registry := resource.NewRegistry(locator, worker)
-	registry.RegisterResource(stream.NewProgramController(maxPrograms, gfxWorker))
-	registry.RegisterResource(stream.NewCubeTextureController(maxCubeTextures, gfxWorker))
-	registry.RegisterResource(stream.NewTwoDTextureController(maxTwoDTextures, gfxWorker))
-	registry.RegisterResource(stream.NewMeshController(maxMeshes, gfxWorker))
+	gfxWorker := graphics.NewWorker()
+
+	programOperator := stream.NewProgramOperator(locator, gfxWorker)
+	programOperator.Register(registry)
+	cubeTextureOperator := stream.NewCubeTextureOperator(locator, gfxWorker)
+	cubeTextureOperator.Register(registry)
+	twodTextureOperator := stream.NewTwoDTextureOperator(locator, gfxWorker)
+	twodTextureOperator.Register(registry)
+	meshOperator := stream.NewMeshOperator(locator, gfxWorker)
+	meshOperator.Register(registry)
 
 	return &Controller{
 		lock:       &sync.Mutex{},

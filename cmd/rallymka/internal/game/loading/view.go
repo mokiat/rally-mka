@@ -2,18 +2,18 @@ package loading
 
 import (
 	"github.com/mokiat/go-whiskey/math"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/graphics"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/resource"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/stream"
+	"github.com/mokiat/rally-mka/internal/engine/graphics"
+	"github.com/mokiat/rally-mka/internal/engine/resource"
 )
 
 func NewView(registry *resource.Registry) *View {
 	program := stream.GetProgram(registry, "diffuse")
-	program.Request()
+	registry.Request(program.Handle)
 	texture := stream.GetTwoDTexture(registry, "loading")
-	texture.Request()
+	registry.Request(texture.Handle)
 	mesh := stream.GetMesh(registry, "quad")
-	mesh.Request()
+	registry.Request(mesh.Handle)
 
 	return &View{
 		projectionMatrix:     math.IdentityMat4x4(),
@@ -29,9 +29,9 @@ type View struct {
 	projectionMatrix     math.Mat4x4
 	indicatorModelMatrix math.Mat4x4
 
-	program *stream.Program
-	texture *stream.TwoDTexture
-	mesh    *stream.Mesh
+	program stream.ProgramHandle
+	texture stream.TwoDTextureHandle
+	mesh    stream.MeshHandle
 }
 
 func (v *View) Resize(width, height int) {
@@ -58,13 +58,13 @@ func (v *View) Render(pipeline *graphics.Pipeline) {
 	sequence.ProjectionMatrix = v.projectionMatrix
 	sequence.ViewMatrix = math.TranslationMat4x4(0.0, 0.0, -15.0)
 
-	if v.program.Available() && v.texture.Available() && v.mesh.Available() {
+	if v.program.IsAvailable() && v.texture.IsAvailable() && v.mesh.IsAvailable() {
 		indicatorItem := sequence.BeginItem()
-		indicatorItem.Program = v.program.Gfx()
+		indicatorItem.Program = v.program.Get()
 		indicatorItem.ModelMatrix = v.indicatorModelMatrix
-		indicatorItem.DiffuseTexture = v.texture.Gfx()
-		indicatorItem.VertexArray = v.mesh.Gfx()
-		indicatorItem.IndexCount = int32(v.mesh.SubMeshes()[0].IndexCount)
+		indicatorItem.DiffuseTexture = v.texture.Get()
+		indicatorItem.VertexArray = v.mesh.Get().VertexArray
+		indicatorItem.IndexCount = v.mesh.Get().SubMeshes[0].IndexCount
 		sequence.EndItem(indicatorItem)
 	}
 	pipeline.EndSequence(sequence)

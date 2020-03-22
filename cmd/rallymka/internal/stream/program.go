@@ -3,83 +3,76 @@ package stream
 import (
 	"fmt"
 
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/graphics"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/resource"
 	"github.com/mokiat/rally-mka/internal/data/asset"
+	"github.com/mokiat/rally-mka/internal/engine/graphics"
+	"github.com/mokiat/rally-mka/internal/engine/resource"
 )
 
 const programResourceType = "program"
 
-func GetProgram(registry *resource.Registry, name string) *Program {
-	return registry.ResourceType(programResourceType).Resource(name).(*Program)
+func GetProgram(registry *resource.Registry, name string) ProgramHandle {
+	return ProgramHandle{
+		Handle: registry.Type(programResourceType).Resource(name),
+	}
 }
 
-type Program struct {
-	*resource.Handle
-	gfxProgram *graphics.Program
+type ProgramHandle struct {
+	resource.Handle
 }
 
-func (p *Program) Gfx() *graphics.Program {
-	return p.gfxProgram
+func (h ProgramHandle) Get() *graphics.Program {
+	return h.Handle.Get().(*graphics.Program)
 }
 
-func NewProgramController(capacity int, gfxWorker *graphics.Worker) ProgramController {
-	return ProgramController{
-		programs:  make([]Program, capacity),
+func NewProgramOperator(locator resource.Locator, gfxWorker *graphics.Worker) *ProgramOperator {
+	return &ProgramOperator{
+		locator:   locator,
 		gfxWorker: gfxWorker,
 	}
 }
 
-type ProgramController struct {
-	programs  []Program
+type ProgramOperator struct {
+	locator   resource.Locator
 	gfxWorker *graphics.Worker
 }
 
-func (c ProgramController) ResourceTypeName() string {
-	return programResourceType
+func (o *ProgramOperator) Register(registry *resource.Registry) {
+	registry.RegisterType(programResourceType, o)
 }
 
-func (c ProgramController) Init(index int, handle *resource.Handle) resource.Resource {
-	c.programs[index] = Program{
-		Handle:     handle,
-		gfxProgram: &graphics.Program{},
-	}
-	return &c.programs[index]
-}
+func (o *ProgramOperator) Allocate(registry *resource.Registry, name string) (resource.Resource, error) {
+	program := &graphics.Program{}
 
-func (c ProgramController) Load(index int, locator resource.Locator, registry *resource.Registry) error {
-	program := &c.programs[index]
-
-	in, err := locator.Open("assets", "programs", program.Name())
+	in, err := o.locator.Open("assets", "programs", name)
 	if err != nil {
-		return fmt.Errorf("failed to open program asset %q: %w", program.Name(), err)
+		return nil, fmt.Errorf("failed to open program asset %q: %w", name, err)
 	}
 	defer in.Close()
 
 	programAsset, err := asset.NewProgramDecoder().Decode(in)
 	if err != nil {
-		return fmt.Errorf("failed to decode program asset %q: %w", program.Name(), err)
+		return nil, fmt.Errorf("failed to decode program asset %q: %w", name, err)
 	}
 
-	gfxTask := func() error {
-		return program.gfxProgram.Allocate(graphics.ProgramData{
+	gfxTask := o.gfxWorker.Schedule(func() error {
+		return program.Allocate(graphics.ProgramData{
 			VertexShaderSourceCode:   programAsset.VertexSourceCode,
 			FragmentShaderSourceCode: programAsset.FragmentSourceCode,
 		})
+	})
+	if err := gfxTask.Wait(); err != nil {
+		return nil, fmt.Errorf("failed to allocate gfx program: %w", err)
 	}
-	if err := c.gfxWorker.Run(gfxTask); err != nil {
-		return fmt.Errorf("failed to allocate gfx program: %w", err)
-	}
-	return nil
+	return program, nil
 }
 
-func (c ProgramController) Unload(index int) error {
-	program := &c.programs[index]
+func (o *ProgramOperator) Release(registry *resource.Registry, resource resource.Resource) error {
+	program := resource.(*graphics.Program)
 
-	gfxTask := func() error {
-		return program.gfxProgram.Release()
-	}
-	if err := c.gfxWorker.Run(gfxTask); err != nil {
+	gfxTask := o.gfxWorker.Schedule(func() error {
+		return program.Release()
+	})
+	if err := gfxTask.Wait(); err != nil {
 		return fmt.Errorf("failed to release gfx program: %w", err)
 	}
 	return nil
