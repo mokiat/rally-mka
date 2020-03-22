@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/mokiat/go-whiskey/math"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/collision"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/render"
+	"github.com/mokiat/rally-mka/internal/engine/collision"
 )
 
 type Map interface {
