@@ -41,8 +41,6 @@ func (o *TwoDTextureOperator) Register(registry *resource.Registry) {
 }
 
 func (o *TwoDTextureOperator) Allocate(registry *resource.Registry, name string) (resource.Resource, error) {
-	texture := &graphics.TwoDTexture{}
-
 	in, err := o.locator.Open("assets", "textures", "twod", name)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open twod texture asset %q: %w", name, err)
@@ -53,6 +51,8 @@ func (o *TwoDTextureOperator) Allocate(registry *resource.Registry, name string)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode twod texture asset %q: %w", name, err)
 	}
+
+	texture := &graphics.TwoDTexture{}
 
 	gfxTask := o.gfxWorker.Schedule(func() error {
 		return texture.Allocate(graphics.TwoDTextureData{

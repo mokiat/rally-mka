@@ -41,8 +41,6 @@ func (o *ProgramOperator) Register(registry *resource.Registry) {
 }
 
 func (o *ProgramOperator) Allocate(registry *resource.Registry, name string) (resource.Resource, error) {
-	program := &graphics.Program{}
-
 	in, err := o.locator.Open("assets", "programs", name)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open program asset %q: %w", name, err)
@@ -53,6 +51,8 @@ func (o *ProgramOperator) Allocate(registry *resource.Registry, name string) (re
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode program asset %q: %w", name, err)
 	}
+
+	program := &graphics.Program{}
 
 	gfxTask := o.gfxWorker.Schedule(func() error {
 		return program.Allocate(graphics.ProgramData{

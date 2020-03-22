@@ -59,6 +59,8 @@ func NewController(assetsDir string) *Controller {
 	cubeTextureOperator.Register(registry)
 	twodTextureOperator := stream.NewTwoDTextureOperator(locator, gfxWorker)
 	twodTextureOperator.Register(registry)
+	modelOperator := stream.NewModelOperator(locator, gfxWorker)
+	modelOperator.Register(registry)
 	meshOperator := stream.NewMeshOperator(locator, gfxWorker)
 	meshOperator.Register(registry)
 

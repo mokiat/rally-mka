@@ -41,8 +41,6 @@ func (o *CubeTextureOperator) Register(registry *resource.Registry) {
 }
 
 func (o *CubeTextureOperator) Allocate(registry *resource.Registry, name string) (resource.Resource, error) {
-	texture := &graphics.CubeTexture{}
-
 	in, err := o.locator.Open("assets", "textures", "cube", name)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open cube texture asset %q: %w", name, err)
@@ -53,6 +51,8 @@ func (o *CubeTextureOperator) Allocate(registry *resource.Registry, name string)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode cube texture asset %q: %w", name, err)
 	}
+
+	texture := &graphics.CubeTexture{}
 
 	gfxTask := o.gfxWorker.Schedule(func() error {
 		return texture.Allocate(graphics.CubeTextureData{

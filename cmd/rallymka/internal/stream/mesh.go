@@ -52,10 +52,6 @@ func (o *MeshOperator) Register(registry *resource.Registry) {
 }
 
 func (o *MeshOperator) Allocate(registry *resource.Registry, name string) (resource.Resource, error) {
-	mesh := &Mesh{
-		VertexArray: &graphics.VertexArray{},
-	}
-
 	in, err := o.locator.Open("assets", "meshes", name)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open mesh asset %q: %w", name, err)
@@ -67,7 +63,20 @@ func (o *MeshOperator) Allocate(registry *resource.Registry, name string) (resou
 		return nil, fmt.Errorf("failed to decode mesh asset %q: %w", name, err)
 	}
 
-	gfxTask := o.gfxWorker.Schedule(func() error {
+	return AllocateMesh(registry, o.gfxWorker, meshAsset)
+}
+
+func (o *MeshOperator) Release(registry *resource.Registry, resource resource.Resource) error {
+	mesh := resource.(*Mesh)
+	return ReleaseMesh(registry, o.gfxWorker, mesh)
+}
+
+func AllocateMesh(registry *resource.Registry, gfxWorker *graphics.Worker, meshAsset *asset.Mesh) (*Mesh, error) {
+	mesh := &Mesh{
+		VertexArray: &graphics.VertexArray{},
+	}
+
+	gfxTask := gfxWorker.Schedule(func() error {
 		return mesh.VertexArray.Allocate(graphics.VertexArrayData{
 			VertexData:     meshAsset.VertexData,
 			VertexStride:   int32(meshAsset.VertexStride),
@@ -98,16 +107,14 @@ func (o *MeshOperator) Allocate(registry *resource.Registry, name string) (resou
 	return mesh, nil
 }
 
-func (o *MeshOperator) Release(registry *resource.Registry, resource resource.Resource) error {
-	mesh := resource.(*Mesh)
-
+func ReleaseMesh(registry *resource.Registry, gfxWorker *graphics.Worker, mesh *Mesh) error {
 	for _, subMesh := range mesh.SubMeshes {
 		if subMesh.DiffuseTexture != nil {
 			registry.Dismiss(subMesh.DiffuseTexture.Handle)
 		}
 	}
 
-	gfxTask := o.gfxWorker.Schedule(func() error {
+	gfxTask := gfxWorker.Schedule(func() error {
 		return mesh.VertexArray.Release()
 	})
 	if err := gfxTask.Wait(); err != nil {
