@@ -29,17 +29,18 @@ type Renderer struct {
 }
 
 func (r *Renderer) BeginPipeline() *Pipeline {
+	var pipeline *Pipeline
 	select {
-	case pipeline := <-r.freePipeline:
-		return pipeline
+	case pipeline = <-r.freePipeline:
 	default:
 		select {
-		case pipeline := <-r.queuedPipeline:
-			return pipeline
+		case pipeline = <-r.queuedPipeline:
 		default:
-			return <-r.freePipeline
+			pipeline = <-r.freePipeline
 		}
 	}
+	pipeline.rewind()
+	return pipeline
 }
 
 func (r *Renderer) EndPipeline(pipeline *Pipeline) {

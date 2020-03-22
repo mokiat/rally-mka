@@ -6,8 +6,10 @@ type Task struct {
 	errRun error
 }
 
-func (t *Task) Wait() {
-	t.errRun = <-t.done
+func (t *Task) Wait() error {
+	err := <-t.done
+	t.errRun = err
+	return err
 }
 
 func (t *Task) Error() error {
