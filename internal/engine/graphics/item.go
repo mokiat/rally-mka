@@ -24,5 +24,10 @@ type Item struct {
 }
 
 func (i *Item) reset() {
+	i.Primitive = RenderPrimitiveTriangles
+	i.Program = nil
+	i.SkyboxTexture = nil
+	i.DiffuseTexture = nil
+	i.VertexArray = nil
 	i.IndexCount = 0
 }

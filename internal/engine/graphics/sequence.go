@@ -46,9 +46,12 @@ func (s *Sequence) EndItem(item *Item) {
 func (s *Sequence) reset(index int) {
 	s.itemStartIndex = index
 	s.itemEndIndex = index
+
+	s.TestDepth = true
+	s.ClearColor = false
+	s.ClearDepth = false
 	s.WriteDepth = true
 	s.DepthFunc = DepthFuncLess
-	s.TestDepth = true
 }
 
 func (s *Sequence) itemsView() []Item {
