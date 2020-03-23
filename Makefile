@@ -1,7 +1,5 @@
 RESOURCES_DIR=resources
 ASSETS_DIR=assets
-SKYBOX_RESOURCES_DIR=$(RESOURCES_DIR)/skyboxes
-SKYBOX_ASSETS_DIR=$(ASSETS_DIR)/skyboxes
 LEVEL_RESOURCES_DIR=$(RESOURCES_DIR)/levels
 LEVEL_ASSETS_DIR=$(ASSETS_DIR)/levels
 SHADER_RESOURCES_DIR=$(RESOURCES_DIR)/shaders
@@ -16,7 +14,7 @@ TWOD_TEX_RESOURCES_DIR=$(RESOURCES_DIR)/textures/twod
 TWOD_TEX_ASSETS_DIR=$(ASSETS_DIR)/textures/twod
 
 .PHONY: assets
-assets: levels programs models meshes cubetextures twodtextures skyboxes
+assets: levels programs models meshes cubetextures twodtextures
 
 .PHONY: levels
 levels: \
@@ -211,20 +209,3 @@ $(TWOD_TEX_ASSETS_DIR)/grass.dat: \
 $(TWOD_TEX_ASSETS_DIR)/gravel.dat: \
 	$(TWOD_TEX_RESOURCES_DIR)/gravel.png
 	rallygen twodtex $+ $@
-
-.PHONY: skyboxes
-skyboxes: \
-	$(SKYBOX_ASSETS_DIR) \
-	$(SKYBOX_ASSETS_DIR)/city.dat
-
-$(SKYBOX_ASSETS_DIR):
-	mkdir -p "$(SKYBOX_ASSETS_DIR)"
-
-$(SKYBOX_ASSETS_DIR)/city.dat: \
-	$(SKYBOX_RESOURCES_DIR)/city/front.png \
-	$(SKYBOX_RESOURCES_DIR)/city/back.png \
-	$(SKYBOX_RESOURCES_DIR)/city/left.png \
-	$(SKYBOX_RESOURCES_DIR)/city/right.png \
-	$(SKYBOX_RESOURCES_DIR)/city/top.png \
-	$(SKYBOX_RESOURCES_DIR)/city/bottom.png
-	rallygen generate-cubemap $+ $@
