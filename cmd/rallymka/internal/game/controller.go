@@ -19,11 +19,11 @@ import (
 	"github.com/mokiat/rally-mka/internal/engine/resource"
 )
 
-const lapCount = 3
-const cameraDistance = 8.0
-const anchorDistance = 4.0
-
 const (
+	lapCount       = 3
+	cameraDistance = 8.0
+	anchorDistance = 4.0
+
 	maxQueuedResources = 64
 	maxResources       = 1024
 	maxEvents          = 64

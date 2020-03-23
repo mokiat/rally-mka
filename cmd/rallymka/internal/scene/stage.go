@@ -107,6 +107,8 @@ func (s *Stage) getSkybox(camera *Camera) (*Skybox, bool) {
 }
 
 func (s *Stage) renderScene(pipeline *graphics.Pipeline, camera *Camera) {
+	// XXX: Modern GPUs prefer that you clear all the buffers
+	// and it can be faster due to cache state
 	sequence := pipeline.BeginSequence()
 	sequence.BackgroundColor = math.MakeVec4(0.0, 0.6, 1.0, 1.0)
 	// sequence.ClearColor = true // TODO once old renderer is removed
