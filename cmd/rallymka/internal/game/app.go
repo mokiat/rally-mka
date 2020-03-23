@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.3/glfw"
+	"github.com/mokiat/rally-mka/cmd/rallymka/internal/game/input"
 )
 
 const (
@@ -65,19 +66,19 @@ func (a Application) Run() error {
 	controller.OnGLResize(fbWidth, fbHeight)
 
 	for !window.ShouldClose() {
-		isQuit := window.GetKey(glfw.KeyEscape) == glfw.Press
-		if isQuit {
+		if window.GetKey(glfw.KeyEscape) == glfw.Press {
 			break
 		}
 
-		isForward := window.GetKey(glfw.KeyUp) == glfw.Press
-		isBack := window.GetKey(glfw.KeyDown) == glfw.Press
-		isLeft := window.GetKey(glfw.KeyLeft) == glfw.Press
-		isRight := window.GetKey(glfw.KeyRight) == glfw.Press
-		isBrake := window.GetKey(glfw.KeyEnter) == glfw.Press
-		isFreeze := window.GetKey(glfw.KeyF) == glfw.Press
-		controller.SetFrame(isForward, isBack, isLeft, isRight, isBrake)
-		controller.SetFreeze(isFreeze)
+		actions := input.ActionSet{
+			Forward:     window.GetKey(glfw.KeyUp) == glfw.Press,
+			Backward:    window.GetKey(glfw.KeyDown) == glfw.Press,
+			Left:        window.GetKey(glfw.KeyLeft) == glfw.Press,
+			Right:       window.GetKey(glfw.KeyRight) == glfw.Press,
+			Handbrake:   window.GetKey(glfw.KeyEnter) == glfw.Press,
+			FreezeFrame: window.GetKey(glfw.KeyF) == glfw.Press,
+		}
+		controller.Input().Set(actions)
 		controller.OnGLDraw()
 
 		window.SwapBuffers()
