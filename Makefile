@@ -42,7 +42,8 @@ $(LEVEL_ASSETS_DIR)/playground.dat: \
 programs: \
 	$(PROGRAM_ASSETS_DIR) \
 	$(PROGRAM_ASSETS_DIR)/diffuse.dat \
-	$(PROGRAM_ASSETS_DIR)/skybox.dat
+	$(PROGRAM_ASSETS_DIR)/skybox.dat \
+	$(PROGRAM_ASSETS_DIR)/debug.dat
 
 $(PROGRAM_ASSETS_DIR):
 	mkdir -p "$(PROGRAM_ASSETS_DIR)"
@@ -55,6 +56,11 @@ $(PROGRAM_ASSETS_DIR)/diffuse.dat: \
 $(PROGRAM_ASSETS_DIR)/skybox.dat: \
 	$(SHADER_RESOURCES_DIR)/skybox.vert \
 	$(SHADER_RESOURCES_DIR)/skybox.frag
+	rallygen program $+ $@
+
+$(PROGRAM_ASSETS_DIR)/debug.dat: \
+	$(SHADER_RESOURCES_DIR)/debug.vert \
+	$(SHADER_RESOURCES_DIR)/debug.frag
 	rallygen program $+ $@
 
 .PHONY: models
