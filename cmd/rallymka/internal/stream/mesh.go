@@ -24,15 +24,35 @@ func (h MeshHandle) Get() *Mesh {
 	return h.Handle.Get().(*Mesh)
 }
 
+func (h MeshHandle) IsAvailable() bool {
+	return h.Handle.IsAvailable() && h.Get().IsAvailable()
+}
+
 type Mesh struct {
 	VertexArray *graphics.VertexArray
 	SubMeshes   []SubMesh
+}
+
+func (m Mesh) IsAvailable() bool {
+	for _, subMesh := range m.SubMeshes {
+		if !subMesh.IsAvailable() {
+			return false
+		}
+	}
+	return true
 }
 
 type SubMesh struct {
 	IndexOffset    int
 	IndexCount     int32
 	DiffuseTexture *TwoDTextureHandle
+}
+
+func (m SubMesh) IsAvailable() bool {
+	if m.DiffuseTexture != nil {
+		return m.DiffuseTexture.IsAvailable()
+	}
+	return true
 }
 
 func NewMeshOperator(locator resource.Locator, gfxWorker *graphics.Worker) *MeshOperator {

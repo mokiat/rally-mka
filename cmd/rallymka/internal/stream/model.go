@@ -25,9 +25,22 @@ func (h ModelHandle) Get() *Model {
 	return h.Handle.Get().(*Model)
 }
 
+func (h ModelHandle) IsAvailable() bool {
+	return h.Handle.IsAvailable() && h.Get().IsAvailable()
+}
+
 type Model struct {
 	Nodes  []*Node
 	meshes []*Mesh
+}
+
+func (m Model) IsAvailable() bool {
+	for _, mesh := range m.meshes {
+		if !mesh.IsAvailable() {
+			return false
+		}
+	}
+	return true
 }
 
 type Node struct {

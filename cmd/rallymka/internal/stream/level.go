@@ -26,6 +26,10 @@ func (h LevelHandle) Get() *Level {
 	return h.Handle.Get().(*Level)
 }
 
+func (h LevelHandle) IsAvailable() bool {
+	return h.Handle.IsAvailable() && h.Get().isAvailable()
+}
+
 type Level struct {
 	Waypoints          []math.Vec3
 	SkyboxTexture      CubeTextureHandle
@@ -35,9 +39,30 @@ type Level struct {
 	StaticEntities     []*Entity
 }
 
+func (l Level) isAvailable() bool {
+	if !l.SkyboxTexture.IsAvailable() {
+		return false
+	}
+	for _, mesh := range l.StaticMeshes {
+		if !mesh.IsAvailable() {
+			return false
+		}
+	}
+	for _, entity := range l.StaticEntities {
+		if !entity.IsAvailable() {
+			return false
+		}
+	}
+	return true
+}
+
 type Entity struct {
 	Model  ModelHandle
 	Matrix math.Mat4x4
+}
+
+func (e Entity) IsAvailable() bool {
+	return e.Model.IsAvailable()
 }
 
 func NewLevelOperator(locator resource.Locator, gfxWorker *graphics.Worker) *LevelOperator {
