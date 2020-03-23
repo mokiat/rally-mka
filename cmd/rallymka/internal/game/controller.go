@@ -63,6 +63,8 @@ func NewController(assetsDir string) *Controller {
 	modelOperator.Register(registry)
 	meshOperator := stream.NewMeshOperator(locator, gfxWorker)
 	meshOperator.Register(registry)
+	levelOperator := stream.NewLevelOperator(locator, gfxWorker)
+	levelOperator.Register(registry)
 
 	gameData := scene.NewData(registry)
 	gameData.Request()
