@@ -1,8 +1,6 @@
 package game
 
 import (
-	"sync"
-
 	"github.com/go-gl/gl/v4.1-core/gl"
 
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/game/input"
@@ -33,34 +31,33 @@ type View interface {
 }
 
 func NewController(assetsDir string) *Controller {
-	ioWorker := resource.NewWorker(maxQueuedResources)
-	go ioWorker.Work() // TODO: Schedule more concurrent routines
-	registry := resource.NewRegistry(ioWorker, maxResources, maxEvents)
+	resWorker := resource.NewWorker(maxQueuedResources)
+	resRegistry := resource.NewRegistry(resWorker, maxResources, maxEvents)
 	gfxWorker := graphics.NewWorker()
 
 	locator := resource.FileLocator{}
 	programOperator := stream.NewProgramOperator(locator, gfxWorker)
-	programOperator.Register(registry)
+	programOperator.Register(resRegistry)
 	cubeTextureOperator := stream.NewCubeTextureOperator(locator, gfxWorker)
-	cubeTextureOperator.Register(registry)
+	cubeTextureOperator.Register(resRegistry)
 	twodTextureOperator := stream.NewTwoDTextureOperator(locator, gfxWorker)
-	twodTextureOperator.Register(registry)
+	twodTextureOperator.Register(resRegistry)
 	modelOperator := stream.NewModelOperator(locator, gfxWorker)
-	modelOperator.Register(registry)
+	modelOperator.Register(resRegistry)
 	meshOperator := stream.NewMeshOperator(locator, gfxWorker)
-	meshOperator.Register(registry)
+	meshOperator.Register(resRegistry)
 	levelOperator := stream.NewLevelOperator(locator, gfxWorker)
-	levelOperator.Register(registry)
+	levelOperator.Register(resRegistry)
 
 	return &Controller{
-		lock: &sync.Mutex{},
-
 		input:          &input.Tracker{},
-		loadingView:    loading.NewView(registry),
-		simulationView: simulation.NewView(registry),
+		loadingView:    loading.NewView(resRegistry),
+		simulationView: simulation.NewView(resRegistry),
 		activeView:     nil,
 
-		registry:        registry,
+		resRegistry: resRegistry,
+		resWorker:   resWorker,
+
 		gfxResizeEvents: make(chan windowSize, 32),
 		gfxWorker:       gfxWorker,
 		gfxRenderer:     graphics.NewRenderer(),
@@ -68,15 +65,14 @@ func NewController(assetsDir string) *Controller {
 }
 
 type Controller struct {
-	lock *sync.Mutex
-
 	windowSize     windowSize
 	input          *input.Tracker
 	activeView     View
 	loadingView    View
 	simulationView View
 
-	registry        *resource.Registry
+	resRegistry     *resource.Registry
+	resWorker       *resource.Worker
 	gfxResizeEvents chan windowSize
 	gfxWorker       *graphics.Worker
 	gfxRenderer     *graphics.Renderer
@@ -87,6 +83,8 @@ func (c *Controller) Input() *input.Tracker {
 }
 
 func (c *Controller) OnInit() {
+	go c.resWorker.Work()
+
 	c.loadingView.Load()
 	c.simulationView.Load()
 }
@@ -94,7 +92,7 @@ func (c *Controller) OnInit() {
 func (c *Controller) OnUpdate(elapsedSeconds float32) {
 	c.processEvents()
 	c.pickView()
-	c.registry.Update()
+	c.resRegistry.Update()
 
 	if c.activeView != nil {
 		c.activeView.Update(elapsedSeconds, c.input.Get())
