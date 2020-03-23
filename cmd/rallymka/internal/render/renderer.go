@@ -2,9 +2,7 @@ package render
 
 import (
 	"github.com/go-gl/gl/v4.1-core/gl"
-	"github.com/pkg/errors"
 
-	"github.com/mokiat/go-whiskey-gl/buffer"
 	"github.com/mokiat/go-whiskey/math"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/scene"
 )
@@ -26,15 +24,10 @@ type Renderer struct {
 	modelMatrix      math.Mat4x4
 	viewMatrix       math.Mat4x4
 
-	skyVertexArrayID uint32
-
 	matrixCache []float32
 }
 
 func (r *Renderer) Generate() {
-	if err := r.generateSky(); err != nil {
-		panic(err)
-	}
 	if err := r.textureMaterial.Generate(); err != nil {
 		panic(err)
 	}
@@ -126,67 +119,6 @@ func (r *Renderer) Render(mesh *Mesh, material *Material) {
 
 func (r *Renderer) RenderScene(stage *scene.Stage, camera *scene.Camera) {
 	r.SetViewMatrix(camera.InverseViewMatrix())
-}
-
-func (r *Renderer) generateSky() error {
-	vertices := buffer.DedicatedFloat32DataPlayground(3 * 8)
-	vertexWriter := buffer.NewFloat32DataWriter(vertices, 0, 3)
-	vertexWriter.PutValue3(-1.0, 1.0, 1.0)
-	vertexWriter.PutValue3(-1.0, -1.0, 1.0)
-	vertexWriter.PutValue3(1.0, -1.0, 1.0)
-	vertexWriter.PutValue3(1.0, 1.0, 1.0)
-	vertexWriter.PutValue3(-1.0, 1.0, -1.0)
-	vertexWriter.PutValue3(-1.0, -1.0, -1.0)
-	vertexWriter.PutValue3(1.0, -1.0, -1.0)
-	vertexWriter.PutValue3(1.0, 1.0, -1.0)
-
-	vertexBuffer := buffer.NewVertexBuffer()
-	if err := vertexBuffer.Allocate(); err != nil {
-		return errors.Wrap(err, "failed to allocate buffer")
-	}
-	vertexBuffer.Bind()
-	vertexBuffer.CreateData(vertices)
-
-	indices := buffer.DedicatedUInt16DataPlayground(17)
-	indexWriter := buffer.NewUInt16DataWriter(indices, 1)
-
-	indexWriter.PutValue(7)
-	indexWriter.PutValue(4)
-	indexWriter.PutValue(6)
-	indexWriter.PutValue(5)
-	indexWriter.PutValue(2)
-	indexWriter.PutValue(1)
-	indexWriter.PutValue(3)
-	indexWriter.PutValue(0)
-
-	indexWriter.PutValue(99)
-
-	indexWriter.PutValue(1)
-	indexWriter.PutValue(5)
-	indexWriter.PutValue(0)
-	indexWriter.PutValue(4)
-	indexWriter.PutValue(3)
-	indexWriter.PutValue(7)
-	indexWriter.PutValue(2)
-	indexWriter.PutValue(6)
-
-	indexBuffer := buffer.NewIndexBuffer()
-	if err := indexBuffer.Allocate(); err != nil {
-		return errors.Wrap(err, "failed to allocate index buffer")
-	}
-	indexBuffer.Bind()
-	indexBuffer.CreateData(indices)
-
-	gl.GenVertexArrays(1, &r.skyVertexArrayID)
-	gl.BindVertexArray(r.skyVertexArrayID)
-
-	vertexBuffer.Bind()
-	gl.EnableVertexAttribArray(0)
-	gl.VertexAttribPointer(0, 3, gl.FLOAT, false, 0, gl.PtrOffset(0))
-	indexBuffer.Bind()
-
-	gl.BindVertexArray(0)
-	return nil
 }
 
 // NOTE: Use this method only as short-lived function argument
