@@ -34,6 +34,18 @@ type Model struct {
 	meshes []*Mesh
 }
 
+func (m Model) FindNode(name string) (*Node, bool) {
+	for _, node := range m.Nodes {
+		if node.Name == name {
+			return node, true
+		}
+		if child, found := node.FindNode(name); found {
+			return child, true
+		}
+	}
+	return nil, false
+}
+
 func (m Model) IsAvailable() bool {
 	for _, mesh := range m.meshes {
 		if !mesh.IsAvailable() {
