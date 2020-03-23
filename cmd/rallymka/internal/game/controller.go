@@ -66,9 +66,6 @@ func NewController(assetsDir string) *Controller {
 	levelOperator := stream.NewLevelOperator(locator, gfxWorker)
 	levelOperator.Register(registry)
 
-	gameData := scene.NewData(registry)
-	gameData.Request()
-
 	return &Controller{
 		lock:       &sync.Mutex{},
 		assetsDir:  assetsDir,
@@ -81,7 +78,7 @@ func NewController(assetsDir string) *Controller {
 		glRenderer: graphics.NewRenderer(),
 
 		registry:   registry,
-		gameData:   gameData,
+		gameData:   scene.NewData(registry),
 		activeView: loading.NewView(registry),
 	}
 }
@@ -119,6 +116,7 @@ func (c *Controller) OnInit() {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
+	c.gameData.Request()
 }
 
 func (r *Controller) OnUpdate(elapsedSeconds float32) {
@@ -134,8 +132,8 @@ func (r *Controller) OnUpdate(elapsedSeconds float32) {
 	r.activeView.Update(elapsedSeconds)
 
 	pipeline := r.glRenderer.BeginPipeline()
-	r.activeView.Render(pipeline)
 	r.stage.Render(pipeline, r.camera)
+	r.activeView.Render(pipeline)
 	r.glRenderer.EndPipeline(pipeline)
 
 	if r.goFreeze {
