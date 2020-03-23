@@ -2,10 +2,11 @@ package scene
 
 import (
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/stream"
+	"github.com/mokiat/rally-mka/internal/engine/graphics"
 )
 
 type Skybox struct {
-	Program stream.ProgramHandle
-	Texture stream.CubeTextureHandle
-	Mesh    stream.MeshHandle
+	Program *graphics.Program
+	Texture *graphics.CubeTexture
+	Mesh    *stream.Mesh
 }

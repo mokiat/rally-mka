@@ -31,7 +31,7 @@ const (
 
 var tracks = [...]string{
 	"tracks/forest/track.m3d",
-	"tracks/highway/track.m3d",
+	// "tracks/highway/track.m3d",
 }
 var cars = []string{
 	"cars/hatch/car.m3d",
@@ -197,7 +197,6 @@ func (r *Controller) OnGLInit() {
 	if err := r.gameMap.Load(track); err != nil {
 		panic(err)
 	}
-	r.gameMap.Generate()
 
 	if err := r.carMine.Load(car); err != nil {
 		panic(err)
@@ -235,12 +234,7 @@ func (r *Controller) OnGLDraw() {
 	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
 	gl.BindVertexArray(r.vertexArrayID)
-	r.gameMap.Draw(r.renderer)
 	r.carMine.Draw(r.renderer)
-
-	// it is more optimal to render front to back
-	// i.e. the skybox should be last and only unoccupied
-	// fragments should be drawn
 	r.renderer.RenderScene(r.stage, r.camera)
 
 	r.glRenderer.Render()

@@ -1,17 +1,11 @@
 package entities
 
 import (
-	"fmt"
-
-	"github.com/mokiat/go-whiskey/math"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/render"
 	"github.com/mokiat/rally-mka/internal/engine/collision"
 )
 
 type Map interface {
 	Load(path string) error
-	Generate()
-	Draw(renderer *render.Renderer)
 	CheckCollisionGround(line collision.Line) (collision.LineCollision, bool)
 	CheckCollisionWall(line collision.Line) (collision.LineCollision, bool)
 }
@@ -21,10 +15,8 @@ func NewMap() Map {
 }
 
 type gameMap struct {
-	walls     []Wall
-	grounds   []Ground
-	dummies   []Dummy
-	waypoints []math.Vec3
+	walls   []Wall
+	grounds []Ground
 }
 
 func (m *gameMap) Load(path string) error {
@@ -34,8 +26,6 @@ func (m *gameMap) Load(path string) error {
 	}
 	m.loadGrounds(model)
 	m.loadWalls(model)
-	m.loadDummies(model)
-	m.loadWaypoints(model)
 	return nil
 }
 
@@ -45,7 +35,6 @@ func (m *gameMap) loadGrounds(model *ExtendedModel) {
 		object := model.GetObjectIndex(searchIndex)
 		m.grounds = append(m.grounds, Ground{
 			CollisionMesh: createCollisionMesh(object),
-			RenderMesh:    createRenderMesh(model, object),
 		})
 		searchIndex = model.FindObjectIndex("Grounds", searchIndex+1, true)
 	}
@@ -57,43 +46,8 @@ func (m *gameMap) loadWalls(model *ExtendedModel) {
 		object := model.GetObjectIndex(searchIndex)
 		m.walls = append(m.walls, Wall{
 			CollisionMesh: createCollisionMesh(object),
-			RenderMesh:    createRenderMesh(model, object),
 		})
 		searchIndex = model.FindObjectIndex("Walls", searchIndex+1, true)
-	}
-}
-
-func (m *gameMap) loadDummies(model *ExtendedModel) {
-	searchIndex := model.FindObjectIndex("Dummy", 0, true)
-	for searchIndex >= 0 {
-		object := model.GetObjectIndex(searchIndex)
-		m.dummies = append(m.dummies, Dummy{
-			RenderMesh: createRenderMesh(model, object),
-		})
-		searchIndex = model.FindObjectIndex("Dummy", searchIndex+1, true)
-	}
-}
-
-func (m *gameMap) loadWaypoints(model *ExtendedModel) {
-	waypointID := 1
-	searchIndex := model.FindObjectIndex(fmt.Sprintf("Way%d", waypointID), 0, false)
-	for searchIndex >= 0 {
-		object := model.Objects[searchIndex]
-		m.waypoints = append(m.waypoints, model.ObjectCenter(object))
-		waypointID++
-		searchIndex = model.FindObjectIndex(fmt.Sprintf("Way%d", waypointID), searchIndex+1, false)
-	}
-}
-
-func (m *gameMap) Generate() {
-	for _, ground := range m.grounds {
-		ground.RenderMesh.Generate()
-	}
-	for _, wall := range m.walls {
-		wall.RenderMesh.Generate()
-	}
-	for _, dummy := range m.dummies {
-		dummy.RenderMesh.Generate()
 	}
 }
 
@@ -127,16 +81,4 @@ func (m *gameMap) CheckCollisionWall(line collision.Line) (bestCollision collisi
 		}
 	}
 	return
-}
-
-func (m *gameMap) Draw(renderer *render.Renderer) {
-	for _, ground := range m.grounds {
-		renderer.Render(ground.RenderMesh, renderer.TextureMaterial())
-	}
-	for _, wall := range m.walls {
-		renderer.Render(wall.RenderMesh, renderer.TextureMaterial())
-	}
-	for _, dummy := range m.dummies {
-		renderer.Render(dummy.RenderMesh, renderer.TextureMaterial())
-	}
 }
