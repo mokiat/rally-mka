@@ -17,6 +17,10 @@ type Mesh struct {
 	triangles []Triangle
 }
 
+func (m *Mesh) Triangles() []Triangle {
+	return m.triangles
+}
+
 func (m *Mesh) LineCollision(line Line) (bestCollision LineCollision, found bool) {
 	if startDistance := line.Start().DecVec3(m.center).Length(); startDistance > line.Length()+m.radius {
 		return
