@@ -199,33 +199,31 @@ func (s *Stage) updateCar(elapsedSeconds float32, input CarInput) {
 	// TODO: Move constants as part of car descriptor
 	const turnSpeed = 100        // FIXME ORIGINAL: 120
 	const returnSpeed = 50       // FIXME ORIGINAL: 60
-	const maxWheelAngle = 20     // FIXME ORIGINAL: 30
+	const maxWheelAngle = 30     // FIXME ORIGINAL: 30
 	const maxAcceleration = 0.1  // FIXME ORIGINAL: 0.01
 	const maxDeceleration = 0.05 // FIXME ORIGINAL: 0.005
 
-	if input.TurnLeft {
-		if s.car.WheelAngle += elapsedSeconds * turnSpeed; s.car.WheelAngle > maxWheelAngle {
-			s.car.WheelAngle = maxWheelAngle
-		}
-	}
-	if input.TurnRight {
-		if s.car.WheelAngle -= elapsedSeconds * turnSpeed; s.car.WheelAngle < -maxWheelAngle {
-			s.car.WheelAngle = -maxWheelAngle
-		}
-	}
-	if input.TurnLeft == input.TurnRight {
+	switch {
+	case input.TurnLeft == input.TurnRight:
 		if s.car.WheelAngle > 0.001 {
 			if s.car.WheelAngle -= elapsedSeconds * returnSpeed; s.car.WheelAngle < 0.0 {
 				s.car.WheelAngle = 0.0
 			}
 		}
-		if s.car.WheelAngle < -0.01 {
+		if s.car.WheelAngle < -0.001 {
 			if s.car.WheelAngle += elapsedSeconds * returnSpeed; s.car.WheelAngle > 0.0 {
 				s.car.WheelAngle = 0.0
 			}
 		}
+	case input.TurnLeft:
+		if s.car.WheelAngle += elapsedSeconds * turnSpeed; s.car.WheelAngle > maxWheelAngle {
+			s.car.WheelAngle = maxWheelAngle
+		}
+	case input.TurnRight:
+		if s.car.WheelAngle -= elapsedSeconds * turnSpeed; s.car.WheelAngle < -maxWheelAngle {
+			s.car.WheelAngle = -maxWheelAngle
+		}
 	}
-
 	s.car.Acceleration = 0.0
 	if input.Forward {
 		s.car.Acceleration = maxAcceleration
@@ -233,7 +231,6 @@ func (s *Stage) updateCar(elapsedSeconds float32, input CarInput) {
 	if input.Backward {
 		s.car.Acceleration = -maxDeceleration
 	}
-
 	s.car.HandbrakePulled = input.Handbrake
 
 	s.car.Update()
