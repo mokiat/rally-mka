@@ -129,14 +129,15 @@ func (s *Stage) Init(data *Data) {
 	s.carProgram = data.CarProgram.Get()
 	s.carModel = data.CarModel.Get()
 	s.car = NewCar(s, s.carModel, math.TranslationMat4x4(0.0, carDropHeight, 0.0))
+	s.cameraAnchor = s.car.Position().IncVec3(math.MakeVec3(0.0, 0.0, -cameraDistance))
 }
 
 func (s *Stage) Update(elapsedSeconds float32, camera *Camera, input CarInput) {
 	s.updateCar(elapsedSeconds, input)
 
-	carPosition := s.car.Position()
 	// we use a camera anchor to achieve the smooth effect of a
 	// camera following the car
+	carPosition := s.car.Position()
 	anchorVector := s.cameraAnchor.DecVec3(carPosition)
 	anchorVector = anchorVector.Resize(anchorDistance)
 	s.cameraAnchor = carPosition.IncVec3(anchorVector)
