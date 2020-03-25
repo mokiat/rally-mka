@@ -1,101 +1,229 @@
 package scene
 
 import (
-	"fmt"
-
 	"github.com/mokiat/go-whiskey/math"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/stream"
 	"github.com/mokiat/rally-mka/internal/engine/collision"
 )
 
-const gravity = -0.05 // original: -0.003
+const (
+	gravity             = 0.01
+	wheelFriction       = 99.0 / 100.0
+	speedFriction       = 99.0 / 100.0
+	speedFriction2      = 1.0 - (99.0 / 100.0)
+	rotationFriction    = 60.0 / 100.0
+	rotationFriction2   = 1.0 - 60.0/100.0
+	maxSuspensionLength = 0.4
+	skidWheelSpeed      = 0.03
+)
 
-func NewCar(stage *Stage, model *stream.Model, modelMatrix math.Mat4x4) *Car {
+func NewCar(stage *Stage, model *stream.Model, position math.Vec3) *Car {
 	bodyNode, _ := model.FindNode("body")
 	flWheelNode, _ := model.FindNode("wheel_front_left")
 	frWheelNode, _ := model.FindNode("wheel_front_right")
 	blWheelNode, _ := model.FindNode("wheel_back_left")
 	brWheelNode, _ := model.FindNode("wheel_back_right")
 
-	return &Car{
+	car := &Car{
 		stage: stage,
 		node:  bodyNode,
 
-		Model:       model,
-		ModelMatrix: modelMatrix,
-		position:    math.MakeVec3(modelMatrix.M14, modelMatrix.M24, modelMatrix.M34),
+		position: position,
 		orientation: Orientation{
 			VectorX: math.BaseVec3X(),
 			VectorY: math.BaseVec3Y(),
 			VectorZ: math.BaseVec3Z(),
 		},
-		flWheel: NewWheel(flWheelNode, true),
-		frWheel: NewWheel(frWheelNode, true),
-		blWheel: NewWheel(blWheelNode, false),
-		brWheel: NewWheel(brWheelNode, false),
 	}
+	car.flWheel = NewWheel(car, flWheelNode, true)
+	car.frWheel = NewWheel(car, frWheelNode, true)
+	car.blWheel = NewWheel(car, blWheelNode, true)
+	car.brWheel = NewWheel(car, brWheelNode, true)
+	return car
 }
 
 type Car struct {
-	stage *Stage
-	node  *stream.Node
-
-	ModelMatrix math.Mat4x4
-	Model       *stream.Model
-
-	position            math.Vec3
-	orientation         Orientation
-	velocity            math.Vec3
-	acceleration        math.Vec3
-	angularVelocity     math.Vec3
-	angularAcceleration math.Vec3
-
+	stage   *Stage
+	node    *stream.Node
 	flWheel *Wheel
 	frWheel *Wheel
 	blWheel *Wheel
 	brWheel *Wheel
+
+	position        math.Vec3
+	orientation     Orientation
+	velocity        math.Vec3
+	angularVelocity math.Vec3
 
 	WheelAngle      float32
 	Acceleration    float32
 	HandbrakePulled bool
 }
 
-func (c Car) Position() math.Vec3 {
-	return math.MakeVec3(c.ModelMatrix.M14, c.ModelMatrix.M24, c.ModelMatrix.M34)
+func (c *Car) Position() math.Vec3 {
+	return c.position
 }
 
 func (c *Car) Update() {
-	c.acceleration = math.NullVec3()
-	c.angularAcceleration = math.NullVec3()
+	c.flWheel.turnAngle = c.WheelAngle
+	c.frWheel.turnAngle = c.WheelAngle
 
-	c.acceleration = c.acceleration.IncCoords(0.0, gravity, 0.0)
+	c.calculateWheelRotation(c.flWheel)
+	c.calculateWheelRotation(c.frWheel)
+	c.calculateWheelRotation(c.blWheel)
+	c.calculateWheelRotation(c.brWheel)
+	c.accelerate()
+	c.translate()
 
-	c.flWheel.RotationAngle += 20.0
-	c.frWheel.RotationAngle += 20.0
-	c.blWheel.RotationAngle += 20.0
-	c.brWheel.RotationAngle += 20.0
+	c.updateModelMatrix()
+	c.flWheel.updateModelMatrix()
+	c.frWheel.updateModelMatrix()
+	c.blWheel.updateModelMatrix()
+	c.brWheel.updateModelMatrix()
+}
 
-	c.flWheel.TurnAngle = c.WheelAngle
-	c.frWheel.TurnAngle = c.WheelAngle
+func (c *Car) calculateWheelRotation(wheel *Wheel) {
+	// Handbrake locks all wheels
+	if wheel.grounded && !c.HandbrakePulled {
+		wheelOrientation := c.orientation
+		wheelOrientation.Rotate(wheelOrientation.VectorY.Resize(wheel.turnAngle * math.Pi / 180))
+		wheel.rotate(math.Vec3DotProduct(c.velocity, wheelOrientation.VectorZ))
+	}
 
-	c.flWheel.updateBasics(c)
-	c.frWheel.updateBasics(c)
-	c.blWheel.updateBasics(c)
-	c.brWheel.updateBasics(c)
+	// Add some wheel slip if we are accelerating
+	if math.Abs32(c.Acceleration) > 0.0001 && wheel.driving {
+		wheel.rotate(math.Signum32(c.Acceleration) * skidWheelSpeed)
+	}
+}
 
-	c.flWheel.Update(c)
-	c.frWheel.Update(c)
-	c.blWheel.Update(c)
-	c.brWheel.Update(c)
+func (c *Car) accelerate() {
+	shouldAccelerate :=
+		(c.flWheel.driving && c.flWheel.grounded) ||
+			(c.frWheel.driving && c.frWheel.grounded) ||
+			(c.blWheel.driving && c.blWheel.grounded) ||
+			(c.brWheel.driving && c.brWheel.grounded)
 
-	c.velocity = c.velocity.IncVec3(c.acceleration)
-	c.velocity = c.velocity.Mul(0.999) // friction // FIXME
-	c.angularVelocity = c.angularVelocity.IncVec3(c.angularAcceleration)
-	c.angularVelocity = c.angularVelocity.Mul(0.99) // friction // FIXME
+	if shouldAccelerate {
+		acceleration := c.orientation.VectorZ.Resize(c.Acceleration)
+		c.velocity = c.velocity.IncVec3(acceleration)
+	}
 
-	c.move(c.velocity, c.angularVelocity)
+	shouldDecelerate := c.HandbrakePulled &&
+		(c.flWheel.grounded || c.frWheel.grounded || c.blWheel.grounded || c.brWheel.grounded)
 
-	c.ModelMatrix = math.VectorMat4x4(
+	if shouldDecelerate {
+		c.velocity = c.velocity.Mul(wheelFriction)
+	}
+
+	c.velocity = c.velocity.DecVec3(math.MakeVec3(0.0, gravity, 0.0))
+	c.velocity = c.velocity.DecVec3(c.velocity.Mul(speedFriction2))
+
+	// no idea how I originally go to this
+	magicVelocity := math.Vec3DotProduct(c.velocity, c.orientation.VectorZ) + math.Vec3DotProduct(c.velocity, c.orientation.VectorX)*math.Sin32(c.WheelAngle*math.Pi/180.0)
+	var turnAcceleration float32
+	if !c.HandbrakePulled {
+		turnAcceleration = c.WheelAngle * magicVelocity / (100.0 + 2.0*magicVelocity*magicVelocity)
+	}
+	turnAcceleration += c.WheelAngle * c.Acceleration * 0.6
+	turnAcceleration /= 2.0
+
+	if c.flWheel.grounded || c.frWheel.grounded {
+		c.angularVelocity = c.angularVelocity.IncVec3(c.orientation.VectorY.Resize(turnAcceleration))
+	}
+	c.angularVelocity = c.angularVelocity.Mul(rotationFriction)
+	c.angularVelocity = c.angularVelocity.DecVec3(c.angularVelocity.Mul(rotationFriction2))
+}
+
+func (c *Car) translate() {
+	c.position = c.position.IncVec3(c.velocity)
+	c.orientation.Rotate(c.angularVelocity)
+	c.checkCollisions()
+}
+
+func (c *Car) checkCollisions() {
+	c.checkWheelSideCollision(c.flWheel, c.orientation.VectorX.Inverse(), c.orientation.VectorZ.Inverse())
+	c.checkWheelSideCollision(c.frWheel, c.orientation.VectorX, c.orientation.VectorZ.Inverse())
+	c.checkWheelSideCollision(c.blWheel, c.orientation.VectorX.Inverse(), c.orientation.VectorZ)
+	c.checkWheelSideCollision(c.brWheel, c.orientation.VectorX, c.orientation.VectorZ)
+	c.checkWheelBottomCollision(c.flWheel)
+	c.checkWheelBottomCollision(c.frWheel)
+	c.checkWheelBottomCollision(c.blWheel)
+	c.checkWheelBottomCollision(c.brWheel)
+}
+
+func (c *Car) checkWheelSideCollision(wheel *Wheel, dirX math.Vec3, dirZ math.Vec3) {
+	pa := wheel.position()
+
+	p2 := pa.DecVec3(dirX.Resize(wheel.length))
+	p1 := pa.IncVec3(dirX.Resize(1.2))
+	result, active := c.stage.CheckCollision(collision.MakeLine(p1, p2))
+	if active {
+		f := result.Normal().Resize(math.Abs32(result.BottomHeight()))
+		c.position = c.position.IncVec3(f)
+	}
+
+	p2 = pa.IncVec3(dirZ.Resize(math.Abs32(wheel.radius)))
+	p1 = pa.DecVec3(dirZ.Resize(1.2))
+	result, active = c.stage.CheckCollision(collision.MakeLine(p1, p2))
+	if active {
+		f := result.Normal().Resize(math.Abs32(result.BottomHeight()))
+		c.position = c.position.IncVec3(f)
+	}
+}
+
+func (c *Car) checkWheelBottomCollision(wheel *Wheel) {
+	wheel.grounded = false
+
+	pa := c.position.IncVec3(c.orientation.MulVec3(wheel.anchorPosition))
+	p1 := pa.IncVec3(c.orientation.VectorY.Resize(3.6))
+	p2 := pa.DecVec3(c.orientation.VectorY.Resize(wheel.radius + maxSuspensionLength))
+
+	result, active := c.stage.CheckCollision(collision.MakeLine(p1, p2))
+	if !active {
+		wheel.suspensionLength = maxSuspensionLength
+		return
+	}
+
+	dis := result.Intersection().DecVec3(p1).Length()
+	if dis > 3.6+wheel.radius {
+		wheel.suspensionLength = dis - (3.6 + wheel.radius)
+	} else {
+		wheel.suspensionLength = 0.0
+	}
+	wheel.grounded = true
+
+	if dis < 3.6+wheel.radius {
+		dis2 := math.Vec3DotProduct(result.Normal(), c.velocity)
+		f := result.Normal().Resize(dis2)
+		c.velocity = c.velocity.DecVec3(f)
+		f = c.orientation.VectorY.Resize(3.6 + wheel.radius - dis)
+		c.position = c.position.IncVec3(f)
+	}
+
+	relativePosition := wheel.position().DecVec3(c.position)
+	cross := math.Vec3CrossProduct(result.Normal(), relativePosition.Inverse())
+	cross = cross.Resize(1.0)
+
+	koef := math.NullVec2()
+	koef.Y = math.Vec3DotProduct(result.Intersection().Inverse(), result.Intersection())
+	tmp := result.Intersection().Inverse().Length()
+	koef.X = math.Sqrt32(tmp*tmp - koef.Y*koef.Y)
+
+	if koef.Length() > 0.0000001 {
+		koef = koef.Resize(1.0)
+	} else {
+		koef.X = 1.0
+		koef.Y = 0.0
+	}
+
+	if math.Abs32(koef.X) > 0.0000001 {
+		cross = cross.Resize(koef.X * koef.X * (1.0 - (dis-(3.6+wheel.radius))/maxSuspensionLength) / 10)
+		c.angularVelocity = c.angularVelocity.IncVec3(cross)
+	}
+}
+
+func (c *Car) updateModelMatrix() {
+	c.node.Matrix = math.VectorMat4x4(
 		c.orientation.VectorX,
 		c.orientation.VectorY,
 		c.orientation.VectorZ,
@@ -103,200 +231,54 @@ func (c *Car) Update() {
 	)
 }
 
-func (c *Car) move(translation math.Vec3, rotation math.Vec3) {
-	c.position = c.position.IncVec3(c.velocity)
-	c.orientation.Rotate(c.angularVelocity)
-
-	c.flWheel.updateBasics(c)
-	c.frWheel.updateBasics(c)
-	c.blWheel.updateBasics(c)
-	c.brWheel.updateBasics(c)
-
-	flDisplace, flTouching := c.checkWheel(c.flWheel)
-	frDisplace, frTouching := c.checkWheel(c.frWheel)
-	blDisplace, blTouching := c.checkWheel(c.blWheel)
-	brDisplace, brTouching := c.checkWheel(c.brWheel)
-
-	if flTouching || frTouching || blTouching || brTouching {
-		var maxDisplace math.Vec3
-		if flDisplace.LengthSquared() > maxDisplace.LengthSquared() {
-			maxDisplace = flDisplace
-		}
-		if frDisplace.LengthSquared() > maxDisplace.LengthSquared() {
-			maxDisplace = frDisplace
-		}
-		if blDisplace.LengthSquared() > maxDisplace.LengthSquared() {
-			maxDisplace = blDisplace
-		}
-		if brDisplace.LengthSquared() > maxDisplace.LengthSquared() {
-			maxDisplace = brDisplace
-		}
-		c.position = c.position.IncVec3(maxDisplace)
-		if c.velocity.Y < 0 {
-			c.velocity.Y = 0 // FIXME: should be constrained based on displace vector
-		}
-		c.angularVelocity.X = 0 // FIXME: should be constrained based on displace vector
-		c.angularVelocity.Z = 0 // FIXME: should be constrained based on displace vector
-	}
-}
-
-func (c *Car) checkWheel(wheel *Wheel) (math.Vec3, bool) {
-	collided := false
-	displacement := math.NullVec3()
-
-	wheel.collisionCylinder.touching = false
-	wheel.collisionCylinder.force = math.NullVec3()
-
-	// test ground
-	p1 := wheel.collisionCylinder.position.IncVec3(wheel.collisionCylinder.orientation.VectorY.Mul(wheel.collisionCylinder.radius))
-	p2 := wheel.collisionCylinder.position.DecVec3(wheel.collisionCylinder.orientation.VectorY.Mul(wheel.collisionCylinder.radius))
-
-	result, active := c.stage.CheckCollision(collision.MakeLine(p1, p2))
-	if active {
-		collided = true
-		f := result.Normal().Resize(math.Abs32(result.BottomHeight()))
-		displacement = displacement.IncVec3(f)
-		wheel.collisionCylinder.touching = true
-		wheel.collisionCylinder.force = wheel.collisionCylinder.force.IncVec3(f.Div(8))
-	}
-
-	p1 = wheel.collisionCylinder.position.IncVec3(wheel.collisionCylinder.orientation.VectorX.Mul(wheel.collisionCylinder.length / 2))
-	p2 = wheel.collisionCylinder.position.DecVec3(wheel.collisionCylinder.orientation.VectorX.Mul(wheel.collisionCylinder.length / 2))
-	result, active = c.stage.CheckCollision(collision.MakeLine(p1, p2))
-	if active {
-		fmt.Println("right collision!")
-		collided = true
-		f := result.Normal().Resize(math.Abs32(result.BottomHeight()))
-		displacement = displacement.IncVec3(f)
-		wheel.collisionCylinder.touching = true
-		wheel.collisionCylinder.force = wheel.collisionCylinder.force.IncVec3(f.Div(8))
-	}
-	result, active = c.stage.CheckCollision(collision.MakeLine(p2, p1))
-	if active {
-		fmt.Println("left collision!")
-		collided = true
-		f := result.Normal().Resize(math.Abs32(result.BottomHeight()))
-		displacement = displacement.IncVec3(f)
-		wheel.collisionCylinder.touching = true
-		wheel.collisionCylinder.force = wheel.collisionCylinder.force.IncVec3(f.Div(8))
-	}
-
-	p1 = wheel.collisionCylinder.position.IncVec3(wheel.collisionCylinder.orientation.VectorZ.Mul(wheel.collisionCylinder.radius))
-	p2 = wheel.collisionCylinder.position.DecVec3(wheel.collisionCylinder.orientation.VectorZ.Mul(wheel.collisionCylinder.radius))
-	result, active = c.stage.CheckCollision(collision.MakeLine(p1, p2))
-	if active {
-		fmt.Println("back collision!")
-		collided = true
-		f := result.Normal().Resize(math.Abs32(result.BottomHeight()))
-		displacement = displacement.IncVec3(f)
-		wheel.collisionCylinder.touching = true
-		wheel.collisionCylinder.force = wheel.collisionCylinder.force.IncVec3(f.Div(8))
-	}
-	result, active = c.stage.CheckCollision(collision.MakeLine(p2, p1))
-	if active {
-		fmt.Println("front collision!")
-		collided = true
-		f := result.Normal().Resize(math.Abs32(result.BottomHeight()))
-		displacement = displacement.IncVec3(f)
-		wheel.collisionCylinder.touching = true
-		wheel.collisionCylinder.force = wheel.collisionCylinder.force.IncVec3(f.Div(8))
-	}
-
-	return displacement, collided
-}
-
-func NewWheel(node *stream.Node, driving bool) *Wheel {
+func NewWheel(car *Car, node *stream.Node, driving bool) *Wheel {
 	return &Wheel{
-		// FIXME: Not accurate, take body node into consideration and fix Y
-		relativePosition:    math.MakeVec3(node.Matrix.M14-node.Parent.Matrix.M14, 0.0, node.Matrix.M34-node.Parent.Matrix.M34),
-		driving:             driving,
-		originalModelMatrix: node.Matrix,
-		collisionCylinder: Cylinder{
-			length: 0.4,
-			radius: 0.2,
-		},
-		Node: node,
+		car:     car,
+		node:    node,
+		driving: driving,
+
+		length: 0.4, // FIXME: Get from model
+		radius: 0.2, // FIXME: Get from model
+
+		anchorPosition:   node.Matrix.Translation().DecVec3(car.node.Matrix.Translation()),
+		suspensionLength: 0.0,
 	}
 }
 
 type Wheel struct {
-	relativePosition math.Vec3
-	orientation      Orientation
+	car     *Car
+	node    *stream.Node
+	driving bool
 
-	originalModelMatrix math.Mat4x4
-	Node                *stream.Node
-	driving             bool
-	TurnAngle           float32
-	RotationAngle       float32
-	grounded            bool
+	length float32
+	radius float32
 
-	collisionCylinder Cylinder
+	anchorPosition math.Vec3
+
+	suspensionLength float32
+	grounded         bool
+
+	turnAngle     float32
+	rotationAngle float32
 }
 
-func (w *Wheel) updateBasics(car *Car) {
-	w.orientation = car.orientation
-	w.orientation.Rotate(w.orientation.VectorY.Mul(w.TurnAngle * math.Pi / 180.0))
-	transformedRelativePosition := car.orientation.MulVec3(w.relativePosition)
-
-	w.collisionCylinder.orientation = w.orientation
-	w.collisionCylinder.position = car.position.IncVec3(transformedRelativePosition)
+func (w *Wheel) position() math.Vec3 {
+	return w.car.position.
+		IncVec3(w.car.orientation.MulVec3(w.anchorPosition)).
+		IncVec3(w.car.orientation.MulVec3(math.MakeVec3(0.0, -w.suspensionLength, 0.0)))
 }
 
-func (w *Wheel) Update(car *Car) {
-	w.Node.Matrix = math.Mat4x4MulMany(
-		w.originalModelMatrix,
-		math.RotationMat4x4(w.TurnAngle, 0.0, 1.0, 0.0),
-		math.RotationMat4x4(w.RotationAngle, 1.0, 0.0, 0.0),
+func (w *Wheel) rotate(speed float32) {
+	rotationCoefficient := float32(180.0 / (math.Pi * w.radius))
+	w.rotationAngle += speed * rotationCoefficient
+}
+
+func (w *Wheel) updateModelMatrix() {
+	w.node.Matrix = math.Mat4x4MulMany(
+		math.TranslationMat4x4(w.anchorPosition.X, w.anchorPosition.Y-w.suspensionLength, w.anchorPosition.Z),
+		math.RotationMat4x4(w.turnAngle, 0.0, 1.0, 0.0),
+		math.RotationMat4x4(w.rotationAngle, 1.0, 0.0, 0.0),
 	)
-
-	if !w.collisionCylinder.touching {
-		return
-	}
-
-	// TODO
-	// if !w.grounded {
-	// 	return
-	// }
-
-	transformedRelativePosition := car.orientation.MulVec3(w.relativePosition)
-
-	velocity := car.velocity
-	velocity = velocity.IncVec3(math.Vec3CrossProduct(
-		car.angularVelocity, transformedRelativePosition,
-	))
-
-	const wheelFriction = 0.01 // 0.03 // 0.005
-	flWheelForce := math.NullVec3()
-	// TODO: Take into consideration wheel spin
-	flWheelForce = flWheelForce.DecVec3(w.orientation.VectorX.Mul(
-		math.Vec3DotProduct(w.orientation.VectorX, velocity) * 0.2, // FIXME
-	))
-	if w.driving {
-		flWheelForce = flWheelForce.IncVec3(w.orientation.VectorZ.Mul(car.Acceleration))
-	}
-	if flWheelForce.Length() > wheelFriction {
-		flWheelForce = flWheelForce.Resize(wheelFriction)
-	}
-	if w.collisionCylinder.touching {
-		flWheelForce = flWheelForce.IncVec3(w.collisionCylinder.force)
-	}
-	// fmt.Printf("wheel force: %.4f, %.4f, %.4f\n", flWheelForce.X, flWheelForce.Y, flWheelForce.Z)
-
-	car.acceleration = car.acceleration.IncVec3(flWheelForce)
-	car.angularAcceleration = car.angularAcceleration.IncVec3(math.Vec3CrossProduct(
-		transformedRelativePosition, flWheelForce, // FIXME should use wheel relative position
-	).Div(transformedRelativePosition.Length())) // FIXME: Use moment of intertia formulas
-
-	// FIXME: If wheel is sliding, there is no controlled directional component
-}
-
-type Cylinder struct {
-	position    math.Vec3
-	orientation Orientation
-	length      float32
-	radius      float32
-	touching    bool
-	force       math.Vec3
 }
 
 type Orientation struct {

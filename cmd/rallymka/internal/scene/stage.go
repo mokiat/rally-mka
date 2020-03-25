@@ -128,7 +128,7 @@ func (s *Stage) Init(data *Data) {
 
 	s.carProgram = data.CarProgram.Get()
 	s.carModel = data.CarModel.Get()
-	s.car = NewCar(s, s.carModel, math.TranslationMat4x4(0.0, carDropHeight, 0.0))
+	s.car = NewCar(s, s.carModel, math.MakeVec3(0.0, carDropHeight, 0.0))
 	s.cameraAnchor = s.car.Position().IncVec3(math.MakeVec3(0.0, 0.0, -cameraDistance))
 }
 
@@ -162,14 +162,6 @@ func (s *Stage) Update(elapsedSeconds float32, camera *Camera, input CarInput) {
 		math.RotationMat4x4(-25.0, 1.0, 0.0, 0.0),
 		math.TranslationMat4x4(0.0, 0.0, cameraDistance),
 	))
-
-	// angle = angle + elapsedSeconds*90
-
-	// camera.SetViewMatrix(math.Mat4x4MulMany(
-	// 	math.RotationMat4x4(angle, 0.0, 1.0, 0.0),
-	// 	math.RotationMat4x4(-20, 1.0, 0.0, 0.0),
-	// 	math.TranslationMat4x4(0.0, 0.0, 15.0),
-	// ))
 }
 
 func (s *Stage) Render(pipeline *graphics.Pipeline, camera *Camera) {
@@ -197,11 +189,11 @@ func (s *Stage) CheckCollision(line collision.Line) (bestCollision collision.Lin
 
 func (s *Stage) updateCar(elapsedSeconds float32, input CarInput) {
 	// TODO: Move constants as part of car descriptor
-	const turnSpeed = 100        // FIXME ORIGINAL: 120
-	const returnSpeed = 50       // FIXME ORIGINAL: 60
-	const maxWheelAngle = 30     // FIXME ORIGINAL: 30
-	const maxAcceleration = 0.1  // FIXME ORIGINAL: 0.01
-	const maxDeceleration = 0.05 // FIXME ORIGINAL: 0.005
+	const turnSpeed = 100       // FIXME ORIGINAL: 120
+	const returnSpeed = 50      // FIXME ORIGINAL: 60
+	const maxWheelAngle = 30    // FIXME ORIGINAL: 30
+	const maxAcceleration = 0.6 // FIXME ORIGINAL: 0.01
+	const maxDeceleration = 0.3 // FIXME ORIGINAL: 0.005
 
 	switch {
 	case input.TurnLeft == input.TurnRight:
@@ -226,10 +218,10 @@ func (s *Stage) updateCar(elapsedSeconds float32, input CarInput) {
 	}
 	s.car.Acceleration = 0.0
 	if input.Forward {
-		s.car.Acceleration = maxAcceleration
+		s.car.Acceleration = maxAcceleration * elapsedSeconds
 	}
 	if input.Backward {
-		s.car.Acceleration = -maxDeceleration
+		s.car.Acceleration = -maxDeceleration * elapsedSeconds
 	}
 	s.car.HandbrakePulled = input.Handbrake
 
@@ -252,7 +244,7 @@ func (s *Stage) renderScene(pipeline *graphics.Pipeline, camera *Camera) {
 	sequence.ProjectionMatrix = camera.ProjectionMatrix()
 	sequence.ViewMatrix = camera.InverseViewMatrix()
 
-	s.renderModel(sequence, s.carProgram, s.car.ModelMatrix, s.carModel)
+	s.renderModel(sequence, s.carProgram, math.IdentityMat4x4(), s.carModel)
 	for _, entity := range s.entities {
 		s.renderModel(sequence, s.entityProgram, entity.Matrix, entity.Model)
 	}
