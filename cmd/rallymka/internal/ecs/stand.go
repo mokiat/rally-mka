@@ -20,8 +20,15 @@ func (s *CameraStandSystem) Update() {
 	}
 }
 
+var angle sprec.Angle
+
 func (s *CameraStandSystem) updateCameraStand(cameraStand *CameraStand) {
+	angle += sprec.Degrees(1.0)
+
 	var targetPosition sprec.Vec3
+	if cameraStand.Target.Transform != nil {
+		targetPosition = cameraStand.Target.Transform.Position
+	}
 	if cameraStand.Target.Vehicle != nil {
 		targetPosition = cameraStand.Target.Vehicle.Position
 	}
@@ -45,6 +52,7 @@ func (s *CameraStandSystem) updateCameraStand(cameraStand *CameraStand) {
 			sprec.UnitVec3(cameraVectorZ),
 			sprec.ZeroVec3(),
 		),
+		sprec.RotationMat4(angle, 0.0, 1.0, 0.0),
 		sprec.RotationMat4(sprec.Degrees(-25.0), 1.0, 0.0, 0.0),
 		sprec.TranslationMat4(0.0, 0.0, cameraStand.CameraDistance),
 	))

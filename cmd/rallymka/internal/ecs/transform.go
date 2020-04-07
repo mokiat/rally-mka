@@ -3,8 +3,19 @@ package ecs
 import "github.com/mokiat/gomath/sprec"
 
 type TransformComponent struct {
-	Position    sprec.Vec3
+	Position sprec.Vec3
+	// TODO: Use quaternion
 	Orientation Orientation
+}
+
+func (c *TransformComponent) Translate(offset sprec.Vec3) {
+	c.Position = sprec.Vec3Sum(c.Position, offset)
+}
+
+func (c *TransformComponent) Rotate(vector sprec.Vec3) {
+	if angle := sprec.Radians(vector.Length()); angle > sprec.Radians(sprec.Pi/1080.0) {
+		c.Orientation.Rotate(vector)
+	}
 }
 
 func (c TransformComponent) Matrix() sprec.Mat4 {

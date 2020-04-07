@@ -7,7 +7,11 @@ import (
 )
 
 type Entity struct {
-	Transform    *TransformComponent
+	Debug     *DebugComponent
+	Transform *TransformComponent
+	Motion    *MotionComponent
+	Collision *CollisionComponent
+
 	RenderMesh   *RenderMesh
 	RenderModel  *RenderModel
 	RenderSkybox *RenderSkybox
@@ -15,6 +19,10 @@ type Entity struct {
 	Wheel        *Wheel
 	Input        *Input
 	CameraStand  *CameraStand
+}
+
+type DebugComponent struct {
+	Name string
 }
 
 type RenderModel struct {

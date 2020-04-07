@@ -5,6 +5,7 @@ import (
 
 	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecs"
+	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecs/constraint"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/stream"
 	"github.com/mokiat/rally-mka/internal/engine/collision"
 	"github.com/mokiat/rally-mka/internal/engine/graphics"
@@ -16,9 +17,10 @@ const (
 )
 
 const (
-	carDropHeight  = 1.6
-	anchorDistance = 4.0
-	cameraDistance = 8.0
+	carDropHeight      = 1.6
+	entityVisualHeight = 5.0
+	anchorDistance     = 4.0
+	cameraDistance     = 8.0
 )
 
 type CarInput struct {
@@ -35,6 +37,7 @@ func NewStage() *Stage {
 		ecsManager:           ecsManager,
 		ecsRenderer:          ecs.NewRenderer(ecsManager),
 		ecsCameraStandSystem: ecs.NewCameraStandSystem(ecsManager),
+		ecsPhysicsSystem:     ecs.NewPhysicsSystem(ecsManager),
 		screenFramebuffer:    &graphics.Framebuffer{},
 	}
 	stage.ecsVehicleSystem = ecs.NewVehicleSystem(ecsManager, stage)
@@ -46,6 +49,7 @@ type Stage struct {
 	ecsRenderer          *ecs.Renderer
 	ecsVehicleSystem     *ecs.VehicleSystem
 	ecsCameraStandSystem *ecs.CameraStandSystem
+	ecsPhysicsSystem     *ecs.PhysicsSystem
 
 	geometryFramebuffer *graphics.Framebuffer
 	lightingFramebuffer *graphics.Framebuffer
@@ -97,62 +101,104 @@ func (s *Stage) Init(data *Data, camera *ecs.Camera) {
 
 	carProgram := data.CarProgram.Get()
 	carModel := data.CarModel.Get()
+	// s.spawnCar(carProgram, carModel)
 
-	// spawn car
-	{
-		bodyNode, _ := carModel.FindNode("body")
-		flWheelNode, _ := carModel.FindNode("wheel_front_left")
-		frWheelNode, _ := carModel.FindNode("wheel_front_right")
-		blWheelNode, _ := carModel.FindNode("wheel_back_left")
-		brWheelNode, _ := carModel.FindNode("wheel_back_right")
+	flWheelNode, _ := carModel.FindNode("wheel_front_right")
+	topEntity := s.ecsManager.CreateEntity()
+	// topEntity.Debug = &ecs.DebugComponent{
+	// 	Name: "top-entity",
+	// }
+	topEntity.Transform = &ecs.TransformComponent{
+		Position:    sprec.NewVec3(0.0, entityVisualHeight, 0.0),
+		Orientation: ecs.NewOrientation(),
+	}
+	topEntity.Motion = &ecs.MotionComponent{
+		Mass: 30.0,
+		MomentOfInertia: sprec.NewMat3(
+			0.8, 0.0, 0.0,
+			0.0, 0.8, 0.0,
+			0.0, 0.0, 0.8,
+		),
+		DragFactor:        10.0,
+		AngularDragFactor: 0.0,
+	}
+	topEntity.RenderMesh = &ecs.RenderMesh{
+		GeomProgram: carProgram,
+		Mesh:        flWheelNode.Mesh,
+	}
+	s.ecsPhysicsSystem.AddConstraint(constraint.FixedPosition{
+		Entity:   topEntity,
+		Position: sprec.NewVec3(0.0, entityVisualHeight, 0.0),
+	})
 
-		createWheelEntity := func(node *stream.Node, isDriven bool) *ecs.Entity {
-			wheelEntity := s.ecsManager.CreateEntity()
-			wheelEntity.Transform = &ecs.TransformComponent{
-				Position:    sprec.ZeroVec3(),
-				Orientation: ecs.NewOrientation(),
-			}
-			wheelEntity.Wheel = &ecs.Wheel{
-				IsDriven:       isDriven,
-				Length:         0.4,
-				Radius:         0.3,
-				AnchorPosition: sprec.Vec3Diff(node.Matrix.Translation(), bodyNode.Matrix.Translation()),
-			}
-			wheelEntity.RenderMesh = &ecs.RenderMesh{
-				GeomProgram: carProgram,
-				Mesh:        node.Mesh,
-			}
-			return wheelEntity
-		}
+	middleEntity := s.ecsManager.CreateEntity()
+	middleEntity.Transform = &ecs.TransformComponent{
+		Position:    sprec.NewVec3(1.4, entityVisualHeight, 0.0),
+		Orientation: ecs.NewOrientation(),
+	}
+	middleEntity.Motion = &ecs.MotionComponent{
+		Mass: 30.0,
+		MomentOfInertia: sprec.NewMat3(
+			0.8, 0.0, 0.0,
+			0.0, 0.8, 0.0,
+			0.0, 0.0, 0.8,
+		),
+		DragFactor:        10.0,
+		AngularDragFactor: 0.0,
+	}
+	middleEntity.RenderMesh = &ecs.RenderMesh{
+		GeomProgram: carProgram,
+		Mesh:        flWheelNode.Mesh,
+	}
+	s.ecsPhysicsSystem.AddConstraint(constraint.Rope{
+		First:        topEntity,
+		FirstAnchor:  sprec.NewVec3(0.2, 0.0, 0.0),
+		Second:       middleEntity,
+		SecondAnchor: sprec.NewVec3(-0.2, 0.0, 0.0),
+		Length:       1.0,
+	})
 
-		carEntity := s.ecsManager.CreateEntity()
-		carEntity.Transform = &ecs.TransformComponent{
-			Position:    sprec.ZeroVec3(),
-			Orientation: ecs.NewOrientation(),
-		}
-		carEntity.RenderMesh = &ecs.RenderMesh{
-			GeomProgram: carProgram,
-			Mesh:        bodyNode.Mesh,
-		}
-		carEntity.Input = &ecs.Input{}
-		carEntity.Vehicle = &ecs.Vehicle{
-			Position:    sprec.NewVec3(0.0, carDropHeight, 0.0),
-			Orientation: ecs.NewOrientation(),
+	bottomEntity := s.ecsManager.CreateEntity()
+	bottomEntity.Transform = &ecs.TransformComponent{
+		Position:    sprec.NewVec3(2.8, entityVisualHeight, 0.0),
+		Orientation: ecs.NewOrientation(),
+	}
+	bottomEntity.Motion = &ecs.MotionComponent{
+		Mass: 30.0,
+		MomentOfInertia: sprec.NewMat3(
+			0.8, 0.0, 0.0,
+			0.0, 0.8, 0.0,
+			0.0, 0.0, 0.8,
+		),
+		// AngularVelocity:   sprec.NewVec3(100.0, 0.0, 0.0),
+		DragFactor:        10.0,
+		AngularDragFactor: 0.0,
+	}
+	bottomEntity.RenderMesh = &ecs.RenderMesh{
+		GeomProgram: carProgram,
+		Mesh:        flWheelNode.Mesh,
+	}
+	s.ecsPhysicsSystem.AddConstraint(constraint.Rope{
+		First:        middleEntity,
+		FirstAnchor:  sprec.NewVec3(0.2, 0.0, 0.0),
+		Second:       bottomEntity,
+		SecondAnchor: sprec.NewVec3(-0.2, 0.0, 0.0),
+		Length:       1.0,
+	})
 
-			FLWheel: createWheelEntity(flWheelNode, true),
-			FRWheel: createWheelEntity(frWheelNode, true),
-			BLWheel: createWheelEntity(blWheelNode, false),
-			BRWheel: createWheelEntity(brWheelNode, false),
-		}
+	// s.ecsPhysicsSystem.AddConstraint(ecs.FixedConstraint{
 
-		standEntity := s.ecsManager.CreateEntity()
-		standEntity.CameraStand = &ecs.CameraStand{
-			Target:         carEntity,
-			Camera:         camera,
-			AnchorPosition: sprec.NewVec3(0.0, carDropHeight, -cameraDistance),
-			AnchorDistance: anchorDistance,
-			CameraDistance: cameraDistance,
-		}
+	// })
+	// anchorEntity := s.ecsManager.CreateEntity()
+	// anchorEntity.FixedContraint = &ecs.FixedContraintComponent{
+
+	standEntity := s.ecsManager.CreateEntity()
+	standEntity.CameraStand = &ecs.CameraStand{
+		Target:         topEntity,
+		Camera:         camera,
+		AnchorPosition: sprec.NewVec3(0.0, entityVisualHeight, -cameraDistance),
+		AnchorDistance: anchorDistance,
+		CameraDistance: cameraDistance,
 	}
 
 	{
@@ -165,12 +211,61 @@ func (s *Stage) Init(data *Data, camera *ecs.Camera) {
 	}
 }
 
+func (s *Stage) spawnCar(carProgram *graphics.Program, carModel *stream.Model) *ecs.Entity {
+	bodyNode, _ := carModel.FindNode("body")
+	flWheelNode, _ := carModel.FindNode("wheel_front_left")
+	frWheelNode, _ := carModel.FindNode("wheel_front_right")
+	blWheelNode, _ := carModel.FindNode("wheel_back_left")
+	brWheelNode, _ := carModel.FindNode("wheel_back_right")
+
+	createWheelEntity := func(node *stream.Node, isDriven bool) *ecs.Entity {
+		wheelEntity := s.ecsManager.CreateEntity()
+		wheelEntity.Transform = &ecs.TransformComponent{
+			Position:    sprec.ZeroVec3(),
+			Orientation: ecs.NewOrientation(),
+		}
+		wheelEntity.Wheel = &ecs.Wheel{
+			IsDriven:       isDriven,
+			Length:         0.4,
+			Radius:         0.3,
+			AnchorPosition: sprec.Vec3Diff(node.Matrix.Translation(), bodyNode.Matrix.Translation()),
+		}
+		wheelEntity.RenderMesh = &ecs.RenderMesh{
+			GeomProgram: carProgram,
+			Mesh:        node.Mesh,
+		}
+		return wheelEntity
+	}
+
+	carEntity := s.ecsManager.CreateEntity()
+	carEntity.Transform = &ecs.TransformComponent{
+		Position:    sprec.ZeroVec3(),
+		Orientation: ecs.NewOrientation(),
+	}
+	carEntity.RenderMesh = &ecs.RenderMesh{
+		GeomProgram: carProgram,
+		Mesh:        bodyNode.Mesh,
+	}
+	carEntity.Input = &ecs.Input{}
+	carEntity.Vehicle = &ecs.Vehicle{
+		Position:    sprec.NewVec3(0.0, carDropHeight, 0.0),
+		Orientation: ecs.NewOrientation(),
+
+		FLWheel: createWheelEntity(flWheelNode, true),
+		FRWheel: createWheelEntity(frWheelNode, true),
+		BLWheel: createWheelEntity(blWheelNode, false),
+		BRWheel: createWheelEntity(brWheelNode, false),
+	}
+	return carEntity
+}
+
 func (s *Stage) Resize(width, height int) {
 	s.screenFramebuffer.Width = int32(width)
 	s.screenFramebuffer.Height = int32(height)
 }
 
 func (s *Stage) Update(elapsedTime time.Duration, camera *ecs.Camera, input ecs.CarInput) {
+	s.ecsPhysicsSystem.Update(elapsedTime)
 	s.ecsVehicleSystem.Update(elapsedTime, input)
 	s.ecsCameraStandSystem.Update()
 }
