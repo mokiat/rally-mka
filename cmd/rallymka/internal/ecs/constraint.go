@@ -4,7 +4,7 @@ type Constraint interface {
 	ApplyForces()
 	ApplyCorrectionForces()
 	ApplyCorrectionImpulses()
-	ApplyCorrectionTranslations()
+	ApplyCorrectionTranslations() // FIXME: Rename to ApplyCorrectionTransforms
 }
 
 var _ Constraint = NilConstraint{}
