@@ -37,7 +37,7 @@ func NewStage() *Stage {
 		ecsManager:           ecsManager,
 		ecsRenderer:          ecs.NewRenderer(ecsManager),
 		ecsCameraStandSystem: ecs.NewCameraStandSystem(ecsManager),
-		ecsPhysicsSystem:     ecs.NewPhysicsSystem(ecsManager),
+		ecsPhysicsSystem:     ecs.NewPhysicsSystem(ecsManager, 15*time.Millisecond),
 		screenFramebuffer:    &graphics.Framebuffer{},
 	}
 	stage.ecsVehicleSystem = ecs.NewVehicleSystem(ecsManager, stage)
