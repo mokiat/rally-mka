@@ -2,6 +2,8 @@ package ecs
 
 import "github.com/mokiat/gomath/sprec"
 
+const driftCorrectionAmount = float32(1.0) // TODO: Configurable?
+
 type SingleEntityJacobian struct {
 	SlopeVelocity        sprec.Vec3
 	SlopeAngularVelocity sprec.Vec3
@@ -21,8 +23,6 @@ func (j SingleEntityJacobian) Apply(entity *Entity) {
 }
 
 func (j SingleEntityJacobian) ApplyNudge(entity *Entity, drift float32) {
-	driftCorrectionAmount := float32(1.0) // TODO: Configurable?
-
 	motionComp := entity.Motion
 
 	lambdaUpper := -driftCorrectionAmount * drift
@@ -62,13 +62,10 @@ func (j DoubleEntityJacobian) Apply(firstEntity, secondEntity *Entity) {
 }
 
 func (j DoubleEntityJacobian) ApplyNudge(firstEntity, secondEntity *Entity, drift float32) {
-	driftCorrectionAmount := float32(0.01)
-	timeStep := float32(0.015) // FIXME: Should be passed somehow
-
 	firstMotionComp := firstEntity.Motion
 	secondMotionComp := secondEntity.Motion
 
-	lambdaUpper := -driftCorrectionAmount * drift / timeStep
+	lambdaUpper := -driftCorrectionAmount * drift
 	lambdaLower := sprec.Vec3Dot(j.SlopeVelocityFirst, j.SlopeVelocityFirst)/firstMotionComp.Mass +
 		sprec.Vec3Dot(sprec.Mat3Vec3Prod(sprec.InverseMat3(firstMotionComp.MomentOfInertia), j.SlopeAngularVelocityFirst), j.SlopeAngularVelocityFirst) +
 		sprec.Vec3Dot(j.SlopeVelocitySecond, j.SlopeVelocitySecond)/secondMotionComp.Mass +
