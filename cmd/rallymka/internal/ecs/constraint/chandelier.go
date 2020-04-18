@@ -23,11 +23,6 @@ func (c Chandelier) ApplyCorrectionTranslations() {
 	result.Jacobian.ApplyNudge(c.Entity, result.Drift)
 }
 
-func (c Chandelier) Error() float32 {
-	result := c.Calculate()
-	return result.Drift
-}
-
 func (c Chandelier) Calculate() ChandelierResult {
 	tranformComp := c.Entity.Transform
 	anchorWorld := sprec.Vec3Sum(tranformComp.Position, tranformComp.Orientation.MulVec3(c.EntityAnchor))
