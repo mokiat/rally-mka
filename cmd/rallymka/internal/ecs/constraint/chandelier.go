@@ -32,10 +32,10 @@ func (c Chandelier) Calculate() ChandelierResult {
 	anchorWorld := sprec.Vec3Sum(tranformComp.Position, tranformComp.Orientation.MulVec3(c.EntityAnchor))
 	radius := sprec.Vec3Diff(anchorWorld, tranformComp.Position)
 	deltaPosition := sprec.Vec3Diff(anchorWorld, c.Fixture)
-	if deltaPosition.SqrLength() < 0.000001 {
-		deltaPosition = sprec.NewVec3(0.000001, 0.0, 0.0)
+	normal := sprec.BasisXVec3()
+	if deltaPosition.SqrLength() > 0.000001 {
+		normal = sprec.UnitVec3(deltaPosition)
 	}
-	normal := sprec.UnitVec3(deltaPosition)
 
 	return ChandelierResult{
 		Jacobian: ecs.SingleEntityJacobian{
