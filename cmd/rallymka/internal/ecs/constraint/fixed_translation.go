@@ -13,12 +13,16 @@ type FixedTranslation struct {
 
 func (c FixedTranslation) ApplyCorrectionImpulses() {
 	result := c.Calculate()
-	result.Jacobian.Apply(c.Entity)
+	if sprec.Abs(result.Drift) > 0.0001 {
+		result.Jacobian.Apply(c.Entity)
+	}
 }
 
 func (c FixedTranslation) ApplyCorrectionTranslations() {
 	result := c.Calculate()
-	result.Jacobian.ApplyNudge(c.Entity, result.Drift)
+	if sprec.Abs(result.Drift) > 0.0001 {
+		result.Jacobian.ApplyNudge(c.Entity, result.Drift)
+	}
 }
 
 func (c FixedTranslation) Calculate() FixedTranslationResult {
