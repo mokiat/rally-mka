@@ -16,12 +16,16 @@ type HingedRod struct {
 
 func (r HingedRod) ApplyCorrectionImpulses() {
 	result := r.Calculate()
-	result.Jacobian.Apply(r.First, r.Second)
+	if sprec.Abs(result.Drift) > 0.0001 {
+		result.Jacobian.Apply(r.First, r.Second)
+	}
 }
 
 func (r HingedRod) ApplyCorrectionTranslations() {
 	result := r.Calculate()
-	result.Jacobian.ApplyNudge(r.First, r.Second, result.Drift)
+	if sprec.Abs(result.Drift) > 0.0001 {
+		result.Jacobian.ApplyNudge(r.First, r.Second, result.Drift)
+	}
 }
 
 func (r HingedRod) Calculate() HingedRodResult {
