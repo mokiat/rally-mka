@@ -15,12 +15,16 @@ type Chandelier struct {
 
 func (c Chandelier) ApplyCorrectionImpulses() {
 	result := c.Calculate()
-	result.Jacobian.Apply(c.Entity)
+	if sprec.Abs(result.Drift) > 0.0001 {
+		result.Jacobian.Apply(c.Entity)
+	}
 }
 
 func (c Chandelier) ApplyCorrectionTranslations() {
 	result := c.Calculate()
-	result.Jacobian.ApplyNudge(c.Entity, result.Drift)
+	if sprec.Abs(result.Drift) > 0.0001 {
+		result.Jacobian.ApplyNudge(c.Entity, result.Drift)
+	}
 }
 
 func (c Chandelier) Calculate() ChandelierResult {
