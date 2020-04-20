@@ -45,7 +45,7 @@ func (c *MotionComponent) ApplyForce(force sprec.Vec3) {
 }
 
 func (c *MotionComponent) ApplyTorque(torque sprec.Vec3) {
-	// TODO: Use transpose instead of inverse?
+	// FIXME: the moment of intertia is in local space, whereas the torque is in world space
 	c.AddAngularAcceleration(sprec.Mat3Vec3Prod(sprec.InverseMat3(c.MomentOfInertia), torque))
 }
 
@@ -59,7 +59,7 @@ func (c *MotionComponent) ApplyImpulse(impulse sprec.Vec3) {
 }
 
 func (c *MotionComponent) ApplyAngularImpulse(impulse sprec.Vec3) {
-	// TODO: Use transpose instead of inverse?
+	// FIXME: the moment of intertia is in local space, whereas the impulse is in world space
 	c.AddAngularVelocity(sprec.Mat3Vec3Prod(sprec.InverseMat3(c.MomentOfInertia), impulse))
 }
 

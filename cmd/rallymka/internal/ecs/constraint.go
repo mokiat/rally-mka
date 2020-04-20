@@ -2,7 +2,9 @@ package ecs
 
 import "github.com/mokiat/gomath/sprec"
 
-const driftCorrectionAmount = float32(1.0) // TODO: Configurable?
+const driftCorrectionAmount = float32(0.01)          // TODO: Configurable?
+const driftBaumgarteCorrectionAmount = float32(0.01) // TODO: Configurable?
+const timeStep = float32(0.015)                      // TODO: Configurable
 
 type SingleEntityJacobian struct {
 	SlopeVelocity        sprec.Vec3
@@ -61,6 +63,61 @@ func (j DoubleEntityJacobian) Apply(firstEntity, secondEntity *Entity) {
 	secondMotionComp.ApplyAngularImpulse(sprec.Vec3Prod(j.SlopeAngularVelocitySecond, lambda))
 }
 
+func (j DoubleEntityJacobian) ApplySoft(firstEntity, secondEntity *Entity, force, gamma float32) {
+	firstMotionComp := firstEntity.Motion
+	secondMotionComp := secondEntity.Motion
+
+	lambdaUpper := -(sprec.Vec3Dot(j.SlopeVelocityFirst, firstMotionComp.Velocity) +
+		sprec.Vec3Dot(j.SlopeAngularVelocityFirst, firstMotionComp.AngularVelocity) +
+		sprec.Vec3Dot(j.SlopeVelocitySecond, secondMotionComp.Velocity) +
+		sprec.Vec3Dot(j.SlopeAngularVelocitySecond, secondMotionComp.AngularVelocity) -
+		force*gamma)
+	lambdaLower := sprec.Vec3Dot(j.SlopeVelocityFirst, j.SlopeVelocityFirst)/firstMotionComp.Mass +
+		sprec.Vec3Dot(sprec.Mat3Vec3Prod(sprec.InverseMat3(firstMotionComp.MomentOfInertia), j.SlopeAngularVelocityFirst), j.SlopeAngularVelocityFirst) +
+		sprec.Vec3Dot(j.SlopeVelocitySecond, j.SlopeVelocitySecond)/secondMotionComp.Mass +
+		sprec.Vec3Dot(sprec.Mat3Vec3Prod(sprec.InverseMat3(secondMotionComp.MomentOfInertia), j.SlopeAngularVelocitySecond), j.SlopeAngularVelocitySecond)
+	lambda := lambdaUpper / lambdaLower
+
+	firstMotionComp.ApplyImpulse(sprec.Vec3Prod(j.SlopeVelocityFirst, lambda))
+	firstMotionComp.ApplyAngularImpulse(sprec.Vec3Prod(j.SlopeAngularVelocityFirst, lambda))
+	secondMotionComp.ApplyImpulse(sprec.Vec3Prod(j.SlopeVelocitySecond, lambda))
+	secondMotionComp.ApplyAngularImpulse(sprec.Vec3Prod(j.SlopeAngularVelocitySecond, lambda))
+}
+
+func (j DoubleEntityJacobian) ApplyNew(firstEntity, secondEntity *Entity, velocityDrift float32) {
+	firstMotionComp := firstEntity.Motion
+	secondMotionComp := secondEntity.Motion
+
+	lambdaUpper := -velocityDrift
+	lambdaLower := sprec.Vec3Dot(j.SlopeVelocityFirst, j.SlopeVelocityFirst)/firstMotionComp.Mass +
+		sprec.Vec3Dot(sprec.Mat3Vec3Prod(sprec.InverseMat3(firstMotionComp.MomentOfInertia), j.SlopeAngularVelocityFirst), j.SlopeAngularVelocityFirst) +
+		sprec.Vec3Dot(j.SlopeVelocitySecond, j.SlopeVelocitySecond)/secondMotionComp.Mass +
+		sprec.Vec3Dot(sprec.Mat3Vec3Prod(sprec.InverseMat3(secondMotionComp.MomentOfInertia), j.SlopeAngularVelocitySecond), j.SlopeAngularVelocitySecond)
+	lambda := lambdaUpper / lambdaLower
+
+	firstMotionComp.ApplyImpulse(sprec.Vec3Prod(j.SlopeVelocityFirst, lambda))
+	firstMotionComp.ApplyAngularImpulse(sprec.Vec3Prod(j.SlopeAngularVelocityFirst, lambda))
+	secondMotionComp.ApplyImpulse(sprec.Vec3Prod(j.SlopeVelocitySecond, lambda))
+	secondMotionComp.ApplyAngularImpulse(sprec.Vec3Prod(j.SlopeAngularVelocitySecond, lambda))
+}
+
+func (j DoubleEntityJacobian) ApplyBaumgarte(firstEntity, secondEntity *Entity, drift float32) {
+	firstMotionComp := firstEntity.Motion
+	secondMotionComp := secondEntity.Motion
+
+	lambdaUpper := -driftBaumgarteCorrectionAmount * drift / timeStep
+	lambdaLower := sprec.Vec3Dot(j.SlopeVelocityFirst, j.SlopeVelocityFirst)/firstMotionComp.Mass +
+		sprec.Vec3Dot(sprec.Mat3Vec3Prod(sprec.InverseMat3(firstMotionComp.MomentOfInertia), j.SlopeAngularVelocityFirst), j.SlopeAngularVelocityFirst) +
+		sprec.Vec3Dot(j.SlopeVelocitySecond, j.SlopeVelocitySecond)/secondMotionComp.Mass +
+		sprec.Vec3Dot(sprec.Mat3Vec3Prod(sprec.InverseMat3(secondMotionComp.MomentOfInertia), j.SlopeAngularVelocitySecond), j.SlopeAngularVelocitySecond)
+	lambda := lambdaUpper / lambdaLower
+
+	firstMotionComp.ApplyImpulse(sprec.Vec3Prod(j.SlopeVelocityFirst, lambda))
+	firstMotionComp.ApplyAngularImpulse(sprec.Vec3Prod(j.SlopeAngularVelocityFirst, lambda))
+	secondMotionComp.ApplyImpulse(sprec.Vec3Prod(j.SlopeVelocitySecond, lambda))
+	secondMotionComp.ApplyAngularImpulse(sprec.Vec3Prod(j.SlopeAngularVelocitySecond, lambda))
+}
+
 func (j DoubleEntityJacobian) ApplyNudge(firstEntity, secondEntity *Entity, drift float32) {
 	firstMotionComp := firstEntity.Motion
 	secondMotionComp := secondEntity.Motion
@@ -94,11 +151,16 @@ type Constraint interface {
 	ApplyForces()
 	ApplyCorrectionForces()
 	ApplyCorrectionImpulses()
+	ApplyCorrectionBaumgarte()
 	ApplyCorrectionTranslations() // FIXME: Rename to ApplyCorrectionTransforms
 }
 
 type DebuggableConstraint interface {
 	Error() float32
+}
+
+type RenderableConstraint interface {
+	Lines() []DebugLine
 }
 
 var _ Constraint = NilConstraint{}
@@ -110,5 +172,7 @@ func (NilConstraint) ApplyForces() {}
 func (NilConstraint) ApplyCorrectionForces() {}
 
 func (NilConstraint) ApplyCorrectionImpulses() {}
+
+func (NilConstraint) ApplyCorrectionBaumgarte() {}
 
 func (NilConstraint) ApplyCorrectionTranslations() {}

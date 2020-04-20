@@ -15,7 +15,7 @@ func NewView(registry *resource.Registry, gfxWorker *graphics.Worker) *View {
 	return &View{
 		gameData: scene.NewData(registry, gfxWorker),
 		camera:   ecs.NewCamera(),
-		stage:    scene.NewStage(),
+		stage:    scene.NewStage(gfxWorker),
 	}
 }
 

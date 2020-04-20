@@ -277,7 +277,7 @@ func (s *VehicleSystem) updateCarModelMatrix(car *Entity) {
 	vehicleComp := car.Vehicle
 	if car.Transform != nil {
 		car.Transform.Position = vehicleComp.Position
-		car.Transform.Orientation = vehicleComp.Orientation
+		// car.Transform.Orientation = vehicleComp.Orientation
 	}
 }
 
@@ -299,10 +299,10 @@ func (s *VehicleSystem) updateWheelModelMatrix(car *Entity, wheel *Entity) {
 
 	if wheel.Transform != nil {
 		wheel.Transform.Position = modelMatrix.Translation()
-		wheel.Transform.Orientation = Orientation{
-			VectorX: modelMatrix.OrientationX(),
-			VectorY: modelMatrix.OrientationY(),
-			VectorZ: modelMatrix.OrientationZ(),
-		}
+		// wheel.Transform.Orientation = Orientation{
+		// 	VectorX: modelMatrix.OrientationX(),
+		// 	VectorY: modelMatrix.OrientationY(),
+		// 	VectorZ: modelMatrix.OrientationZ(),
+		// }
 	}
 }

@@ -20,10 +20,16 @@ func (s *CameraStandSystem) Update() {
 	}
 }
 
-var angle sprec.Angle
+// var angleSpeed sprec.Angle = sprec.Degrees(0.5)
+// var angle sprec.Angle = sprec.Degrees(200)
+
+var angleSpeed sprec.Angle = sprec.Degrees(0.0)
+var angle sprec.Angle = sprec.Degrees(0)
+
+// var angle sprec.Angle = sprec.Degrees(300)
 
 func (s *CameraStandSystem) updateCameraStand(cameraStand *CameraStand) {
-	angle += sprec.Degrees(1.0)
+	angle += angleSpeed
 
 	var targetPosition sprec.Vec3
 	if cameraStand.Target.Transform != nil {

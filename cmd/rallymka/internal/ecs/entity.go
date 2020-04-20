@@ -19,6 +19,7 @@ type Entity struct {
 	Wheel        *Wheel
 	Input        *Input
 	CameraStand  *CameraStand
+	Car          *Car
 }
 
 type DebugComponent struct {
@@ -39,6 +40,20 @@ type RenderSkybox struct {
 	Program *graphics.Program
 	Texture *graphics.CubeTexture
 	Mesh    *stream.Mesh
+}
+
+type Car struct {
+	SteeringAngle   sprec.Angle
+	Acceleration    float32
+	HandbrakePulled bool
+
+	Body            *Entity
+	FLWheelRotation Constraint
+	FLWheel         *Entity
+	FRWheelRotation Constraint
+	FRWheel         *Entity
+	BLWheel         *Entity
+	BRWheel         *Entity
 }
 
 type Vehicle struct {

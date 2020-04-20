@@ -36,6 +36,6 @@ func (s Spring) ApplyForces() {
 	entityMotionComp := s.Entity.Motion
 
 	force := sprec.Vec3Prod(jacobian, extendDistance*s.Stiffness)
-	targetMotionComp.ApplyOffsetForce(targetAnchorRelativePosition, sprec.InverseVec3(force))
+	targetMotionComp.ApplyOffsetForce(targetAnchorRelativePosition, force)
 	entityMotionComp.ApplyForce(sprec.InverseVec3(force))
 }
