@@ -35,6 +35,21 @@ type GroundCollisionConstraint struct {
 	Depth            float32
 }
 
+func (c GroundCollisionConstraint) ApplyForces() {
+	transformComp := c.Entity.Transform
+	motionComp := c.Entity.Motion
+	relativeContactPosition := sprec.Vec3Diff(c.ContactPoint, transformComp.Position)
+	contactVelocity := sprec.Vec3Sum(motionComp.Velocity, sprec.Vec3Cross(motionComp.AngularVelocity, relativeContactPosition))
+
+	lateralVelocity := sprec.Vec3Diff(contactVelocity, sprec.Vec3Prod(c.Normal, sprec.Vec3Dot(contactVelocity, c.Normal)))
+	maxFriction := float32(100.0)
+	if lateralVelocity.Length() > maxFriction {
+		lateralVelocity = sprec.ResizedVec3(lateralVelocity, maxFriction)
+	}
+
+	c.Entity.Motion.ApplyOffsetImpulse(relativeContactPosition, sprec.Vec3Prod(lateralVelocity, -motionComp.Mass/10))
+}
+
 // func (c GroundCollisionConstraint) ApplyCorrectionForces() {
 // 	transformComp := c.Entity.Transform
 // 	motionComp := c.Entity.Motion

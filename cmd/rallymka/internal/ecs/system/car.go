@@ -69,12 +69,19 @@ func (s *CarSystem) updateCarInput(car *ecs.Car, elapsedTime time.Duration, inpu
 }
 
 func (s *CarSystem) updateCar(car *ecs.Car) {
-	flRotation := car.FLWheelRotation.(*constraint.CopyRotation)
-	frRotation := car.FRWheelRotation.(*constraint.CopyRotation)
+	flRotation := car.FLWheelRotation.(*constraint.CopyAxis)
+	frRotation := car.FRWheelRotation.(*constraint.CopyAxis)
 	flRotation.TargetOffset = sprec.RotationQuat(car.SteeringAngle, sprec.BasisYVec3())
 	frRotation.TargetOffset = sprec.RotationQuat(car.SteeringAngle, sprec.BasisYVec3())
 
 	// FIXME: Acceleration, however, it gets erased at the moment, hence velocity
-	car.FLWheel.Motion.Velocity = sprec.Vec3Sum(car.FLWheel.Motion.Velocity, sprec.Vec3Prod(car.FLWheel.Transform.Orientation.OrientationZ(), car.Acceleration*20))
-	car.FRWheel.Motion.Velocity = sprec.Vec3Sum(car.FRWheel.Motion.Velocity, sprec.Vec3Prod(car.FRWheel.Transform.Orientation.OrientationZ(), car.Acceleration*20))
+
+	// FIXME: With rotation this is no-longer correct as the Z axis moves around, making the wheel wobble
+	// car.FLWheel.Motion.Velocity = sprec.Vec3Sum(car.FLWheel.Motion.Velocity, sprec.Vec3Prod(car.FLWheel.Transform.Orientation.OrientationZ(), car.Acceleration*20))
+	// car.FRWheel.Motion.Velocity = sprec.Vec3Sum(car.FRWheel.Motion.Velocity, sprec.Vec3Prod(car.FRWheel.Transform.Orientation.OrientationZ(), car.Acceleration*20))
+
+	car.FLWheel.Motion.AngularVelocity = sprec.Vec3Sum(car.FLWheel.Motion.AngularVelocity, sprec.Vec3Prod(car.FLWheel.Transform.Orientation.OrientationX(), car.Acceleration*250))
+	car.FRWheel.Motion.AngularVelocity = sprec.Vec3Sum(car.FRWheel.Motion.AngularVelocity, sprec.Vec3Prod(car.FRWheel.Transform.Orientation.OrientationX(), car.Acceleration*250))
+	car.BLWheel.Motion.AngularVelocity = sprec.Vec3Sum(car.BLWheel.Motion.AngularVelocity, sprec.Vec3Prod(car.BLWheel.Transform.Orientation.OrientationX(), car.Acceleration*250))
+	car.BRWheel.Motion.AngularVelocity = sprec.Vec3Sum(car.BRWheel.Motion.AngularVelocity, sprec.Vec3Prod(car.BRWheel.Transform.Orientation.OrientationX(), car.Acceleration*250))
 }

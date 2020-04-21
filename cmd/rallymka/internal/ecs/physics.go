@@ -106,6 +106,9 @@ func (s *PhysicsSystem) applyForces() {
 	for _, constraint := range s.constraints {
 		constraint.ApplyForces()
 	}
+	for _, constraint := range s.collisionConstraints {
+		constraint.ApplyForces()
+	}
 
 	// TODO: Restrict max linear + angular accelerations
 }
@@ -182,7 +185,7 @@ func (s *PhysicsSystem) applyCorrectionBaumgarte() {
 }
 
 func (s *PhysicsSystem) applyCorrectionTranslations() {
-	const accuracy = 10
+	const accuracy = 100
 	for i := 0; i < accuracy; i++ {
 		for _, constraint := range s.constraints {
 			constraint.ApplyCorrectionTranslations()
@@ -299,11 +302,20 @@ func (s *PhysicsSystem) checkEntitiesCollision(firstEntity, secondEntity *Entity
 		halfHeight := sprec.Vec3Prod(firstTransformComp.Orientation.OrientationY(), firstCollisionShape.Radius)
 		halfLength := sprec.Vec3Prod(firstTransformComp.Orientation.OrientationZ(), firstCollisionShape.Radius)
 
-		checkLineCollision(firstTransformComp.Position, sprec.Vec3Diff(firstTransformComp.Position, halfHeight))
 		checkLineCollision(firstTransformComp.Position, sprec.Vec3Sum(firstTransformComp.Position, halfWidth))
 		checkLineCollision(firstTransformComp.Position, sprec.Vec3Diff(firstTransformComp.Position, halfWidth))
-		checkLineCollision(firstTransformComp.Position, sprec.Vec3Sum(firstTransformComp.Position, halfLength))
-		checkLineCollision(firstTransformComp.Position, sprec.Vec3Diff(firstTransformComp.Position, halfLength))
+		// checkLineCollision(firstTransformComp.Position, sprec.Vec3Sum(firstTransformComp.Position, halfHeight))
+		// checkLineCollision(firstTransformComp.Position, sprec.Vec3Diff(firstTransformComp.Position, halfHeight))
+		// checkLineCollision(firstTransformComp.Position, sprec.Vec3Sum(firstTransformComp.Position, halfLength))
+		// checkLineCollision(firstTransformComp.Position, sprec.Vec3Diff(firstTransformComp.Position, halfLength))
+
+		const precision = 48
+		for i := 0; i < precision; i++ {
+			cos := sprec.Cos(sprec.Degrees(360.0 * float32(i) / 12.0))
+			sin := sprec.Sin(sprec.Degrees(360.0 * float32(i) / 12.0))
+			direction := sprec.Vec3Sum(sprec.Vec3Prod(halfLength, cos), sprec.Vec3Prod(halfHeight, sin))
+			checkLineCollision(firstTransformComp.Position, sprec.Vec3Sum(firstTransformComp.Position, direction))
+		}
 	}
 }
 

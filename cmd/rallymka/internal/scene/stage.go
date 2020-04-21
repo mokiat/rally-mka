@@ -302,12 +302,13 @@ func (s *Stage) setupCarDemo(program *graphics.Program, model *stream.Model, pos
 	delta := sprec.QuatProd(rot1, rot2)
 	fmt.Printf("delta: %#v\n", delta)
 
-	suspensionLength := float32(0.6)
-	suspensionStiffness := float32(3000.0)
-	suspensionDampness := float32(0.5)
+	suspensionLength := float32(1.0)
+	suspensionStiffness := float32(5000.0)
+	suspensionDampness := float32(0.4)
 
 	flTireRelativePosition := sprec.NewVec3(1.0, -0.6-suspensionLength/2.0, 1.75)
 	flTire := car.Tire(program, model, car.FrontLeftTireLocation).
+		WithDebug("fl-wheel").
 		WithPosition(sprec.Vec3Sum(position, flTireRelativePosition)).
 		Build(s.ecsManager)
 	s.ecsPhysicsSystem.AddConstraint(constraint.CopyTranslation{
@@ -316,10 +317,12 @@ func (s *Stage) setupCarDemo(program *graphics.Program, model *stream.Model, pos
 		RelativeOffset: flTireRelativePosition,
 		SkipY:          true,
 	})
-	flRotation := &constraint.CopyRotation{
+	flRotation := &constraint.CopyAxis{
 		Target:       chasis,
 		TargetOffset: sprec.IdentityQuat(),
+		TargetAxis:   sprec.BasisXVec3(),
 		Entity:       flTire,
+		EntityAxis:   sprec.BasisXVec3(),
 	}
 	s.ecsPhysicsSystem.AddConstraint(flRotation)
 	flSpringAttachmentRelativePosition := sprec.Vec3Sum(flTireRelativePosition, sprec.NewVec3(0.0, suspensionLength, 0.0))
@@ -347,10 +350,12 @@ func (s *Stage) setupCarDemo(program *graphics.Program, model *stream.Model, pos
 		RelativeOffset: frTireRelativePosition,
 		SkipY:          true,
 	})
-	frRotation := &constraint.CopyRotation{
+	frRotation := &constraint.CopyAxis{
 		Target:       chasis,
 		TargetOffset: sprec.IdentityQuat(),
+		TargetAxis:   sprec.BasisXVec3(),
 		Entity:       frTire,
+		EntityAxis:   sprec.BasisXVec3(),
 	}
 	s.ecsPhysicsSystem.AddConstraint(frRotation)
 	frSpringAttachmentRelativePosition := sprec.Vec3Sum(frTireRelativePosition, sprec.NewVec3(0.0, suspensionLength, 0.0))
@@ -378,10 +383,12 @@ func (s *Stage) setupCarDemo(program *graphics.Program, model *stream.Model, pos
 		RelativeOffset: blTireRelativePosition,
 		SkipY:          true,
 	})
-	s.ecsPhysicsSystem.AddConstraint(constraint.CopyRotation{
+	s.ecsPhysicsSystem.AddConstraint(constraint.CopyAxis{
 		Target:       chasis,
+		TargetAxis:   sprec.BasisXVec3(),
 		TargetOffset: sprec.IdentityQuat(),
 		Entity:       blTire,
+		EntityAxis:   sprec.BasisXVec3(),
 	})
 	blSpringAttachmentRelativePosition := sprec.Vec3Sum(blTireRelativePosition, sprec.NewVec3(0.0, suspensionLength, 0.0))
 	s.ecsPhysicsSystem.AddConstraint(constraint.Spring{
@@ -408,10 +415,12 @@ func (s *Stage) setupCarDemo(program *graphics.Program, model *stream.Model, pos
 		RelativeOffset: brTireRelativePosition,
 		SkipY:          true,
 	})
-	s.ecsPhysicsSystem.AddConstraint(constraint.CopyRotation{
+	s.ecsPhysicsSystem.AddConstraint(constraint.CopyAxis{
 		Target:       chasis,
+		TargetAxis:   sprec.BasisXVec3(),
 		TargetOffset: sprec.IdentityQuat(),
 		Entity:       brTire,
+		EntityAxis:   sprec.BasisXVec3(),
 	})
 	brSpringAttachmentRelativePosition := sprec.Vec3Sum(brTireRelativePosition, sprec.NewVec3(0.0, suspensionLength, 0.0))
 	s.ecsPhysicsSystem.AddConstraint(constraint.Spring{
