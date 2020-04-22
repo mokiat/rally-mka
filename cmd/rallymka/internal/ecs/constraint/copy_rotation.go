@@ -36,14 +36,14 @@ func (t CopyRotation) Calculate() CopyRotationResult {
 	targetTransformComp := t.Target.Transform
 	entityTransformComp := t.Entity.Transform
 
-	targetRadiusY := sprec.QuatProd(t.TargetOffset, targetTransformComp.Orientation).OrientationY()
+	targetRadiusY := sprec.QuatProd(targetTransformComp.Orientation, t.TargetOffset).OrientationY()
 	entityRadiusY := entityTransformComp.Orientation.OrientationY()
 	deltaPositionY := sprec.Vec3Diff(entityRadiusY, targetRadiusY)
 	normalY := sprec.BasisXVec3()
 	if deltaPositionY.SqrLength() > 0.000001 {
 		normalY = sprec.UnitVec3(deltaPositionY)
 	}
-	targetRadiusZ := sprec.QuatProd(t.TargetOffset, targetTransformComp.Orientation).OrientationZ()
+	targetRadiusZ := sprec.QuatProd(targetTransformComp.Orientation, t.TargetOffset).OrientationZ()
 	entityRadiusZ := entityTransformComp.Orientation.OrientationZ()
 	deltaPositionZ := sprec.Vec3Diff(entityRadiusZ, targetRadiusZ)
 	normalZ := sprec.BasisXVec3()

@@ -32,7 +32,7 @@ func (a CopyAxis) Calculate() CopyAxisResult {
 	targetTransformComp := a.Target.Transform
 	entityTransformComp := a.Entity.Transform
 
-	targetRadius := sprec.QuatProd(a.TargetOffset, targetTransformComp.Orientation).MulVec3(a.TargetAxis)
+	targetRadius := sprec.QuatProd(targetTransformComp.Orientation, a.TargetOffset).MulVec3(a.TargetAxis)
 	entityRadius := entityTransformComp.Orientation.MulVec3(a.EntityAxis)
 	deltaPosition := sprec.Vec3Diff(entityRadius, targetRadius)
 	normal := sprec.BasisZVec3()
