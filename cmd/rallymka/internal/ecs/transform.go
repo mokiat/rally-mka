@@ -14,7 +14,7 @@ func (c *TransformComponent) Translate(offset sprec.Vec3) {
 func (c *TransformComponent) Rotate(vector sprec.Vec3) {
 	if angle := sprec.Radians(vector.Length()); angle > sprec.Radians(sprec.Pi/10800.0) {
 		rotationQuat := sprec.RotationQuat(angle, sprec.UnitVec3(vector))
-		c.Orientation = rotationQuat.MulQuat(c.Orientation)
+		c.Orientation = sprec.QuatProd(rotationQuat, c.Orientation)
 	}
 }
 

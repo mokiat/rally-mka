@@ -15,7 +15,7 @@ type Damper struct {
 
 func (c Damper) ApplyForces() {
 	targetTransformComp := c.Target.Transform
-	targetAnchorRelativePosition := targetTransformComp.Orientation.MulVec3(c.TargetRelativeOffset)
+	targetAnchorRelativePosition := sprec.QuatVec3Rotation(targetTransformComp.Orientation, c.TargetRelativeOffset)
 
 	targetMotionComp := c.Target.Motion
 	entityMotionComp := c.Entity.Motion
@@ -44,7 +44,7 @@ func (c Damper) ApplyForces() {
 func (d Damper) Calculate() DamperResult {
 	targetTransformComp := d.Target.Transform
 	entityTransformComp := d.Entity.Transform
-	targetRadius := targetTransformComp.Orientation.MulVec3(d.TargetRelativeOffset)
+	targetRadius := sprec.QuatVec3Rotation(targetTransformComp.Orientation, d.TargetRelativeOffset)
 	targetAnchor := sprec.Vec3Sum(targetTransformComp.Position, targetRadius)
 	deltaPosition := sprec.Vec3Diff(entityTransformComp.Position, targetAnchor)
 	normal := sprec.BasisXVec3()

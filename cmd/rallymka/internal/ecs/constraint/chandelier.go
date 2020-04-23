@@ -29,7 +29,7 @@ func (c Chandelier) ApplyCorrectionTranslations() {
 
 func (c Chandelier) Calculate() ChandelierResult {
 	tranformComp := c.Entity.Transform
-	anchorWorld := sprec.Vec3Sum(tranformComp.Position, tranformComp.Orientation.MulVec3(c.EntityAnchor))
+	anchorWorld := sprec.Vec3Sum(tranformComp.Position, sprec.QuatVec3Rotation(tranformComp.Orientation, c.EntityAnchor))
 	radius := sprec.Vec3Diff(anchorWorld, tranformComp.Position)
 	deltaPosition := sprec.Vec3Diff(anchorWorld, c.Fixture)
 	normal := sprec.BasisXVec3()

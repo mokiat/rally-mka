@@ -32,8 +32,8 @@ func (a CopyAxis) Calculate() CopyAxisResult {
 	targetTransformComp := a.Target.Transform
 	entityTransformComp := a.Entity.Transform
 
-	targetRadius := sprec.QuatProd(targetTransformComp.Orientation, a.TargetOffset).MulVec3(a.TargetAxis)
-	entityRadius := entityTransformComp.Orientation.MulVec3(a.EntityAxis)
+	targetRadius := sprec.QuatVec3Rotation(sprec.QuatProd(targetTransformComp.Orientation, a.TargetOffset), a.TargetAxis)
+	entityRadius := sprec.QuatVec3Rotation(entityTransformComp.Orientation, a.EntityAxis)
 	deltaPosition := sprec.Vec3Diff(entityRadius, targetRadius)
 	normal := sprec.BasisZVec3()
 	if deltaPosition.SqrLength() > 0.000001 {

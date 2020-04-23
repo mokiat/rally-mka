@@ -32,7 +32,7 @@ func (t CopyTranslation) ApplyCorrectionTranslations() {
 func (t CopyTranslation) Calculate() CopyTranslationResult {
 	targetTransformComp := t.Target.Transform
 	entityTransformComp := t.Entity.Transform
-	targetRadius := targetTransformComp.Orientation.MulVec3(t.RelativeOffset)
+	targetRadius := sprec.QuatVec3Rotation(targetTransformComp.Orientation, t.RelativeOffset)
 	targetAnchor := sprec.Vec3Sum(targetTransformComp.Position, targetRadius)
 	deltaPosition := sprec.Vec3Diff(entityTransformComp.Position, targetAnchor)
 	if t.SkipX {

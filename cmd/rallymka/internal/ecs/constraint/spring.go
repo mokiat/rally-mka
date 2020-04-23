@@ -18,7 +18,7 @@ func (s Spring) ApplyForces() {
 	targetTransformComp := s.Target.Transform
 	entityTransformComp := s.Entity.Transform
 
-	targetAnchorRelativePosition := targetTransformComp.Orientation.MulVec3(s.TargetRelativeOffset)
+	targetAnchorRelativePosition := sprec.QuatVec3Rotation(targetTransformComp.Orientation, s.TargetRelativeOffset)
 	targetAnchorPosition := sprec.Vec3Sum(targetTransformComp.Position, targetAnchorRelativePosition)
 	entityPosition := entityTransformComp.Position
 

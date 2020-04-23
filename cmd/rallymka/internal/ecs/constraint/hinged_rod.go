@@ -31,8 +31,8 @@ func (r HingedRod) ApplyCorrectionTranslations() {
 func (r HingedRod) Calculate() HingedRodResult {
 	firstTransformComp := r.First.Transform
 	secondTransformComp := r.Second.Transform
-	firstRadius := firstTransformComp.Orientation.MulVec3(r.FirstAnchor)
-	secondRadius := secondTransformComp.Orientation.MulVec3(r.SecondAnchor)
+	firstRadius := sprec.QuatVec3Rotation(firstTransformComp.Orientation, r.FirstAnchor)
+	secondRadius := sprec.QuatVec3Rotation(secondTransformComp.Orientation, r.SecondAnchor)
 	firstAnchorWorld := sprec.Vec3Sum(firstTransformComp.Position, firstRadius)
 	secondAnchorWorld := sprec.Vec3Sum(secondTransformComp.Position, secondRadius)
 	deltaPosition := sprec.Vec3Diff(secondAnchorWorld, firstAnchorWorld)
