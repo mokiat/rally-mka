@@ -66,9 +66,12 @@ func (b *ChassisBuilder) Build(ecsManager *ecs.Manager) *ecs.Entity {
 	entity.Collision = &ecs.CollisionComponent{
 		RestitutionCoef: chassisRestitutionCoef,
 		CollisionShape: ecs.BoxShape{
-			Width:  2.2,
-			Length: 4.0,
-			Height: 1.0,
+			MinX: -0.8,
+			MaxX: 0.8,
+			MinY: -0.4,
+			MaxY: 0.8,
+			MinZ: -2.2,
+			MaxZ: 1.5,
 		},
 	}
 	entity.RenderMesh = &ecs.RenderMesh{

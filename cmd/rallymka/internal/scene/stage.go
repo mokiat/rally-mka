@@ -1,7 +1,6 @@
 package scene
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/mokiat/gomath/sprec"
@@ -71,14 +70,12 @@ func NewStage(gfxWorker *graphics.Worker) *Stage {
 		debugVertexArray:     debugVertexArray,
 		debugVertexArrayData: debugVertexArrayData,
 	}
-	stage.ecsVehicleSystem = ecs.NewVehicleSystem(ecsManager, stage)
 	return stage
 }
 
 type Stage struct {
 	ecsManager           *ecs.Manager
 	ecsRenderer          *ecs.Renderer
-	ecsVehicleSystem     *ecs.VehicleSystem
 	ecsCarSystem         *system.CarSystem
 	ecsCameraStandSystem *ecs.CameraStandSystem
 	ecsPhysicsSystem     *ecs.PhysicsSystem
@@ -297,18 +294,15 @@ func (s *Stage) setupCarDemo(program *graphics.Program, model *stream.Model, pos
 	// 	Position: position,
 	// })
 
-	rot1 := sprec.RotationQuat(sprec.Degrees(25), sprec.UnitVec3(sprec.NewVec3(1.0, 0.5, 0.3)))
-	rot2 := sprec.InverseQuat(rot1)
-	delta := sprec.QuatProd(rot1, rot2)
-	fmt.Printf("delta: %#v\n", delta)
+	// suspensionLength := float32(1.0)
+	// suspensionStiffness := float32(5000.0)
+	// suspensionDampness := float32(0.4)
+	suspensionLength := float32(0.5)
+	suspensionStiffness := float32(6000.0)
+	suspensionDampness := float32(0.9)
 
-	suspensionLength := float32(1.0)
-	suspensionStiffness := float32(5000.0)
-	suspensionDampness := float32(0.4)
-
-	flTireRelativePosition := sprec.NewVec3(1.0, -0.6-suspensionLength/2.0, 1.75)
+	flTireRelativePosition := sprec.NewVec3(1.0, -0.6-suspensionLength/2.0, 1.25)
 	flTire := car.Tire(program, model, car.FrontLeftTireLocation).
-		WithDebug("fl-wheel").
 		WithPosition(sprec.Vec3Sum(position, flTireRelativePosition)).
 		Build(s.ecsManager)
 	s.ecsPhysicsSystem.AddConstraint(constraint.CopyTranslation{
@@ -340,7 +334,7 @@ func (s *Stage) setupCarDemo(program *graphics.Program, model *stream.Model, pos
 		Strength:             suspensionDampness,
 	})
 
-	frTireRelativePosition := sprec.NewVec3(-1.0, -0.6-suspensionLength/2.0, 1.75)
+	frTireRelativePosition := sprec.NewVec3(-1.0, -0.6-suspensionLength/2.0, 1.25)
 	frTire := car.Tire(program, model, car.FrontRightTireLocation).
 		WithPosition(sprec.Vec3Sum(position, frTireRelativePosition)).
 		Build(s.ecsManager)
@@ -373,7 +367,7 @@ func (s *Stage) setupCarDemo(program *graphics.Program, model *stream.Model, pos
 		Strength:             suspensionDampness,
 	})
 
-	blTireRelativePosition := sprec.NewVec3(1.0, -0.6-suspensionLength/2.0, -1.4)
+	blTireRelativePosition := sprec.NewVec3(1.0, -0.6-suspensionLength/2.0, -1.45)
 	blTire := car.Tire(program, model, car.BackLeftTireLocation).
 		WithPosition(sprec.Vec3Sum(position, blTireRelativePosition)).
 		Build(s.ecsManager)
@@ -405,7 +399,7 @@ func (s *Stage) setupCarDemo(program *graphics.Program, model *stream.Model, pos
 		Strength:             suspensionDampness,
 	})
 
-	brTireRelativePosition := sprec.NewVec3(-1.0, -0.6-suspensionLength/2.0, -1.4)
+	brTireRelativePosition := sprec.NewVec3(-1.0, -0.6-suspensionLength/2.0, -1.45)
 	brTire := car.Tire(program, model, car.BackRightTireLocation).
 		WithPosition(sprec.Vec3Sum(position, brTireRelativePosition)).
 		Build(s.ecsManager)
@@ -451,54 +445,6 @@ func (s *Stage) setupCarDemo(program *graphics.Program, model *stream.Model, pos
 	return chasis
 }
 
-func (s *Stage) spawnCar(carProgram *graphics.Program, carModel *stream.Model) *ecs.Entity {
-	bodyNode, _ := carModel.FindNode("body")
-	flWheelNode, _ := carModel.FindNode("wheel_front_left")
-	frWheelNode, _ := carModel.FindNode("wheel_front_right")
-	blWheelNode, _ := carModel.FindNode("wheel_back_left")
-	brWheelNode, _ := carModel.FindNode("wheel_back_right")
-
-	createWheelEntity := func(node *stream.Node, isDriven bool) *ecs.Entity {
-		wheelEntity := s.ecsManager.CreateEntity()
-		wheelEntity.Transform = &ecs.TransformComponent{
-			Position:    sprec.ZeroVec3(),
-			Orientation: sprec.IdentityQuat(),
-		}
-		wheelEntity.Wheel = &ecs.Wheel{
-			IsDriven:       isDriven,
-			Length:         0.4,
-			Radius:         0.3,
-			AnchorPosition: sprec.Vec3Diff(node.Matrix.Translation(), bodyNode.Matrix.Translation()),
-		}
-		wheelEntity.RenderMesh = &ecs.RenderMesh{
-			GeomProgram: carProgram,
-			Mesh:        node.Mesh,
-		}
-		return wheelEntity
-	}
-
-	carEntity := s.ecsManager.CreateEntity()
-	carEntity.Transform = &ecs.TransformComponent{
-		Position:    sprec.ZeroVec3(),
-		Orientation: sprec.IdentityQuat(),
-	}
-	carEntity.RenderMesh = &ecs.RenderMesh{
-		GeomProgram: carProgram,
-		Mesh:        bodyNode.Mesh,
-	}
-	carEntity.Input = &ecs.Input{}
-	carEntity.Vehicle = &ecs.Vehicle{
-		Position:    sprec.NewVec3(0.0, carDropHeight, 0.0),
-		Orientation: ecs.NewOrientation(),
-
-		FLWheel: createWheelEntity(flWheelNode, true),
-		FRWheel: createWheelEntity(frWheelNode, true),
-		BLWheel: createWheelEntity(blWheelNode, false),
-		BRWheel: createWheelEntity(brWheelNode, false),
-	}
-	return carEntity
-}
-
 func (s *Stage) Resize(width, height int) {
 	s.screenFramebuffer.Width = int32(width)
 	s.screenFramebuffer.Height = int32(height)
@@ -507,7 +453,6 @@ func (s *Stage) Resize(width, height int) {
 func (s *Stage) Update(elapsedTime time.Duration, camera *ecs.Camera, input ecs.CarInput) {
 	s.ecsPhysicsSystem.Update(elapsedTime)
 	s.ecsCarSystem.Update(elapsedTime, input)
-	s.ecsVehicleSystem.Update(elapsedTime, input)
 	s.ecsCameraStandSystem.Update()
 }
 

@@ -32,8 +32,8 @@ func (s *CarSystem) updateCarInput(car *ecs.Car, elapsedTime time.Duration, inpu
 	const turnSpeed = 100       // FIXME ORIGINAL: 120
 	const returnSpeed = 50      // FIXME ORIGINAL: 60
 	const maxWheelAngle = 30    // FIXME ORIGINAL: 30
-	const maxAcceleration = 0.6 // FIXME ORIGINAL: 0.01
-	const maxDeceleration = 0.3 // FIXME ORIGINAL: 0.005
+	const maxAcceleration = 0.8 // FIXME ORIGINAL: 0.6
+	const maxDeceleration = 0.6 // FIXME ORIGINAL: 0.3
 
 	elapsedSeconds := float32(elapsedTime.Seconds())
 

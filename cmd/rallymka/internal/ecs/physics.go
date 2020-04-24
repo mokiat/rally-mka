@@ -231,8 +231,16 @@ func (s *PhysicsSystem) checkEntitiesCollision(firstEntity, secondEntity *Entity
 	secondCollisionShape := secondEntity.Collision.CollisionShape.(MeshShape)
 
 	checkLineCollision := func(a, b sprec.Vec3) {
-		line := collision.MakeLine(a, b)
-		if result, ok := secondCollisionShape.Mesh.LineCollision(line); ok {
+		if result, ok := secondCollisionShape.Mesh.LineCollision(collision.MakeLine(a, b)); ok {
+			s.collisionConstraints = append(s.collisionConstraints, GroundCollisionConstraint{
+				Entity:           firstEntity,
+				OriginalPosition: firstTransformComp.Position,
+				Normal:           result.Normal(),
+				ContactPoint:     result.Intersection(),
+				Depth:            sprec.Abs(result.BottomHeight()), // FIXME: Shouldn't it just be negative or positive
+			})
+		}
+		if result, ok := secondCollisionShape.Mesh.LineCollision(collision.MakeLine(b, a)); ok {
 			s.collisionConstraints = append(s.collisionConstraints, GroundCollisionConstraint{
 				Entity:           firstEntity,
 				OriginalPosition: firstTransformComp.Position,
@@ -245,36 +253,45 @@ func (s *PhysicsSystem) checkEntitiesCollision(firstEntity, secondEntity *Entity
 
 	switch firstCollisionShape := firstCollisionComp.CollisionShape.(type) {
 	case BoxShape:
-		halfWidth := sprec.Vec3Prod(firstTransformComp.Orientation.OrientationX(), firstCollisionShape.Width/2.0)
-		halfHeight := sprec.Vec3Prod(firstTransformComp.Orientation.OrientationY(), firstCollisionShape.Height/2.0)
-		halfLength := sprec.Vec3Prod(firstTransformComp.Orientation.OrientationZ(), firstCollisionShape.Length/2.0)
+		minX := sprec.Vec3Prod(firstTransformComp.Orientation.OrientationX(), firstCollisionShape.MinX)
+		maxX := sprec.Vec3Prod(firstTransformComp.Orientation.OrientationX(), firstCollisionShape.MaxX)
+		minY := sprec.Vec3Prod(firstTransformComp.Orientation.OrientationY(), firstCollisionShape.MinY)
+		maxY := sprec.Vec3Prod(firstTransformComp.Orientation.OrientationY(), firstCollisionShape.MaxY)
+		minZ := sprec.Vec3Prod(firstTransformComp.Orientation.OrientationZ(), firstCollisionShape.MinZ)
+		maxZ := sprec.Vec3Prod(firstTransformComp.Orientation.OrientationZ(), firstCollisionShape.MaxZ)
 
-		p1 := sprec.Vec3Sum(sprec.Vec3Diff(sprec.Vec3Diff(firstTransformComp.Position, halfWidth), halfLength), halfHeight)
-		p2 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Diff(firstTransformComp.Position, halfWidth), halfLength), halfHeight)
-		p3 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(firstTransformComp.Position, halfWidth), halfLength), halfHeight)
-		p4 := sprec.Vec3Sum(sprec.Vec3Diff(sprec.Vec3Sum(firstTransformComp.Position, halfWidth), halfLength), halfHeight)
-		p5 := sprec.Vec3Diff(sprec.Vec3Diff(sprec.Vec3Diff(firstTransformComp.Position, halfWidth), halfLength), halfHeight)
-		p6 := sprec.Vec3Diff(sprec.Vec3Sum(sprec.Vec3Diff(firstTransformComp.Position, halfWidth), halfLength), halfHeight)
-		p7 := sprec.Vec3Diff(sprec.Vec3Sum(sprec.Vec3Sum(firstTransformComp.Position, halfWidth), halfLength), halfHeight)
-		p8 := sprec.Vec3Diff(sprec.Vec3Diff(sprec.Vec3Sum(firstTransformComp.Position, halfWidth), halfLength), halfHeight)
+		p1 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(firstTransformComp.Position, minX), minZ), maxY)
+		p2 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(firstTransformComp.Position, minX), maxZ), maxY)
+		p3 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(firstTransformComp.Position, maxX), maxZ), maxY)
+		p4 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(firstTransformComp.Position, maxX), minZ), maxY)
+		p5 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(firstTransformComp.Position, minX), minZ), minY)
+		p6 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(firstTransformComp.Position, minX), maxZ), minY)
+		p7 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(firstTransformComp.Position, maxX), maxZ), minY)
+		p8 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(firstTransformComp.Position, maxX), minZ), minY)
 
 		checkLineCollision(p1, p2)
 		checkLineCollision(p2, p3)
 		checkLineCollision(p3, p4)
 		checkLineCollision(p4, p1)
+
 		checkLineCollision(p5, p6)
 		checkLineCollision(p6, p7)
 		checkLineCollision(p7, p8)
 		checkLineCollision(p8, p5)
 
-		checkLineCollision(p2, p1)
-		checkLineCollision(p3, p2)
-		checkLineCollision(p4, p3)
-		checkLineCollision(p1, p4)
-		checkLineCollision(p6, p5)
-		checkLineCollision(p7, p6)
-		checkLineCollision(p8, p7)
-		checkLineCollision(p5, p8)
+		checkLineCollision(p1, p5)
+		checkLineCollision(p2, p6)
+		checkLineCollision(p3, p7)
+		checkLineCollision(p4, p8)
+
+		// checkLineCollision(p2, p1)
+		// checkLineCollision(p3, p2)
+		// checkLineCollision(p4, p3)
+		// checkLineCollision(p1, p4)
+		// checkLineCollision(p6, p5)
+		// checkLineCollision(p7, p6)
+		// checkLineCollision(p8, p7)
+		// checkLineCollision(p5, p8)
 
 		// checkLineCollision(firstTransformComp.Position, sprec.Vec3Diff(firstTransformComp.Position, halfHeight))
 		// checkLineCollision(firstTransformComp.Position, sprec.Vec3Sum(firstTransformComp.Position, halfWidth))
@@ -288,14 +305,20 @@ func (s *PhysicsSystem) checkEntitiesCollision(firstEntity, secondEntity *Entity
 		// checkLineCollision(firstTransformComp.Position, sprec.Vec3Sum(firstTransformComp.Position, halfLength))
 		// checkLineCollision(firstTransformComp.Position, sprec.Vec3Diff(firstTransformComp.Position, halfLength))
 
-		s.addCollisionLine(p1, p2)
-		s.addCollisionLine(p2, p3)
-		s.addCollisionLine(p3, p4)
-		s.addCollisionLine(p4, p1)
-		s.addCollisionLine(p5, p6)
-		s.addCollisionLine(p6, p7)
-		s.addCollisionLine(p7, p8)
-		s.addCollisionLine(p8, p5)
+		// s.addCollisionLine(p1, p2)
+		// s.addCollisionLine(p2, p3)
+		// s.addCollisionLine(p3, p4)
+		// s.addCollisionLine(p4, p1)
+
+		// s.addCollisionLine(p5, p6)
+		// s.addCollisionLine(p6, p7)
+		// s.addCollisionLine(p7, p8)
+		// s.addCollisionLine(p8, p5)
+
+		// s.addCollisionLine(p1, p5)
+		// s.addCollisionLine(p2, p6)
+		// s.addCollisionLine(p3, p7)
+		// s.addCollisionLine(p4, p8)
 
 	case CylinderShape:
 		halfWidth := sprec.Vec3Prod(firstTransformComp.Orientation.OrientationX(), firstCollisionShape.Length)

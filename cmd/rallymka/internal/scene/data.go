@@ -16,8 +16,8 @@ func NewData(registry *resource.Registry, gfxWorker *graphics.Worker) *Data {
 		TerrainProgram: stream.GetProgram(registry, "deferred-geometry"),
 		EntityProgram:  stream.GetProgram(registry, "deferred-geometry"),
 		CarProgram:     stream.GetProgram(registry, "deferred-geometry"),
-		CarModel:       stream.GetModel(registry, "hatch"),
-		Level:          stream.GetLevel(registry, "forest"),
+		CarModel:       stream.GetModel(registry, "suv"),
+		Level:          stream.GetLevel(registry, "highway"),
 
 		DeferredGeometryProgram: stream.GetProgram(registry, "deferred-geometry"),
 		DeferredLightingProgram: stream.GetProgram(registry, "deferred-lighting"),

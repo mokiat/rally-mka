@@ -15,8 +15,6 @@ type Entity struct {
 	RenderMesh   *RenderMesh
 	RenderModel  *RenderModel
 	RenderSkybox *RenderSkybox
-	Vehicle      *Vehicle
-	Wheel        *Wheel
 	Input        *Input
 	CameraStand  *CameraStand
 	Car          *Car
@@ -42,6 +40,14 @@ type RenderSkybox struct {
 	Mesh    *stream.Mesh
 }
 
+type CarInput struct {
+	Forward   bool
+	Backward  bool
+	TurnLeft  bool
+	TurnRight bool
+	Handbrake bool
+}
+
 type Car struct {
 	SteeringAngle   sprec.Angle
 	Acceleration    float32
@@ -54,37 +60,6 @@ type Car struct {
 	FRWheel         *Entity
 	BLWheel         *Entity
 	BRWheel         *Entity
-}
-
-type Vehicle struct {
-	SteeringAngle   sprec.Angle
-	Acceleration    float32
-	HandbrakePulled bool
-
-	Position        sprec.Vec3
-	Orientation     Orientation
-	Velocity        sprec.Vec3
-	AngularVelocity sprec.Vec3
-
-	FLWheel *Entity
-	FRWheel *Entity
-	BLWheel *Entity
-	BRWheel *Entity
-}
-
-type Wheel struct {
-	SteeringAngle sprec.Angle
-	RotationAngle sprec.Angle
-
-	AnchorPosition sprec.Vec3
-
-	IsDriven bool
-
-	Length float32
-	Radius float32
-
-	SuspensionLength float32
-	IsGrounded       bool
 }
 
 type Input struct{}

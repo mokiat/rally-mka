@@ -35,9 +35,6 @@ func (s *CameraStandSystem) updateCameraStand(cameraStand *CameraStand) {
 	if cameraStand.Target.Transform != nil {
 		targetPosition = cameraStand.Target.Transform.Position
 	}
-	if cameraStand.Target.Vehicle != nil {
-		targetPosition = cameraStand.Target.Vehicle.Position
-	}
 	// we use a camera anchor to achieve the smooth effect of a
 	// camera following the target
 	anchorVector := sprec.Vec3Diff(cameraStand.AnchorPosition, targetPosition)

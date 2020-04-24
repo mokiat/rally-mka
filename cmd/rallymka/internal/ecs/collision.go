@@ -12,9 +12,12 @@ type CollisionComponent struct {
 }
 
 type BoxShape struct {
-	Width  float32
-	Length float32
-	Height float32
+	MinX float32
+	MaxX float32
+	MinY float32
+	MaxY float32
+	MinZ float32
+	MaxZ float32
 }
 
 type CylinderShape struct {
