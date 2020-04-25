@@ -3,10 +3,11 @@ package constraint
 import (
 	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecs"
+	"github.com/mokiat/rally-mka/internal/engine/physics"
 )
 
 type HingedRod struct {
-	ecs.NilConstraint
+	physics.NilConstraint
 	First        *ecs.Entity
 	FirstAnchor  sprec.Vec3
 	Second       *ecs.Entity
@@ -14,14 +15,14 @@ type HingedRod struct {
 	Length       float32
 }
 
-func (r HingedRod) ApplyCorrectionImpulses() {
+func (r HingedRod) ApplyImpulse() {
 	result := r.Calculate()
 	if sprec.Abs(result.Drift) > 0.0001 {
 		result.Jacobian.Apply(r.First, r.Second)
 	}
 }
 
-func (r HingedRod) ApplyCorrectionTranslations() {
+func (r HingedRod) ApplyNudge() {
 	result := r.Calculate()
 	if sprec.Abs(result.Drift) > 0.0001 {
 		result.Jacobian.ApplyNudge(r.First, r.Second, result.Drift)

@@ -3,24 +3,25 @@ package constraint
 import (
 	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecs"
+	"github.com/mokiat/rally-mka/internal/engine/physics"
 )
 
 type Chandelier struct {
-	ecs.NilConstraint
+	physics.NilConstraint
 	Entity       *ecs.Entity
 	EntityAnchor sprec.Vec3
 	Length       float32
 	Fixture      sprec.Vec3
 }
 
-func (c Chandelier) ApplyCorrectionImpulses() {
+func (c Chandelier) ApplyImpulse() {
 	result := c.Calculate()
 	if sprec.Abs(result.Drift) > 0.0001 {
 		result.Jacobian.Apply(c.Entity)
 	}
 }
 
-func (c Chandelier) ApplyCorrectionTranslations() {
+func (c Chandelier) ApplyNudge() {
 	result := c.Calculate()
 	if sprec.Abs(result.Drift) > 0.0001 {
 		result.Jacobian.ApplyNudge(c.Entity, result.Drift)

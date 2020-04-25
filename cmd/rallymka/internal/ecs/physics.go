@@ -6,6 +6,15 @@ import (
 
 	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/rally-mka/internal/engine/collision"
+	"github.com/mokiat/rally-mka/internal/engine/physics"
+)
+
+const (
+	gravity     = 9.8
+	windDensity = 1.2
+
+	impulseIterations = 100
+	nudgeIterations   = 100
 )
 
 func NewPhysicsSystem(ecsManager *Manager, step time.Duration) *PhysicsSystem {
@@ -15,12 +24,10 @@ func NewPhysicsSystem(ecsManager *Manager, step time.Duration) *PhysicsSystem {
 		step:            step,
 		accumulatedTime: 0,
 
-		gravity: sprec.NewVec3(0.0, -9.8, 0.0),
-		// gravity:      sprec.NewVec3(0.0, -1.8, 0.0),
+		gravity:      sprec.NewVec3(0.0, -gravity, 0.0),
 		windVelocity: sprec.NewVec3(0.0, 0.0, 0.0),
-		// windVelocity: sprec.NewVec3(0.0, 0.0, 1.0),
-		windDensity: 1.2,
-		// windDensity: 0.0,
+		windDensity:  windDensity,
+
 		lines: make([]DebugLine, 0, 1024),
 	}
 }
@@ -31,8 +38,8 @@ type PhysicsSystem struct {
 	step            time.Duration
 	accumulatedTime time.Duration
 
-	constraints          []Constraint
-	collisionConstraints []Constraint
+	constraints          []physics.Constraint
+	collisionConstraints []physics.Constraint
 
 	gravity      sprec.Vec3
 	windVelocity sprec.Vec3
@@ -43,7 +50,7 @@ type PhysicsSystem struct {
 	lines []DebugLine
 }
 
-func (s *PhysicsSystem) AddConstraint(constraint Constraint) {
+func (s *PhysicsSystem) AddConstraint(constraint physics.Constraint) {
 	s.constraints = append(s.constraints, constraint)
 }
 
@@ -68,13 +75,12 @@ func (s *PhysicsSystem) GetDebug() []DebugLine {
 func (s *PhysicsSystem) runSimulation(elapsedSeconds float32) {
 	s.lines = s.lines[:0]
 	s.applyForces()
-	s.applyCorrectionForces()
-
 	s.integrate(elapsedSeconds)
-	s.applyCorrectionImpulses()
-	s.applyCorrectionBaumgarte()
+	s.applyImpulses()
+	s.applyBaumgarte()
+
 	s.applyMotion(elapsedSeconds)
-	s.applyCorrectionTranslations()
+	s.applyNudges()
 	s.detectCollisions()
 
 	s.renderDebug()
@@ -104,25 +110,13 @@ func (s *PhysicsSystem) applyForces() {
 	}
 
 	for _, constraint := range s.constraints {
-		constraint.ApplyForces()
+		constraint.ApplyForce()
 	}
 	for _, constraint := range s.collisionConstraints {
-		constraint.ApplyForces()
+		constraint.ApplyForce()
 	}
 
 	// TODO: Restrict max linear + angular accelerations
-}
-
-func (s *PhysicsSystem) applyCorrectionForces() {
-	const accuracy = 1
-	for i := 0; i < accuracy; i++ {
-		for _, constraint := range s.constraints {
-			constraint.ApplyCorrectionForces()
-		}
-		for _, constraint := range s.collisionConstraints {
-			constraint.ApplyCorrectionForces()
-		}
-	}
 }
 
 func (s *PhysicsSystem) integrate(elapsedSeconds float32) {
@@ -160,38 +154,33 @@ func (s *PhysicsSystem) applyMotion(elapsedSeconds float32) {
 	}
 }
 
-func (s *PhysicsSystem) applyCorrectionImpulses() {
-	const accuracy = 100
-	for i := 0; i < accuracy; i++ {
+func (s *PhysicsSystem) applyImpulses() {
+	for i := 0; i < impulseIterations; i++ {
 		for _, constraint := range s.constraints {
-			constraint.ApplyCorrectionImpulses()
+			constraint.ApplyImpulse()
 		}
 		for _, constraint := range s.collisionConstraints {
-			constraint.ApplyCorrectionImpulses()
+			constraint.ApplyImpulse()
 		}
 	}
 }
 
-func (s *PhysicsSystem) applyCorrectionBaumgarte() {
-	const accuracy = 1
-	for i := 0; i < accuracy; i++ {
-		for _, constraint := range s.constraints {
-			constraint.ApplyCorrectionBaumgarte()
-		}
-		for _, constraint := range s.collisionConstraints {
-			constraint.ApplyCorrectionBaumgarte()
-		}
+func (s *PhysicsSystem) applyBaumgarte() {
+	for _, constraint := range s.constraints {
+		constraint.ApplyBaumgarte()
+	}
+	for _, constraint := range s.collisionConstraints {
+		constraint.ApplyBaumgarte()
 	}
 }
 
-func (s *PhysicsSystem) applyCorrectionTranslations() {
-	const accuracy = 100
-	for i := 0; i < accuracy; i++ {
+func (s *PhysicsSystem) applyNudges() {
+	for i := 0; i < nudgeIterations; i++ {
 		for _, constraint := range s.constraints {
-			constraint.ApplyCorrectionTranslations()
+			constraint.ApplyNudge()
 		}
 		for _, constraint := range s.collisionConstraints {
-			constraint.ApplyCorrectionTranslations()
+			constraint.ApplyNudge()
 		}
 	}
 }
@@ -284,27 +273,6 @@ func (s *PhysicsSystem) checkEntitiesCollision(firstEntity, secondEntity *Entity
 		checkLineCollision(p3, p7)
 		checkLineCollision(p4, p8)
 
-		// checkLineCollision(p2, p1)
-		// checkLineCollision(p3, p2)
-		// checkLineCollision(p4, p3)
-		// checkLineCollision(p1, p4)
-		// checkLineCollision(p6, p5)
-		// checkLineCollision(p7, p6)
-		// checkLineCollision(p8, p7)
-		// checkLineCollision(p5, p8)
-
-		// checkLineCollision(firstTransformComp.Position, sprec.Vec3Diff(firstTransformComp.Position, halfHeight))
-		// checkLineCollision(firstTransformComp.Position, sprec.Vec3Sum(firstTransformComp.Position, halfWidth))
-		// checkLineCollision(firstTransformComp.Position, sprec.Vec3Diff(firstTransformComp.Position, halfWidth))
-		// checkLineCollision(firstTransformComp.Position, sprec.Vec3Sum(firstTransformComp.Position, halfLength))
-		// checkLineCollision(firstTransformComp.Position, sprec.Vec3Diff(firstTransformComp.Position, halfLength))
-
-		// checkLineCollision(firstTransformComp.Position, sprec.Vec3Diff(firstTransformComp.Position, halfHeight))
-		// checkLineCollision(firstTransformComp.Position, sprec.Vec3Sum(firstTransformComp.Position, halfWidth))
-		// checkLineCollision(firstTransformComp.Position, sprec.Vec3Diff(firstTransformComp.Position, halfWidth))
-		// checkLineCollision(firstTransformComp.Position, sprec.Vec3Sum(firstTransformComp.Position, halfLength))
-		// checkLineCollision(firstTransformComp.Position, sprec.Vec3Diff(firstTransformComp.Position, halfLength))
-
 		// s.addCollisionLine(p1, p2)
 		// s.addCollisionLine(p2, p3)
 		// s.addCollisionLine(p3, p4)
@@ -327,10 +295,6 @@ func (s *PhysicsSystem) checkEntitiesCollision(firstEntity, secondEntity *Entity
 
 		checkLineCollision(firstTransformComp.Position, sprec.Vec3Sum(firstTransformComp.Position, halfWidth))
 		checkLineCollision(firstTransformComp.Position, sprec.Vec3Diff(firstTransformComp.Position, halfWidth))
-		// checkLineCollision(firstTransformComp.Position, sprec.Vec3Sum(firstTransformComp.Position, halfHeight))
-		// checkLineCollision(firstTransformComp.Position, sprec.Vec3Diff(firstTransformComp.Position, halfHeight))
-		// checkLineCollision(firstTransformComp.Position, sprec.Vec3Sum(firstTransformComp.Position, halfLength))
-		// checkLineCollision(firstTransformComp.Position, sprec.Vec3Diff(firstTransformComp.Position, halfLength))
 
 		const precision = 48
 		for i := 0; i < precision; i++ {

@@ -3,16 +3,17 @@ package constraint
 import (
 	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecs"
+	"github.com/mokiat/rally-mka/internal/engine/physics"
 )
 
 type CopyRotation struct {
-	ecs.NilConstraint
+	physics.NilConstraint
 	Target       *ecs.Entity
 	TargetOffset sprec.Quat
 	Entity       *ecs.Entity
 }
 
-func (t CopyRotation) ApplyCorrectionImpulses() {
+func (t CopyRotation) ApplyImpulse() {
 	result := t.Calculate()
 	if sprec.Abs(result.DriftY) > 0.0001 {
 		result.JacobianY.Apply(t.Target, t.Entity)
@@ -22,7 +23,7 @@ func (t CopyRotation) ApplyCorrectionImpulses() {
 	}
 }
 
-func (t CopyRotation) ApplyCorrectionTranslations() {
+func (t CopyRotation) ApplyNudge() {
 	result := t.Calculate()
 	if sprec.Abs(result.DriftY) > 0.0001 {
 		result.JacobianY.ApplyNudge(t.Target, t.Entity, result.DriftY)

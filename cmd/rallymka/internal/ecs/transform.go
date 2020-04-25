@@ -12,9 +12,8 @@ func (c *TransformComponent) Translate(offset sprec.Vec3) {
 }
 
 func (c *TransformComponent) Rotate(vector sprec.Vec3) {
-	if angle := sprec.Radians(vector.Length()); angle > sprec.Radians(sprec.Pi/10800.0) {
-		rotationQuat := sprec.RotationQuat(angle, vector)
-		c.Orientation = sprec.QuatProd(rotationQuat, c.Orientation)
+	if radians := vector.Length(); sprec.Abs(radians) > 0.00001 {
+		c.Orientation = sprec.QuatProd(sprec.RotationQuat(sprec.Radians(radians), vector), c.Orientation)
 	}
 }
 

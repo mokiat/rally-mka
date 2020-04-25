@@ -3,22 +3,23 @@ package constraint
 import (
 	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecs"
+	"github.com/mokiat/rally-mka/internal/engine/physics"
 )
 
 type FixedTranslation struct {
-	ecs.NilConstraint
+	physics.NilConstraint
 	Entity   *ecs.Entity
 	Position sprec.Vec3
 }
 
-func (c FixedTranslation) ApplyCorrectionImpulses() {
+func (c FixedTranslation) ApplyImpulse() {
 	result := c.Calculate()
 	if sprec.Abs(result.Drift) > 0.0001 {
 		result.Jacobian.Apply(c.Entity)
 	}
 }
 
-func (c FixedTranslation) ApplyCorrectionTranslations() {
+func (c FixedTranslation) ApplyNudge() {
 	result := c.Calculate()
 	if sprec.Abs(result.Drift) > 0.0001 {
 		result.Jacobian.ApplyNudge(c.Entity, result.Drift)

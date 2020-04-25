@@ -3,6 +3,7 @@ package ecs
 import (
 	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/rally-mka/internal/engine/collision"
+	"github.com/mokiat/rally-mka/internal/engine/physics"
 )
 
 type CollisionComponent struct {
@@ -30,7 +31,7 @@ type MeshShape struct {
 }
 
 type GroundCollisionConstraint struct {
-	NilConstraint
+	physics.NilConstraint
 	Entity           *Entity
 	OriginalPosition sprec.Vec3
 	Normal           sprec.Vec3
@@ -38,7 +39,7 @@ type GroundCollisionConstraint struct {
 	Depth            float32
 }
 
-func (c GroundCollisionConstraint) ApplyForces() {
+func (c GroundCollisionConstraint) ApplyForce() {
 	transformComp := c.Entity.Transform
 	motionComp := c.Entity.Motion
 	relativeContactPosition := sprec.Vec3Diff(c.ContactPoint, transformComp.Position)
@@ -70,7 +71,7 @@ func (c GroundCollisionConstraint) ApplyForces() {
 // 	motionComp.ApplyOffsetForce(relativeContactPosition, sprec.Vec3Prod(c.Normal, -forceStrength))
 // }
 
-func (c GroundCollisionConstraint) ApplyCorrectionImpulses() {
+func (c GroundCollisionConstraint) ApplyImpulse() {
 	transformComp := c.Entity.Transform
 	motionComp := c.Entity.Motion
 	collisionComp := c.Entity.Collision
@@ -134,7 +135,7 @@ func (c GroundCollisionConstraint) ApplyCorrectionImpulses() {
 	// 	secondMotionComp.ApplyOffsetImpulse(secondAnchorRelativePosition, sprec.InverseVec3(impulse))
 }
 
-func (c GroundCollisionConstraint) ApplyCorrectionTranslations() {
+func (c GroundCollisionConstraint) ApplyNudge() {
 	// 	firstTransformComp := r.First.Transform
 	// 	secondTransformComp := r.Second.Transform
 

@@ -147,14 +147,6 @@ func applyAngularNudge(entity *Entity, angularNudge sprec.Vec3) {
 	transformComp.Rotate(sprec.Mat3Vec3Prod(sprec.InverseMat3(motionComp.MomentOfInertia), angularNudge))
 }
 
-type Constraint interface {
-	ApplyForces()
-	ApplyCorrectionForces()
-	ApplyCorrectionImpulses()
-	ApplyCorrectionBaumgarte()
-	ApplyCorrectionTranslations() // FIXME: Rename to ApplyCorrectionTransforms
-}
-
 type DebuggableConstraint interface {
 	Error() float32
 }
@@ -162,17 +154,3 @@ type DebuggableConstraint interface {
 type RenderableConstraint interface {
 	Lines() []DebugLine
 }
-
-var _ Constraint = NilConstraint{}
-
-type NilConstraint struct{}
-
-func (NilConstraint) ApplyForces() {}
-
-func (NilConstraint) ApplyCorrectionForces() {}
-
-func (NilConstraint) ApplyCorrectionImpulses() {}
-
-func (NilConstraint) ApplyCorrectionBaumgarte() {}
-
-func (NilConstraint) ApplyCorrectionTranslations() {}

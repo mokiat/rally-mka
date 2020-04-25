@@ -3,17 +3,18 @@ package constraint
 import (
 	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecs"
+	"github.com/mokiat/rally-mka/internal/engine/physics"
 )
 
 type Damper struct {
-	ecs.NilConstraint
+	physics.NilConstraint
 	Target               *ecs.Entity
 	TargetRelativeOffset sprec.Vec3
 	Entity               *ecs.Entity
 	Strength             float32
 }
 
-func (c Damper) ApplyForces() {
+func (c Damper) ApplyForce() {
 	targetTransformComp := c.Target.Transform
 	targetAnchorRelativePosition := sprec.QuatVec3Rotation(targetTransformComp.Orientation, c.TargetRelativeOffset)
 
@@ -31,12 +32,12 @@ func (c Damper) ApplyForces() {
 	entityMotionComp.ApplyForce(sprec.InverseVec3(force))
 }
 
-// func (d Damper) ApplyCorrectionBaumgarte() {
+// func (d Damper) ApplyBaumgarte() {
 // 	result := d.Calculate()
 // 	result.Jacobian.ApplySoft(d.Target, d.Entity, result.Force, result.Gamma)
 // }
 
-// func (d Damper) ApplyCorrectionImpulses() {
+// func (d Damper) ApplyNudge() {
 // 	result := d.Calculate()
 // 	result.Jacobian.ApplySoft(d.Target, d.Entity, result.Force, result.Gamma)
 // }

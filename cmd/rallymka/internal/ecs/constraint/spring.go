@@ -3,10 +3,11 @@ package constraint
 import (
 	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecs"
+	"github.com/mokiat/rally-mka/internal/engine/physics"
 )
 
 type Spring struct {
-	ecs.NilConstraint
+	physics.NilConstraint
 	Target               *ecs.Entity
 	TargetRelativeOffset sprec.Vec3
 	Entity               *ecs.Entity
@@ -14,7 +15,7 @@ type Spring struct {
 	Stiffness            float32
 }
 
-func (s Spring) ApplyForces() {
+func (s Spring) ApplyForce() {
 	targetTransformComp := s.Target.Transform
 	entityTransformComp := s.Entity.Transform
 

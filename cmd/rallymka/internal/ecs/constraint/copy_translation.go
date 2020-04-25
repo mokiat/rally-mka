@@ -3,10 +3,11 @@ package constraint
 import (
 	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecs"
+	"github.com/mokiat/rally-mka/internal/engine/physics"
 )
 
 type CopyTranslation struct {
-	ecs.NilConstraint
+	physics.NilConstraint
 	Target         *ecs.Entity
 	Entity         *ecs.Entity
 	RelativeOffset sprec.Vec3
@@ -15,14 +16,14 @@ type CopyTranslation struct {
 	SkipZ          bool
 }
 
-func (t CopyTranslation) ApplyCorrectionImpulses() {
+func (t CopyTranslation) ApplyImpulse() {
 	result := t.Calculate()
 	if sprec.Abs(result.Drift) > 0.0001 {
 		result.Jacobian.Apply(t.Target, t.Entity)
 	}
 }
 
-func (t CopyTranslation) ApplyCorrectionTranslations() {
+func (t CopyTranslation) ApplyNudge() {
 	result := t.Calculate()
 	if sprec.Abs(result.Drift) > 0.0001 {
 		result.Jacobian.ApplyNudge(t.Target, t.Entity, result.Drift)

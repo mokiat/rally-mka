@@ -4,6 +4,7 @@ import (
 	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/stream"
 	"github.com/mokiat/rally-mka/internal/engine/graphics"
+	"github.com/mokiat/rally-mka/internal/engine/physics"
 )
 
 type Entity struct {
@@ -54,9 +55,9 @@ type Car struct {
 	HandbrakePulled bool
 
 	Body            *Entity
-	FLWheelRotation Constraint
+	FLWheelRotation physics.Constraint
 	FLWheel         *Entity
-	FRWheelRotation Constraint
+	FRWheelRotation physics.Constraint
 	FRWheel         *Entity
 	BLWheel         *Entity
 	BRWheel         *Entity
