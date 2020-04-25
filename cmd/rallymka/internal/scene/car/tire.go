@@ -7,6 +7,7 @@ import (
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecs"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/stream"
 	"github.com/mokiat/rally-mka/internal/engine/graphics"
+	"github.com/mokiat/rally-mka/internal/engine/physics"
 )
 
 const (
@@ -67,12 +68,8 @@ func (b *TireBuilder) Build(ecsManager *ecs.Manager) *ecs.Entity {
 		Orientation: sprec.IdentityQuat(),
 	}
 	entity.Motion = &ecs.MotionComponent{
-		Mass: tireMass,
-		MomentOfInertia: sprec.NewMat3(
-			tireMomentOfInertia, 0.0, 0.0,
-			0.0, tireMomentOfInertia, 0.0,
-			0.0, 0.0, tireMomentOfInertia,
-		),
+		Mass:              tireMass,
+		MomentOfInertia:   physics.SymmetricMomentOfInertia(tireMomentOfInertia),
 		DragFactor:        tireDragFactor,
 		AngularDragFactor: tireAngularDragFactor,
 	}

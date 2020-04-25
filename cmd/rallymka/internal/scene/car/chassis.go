@@ -5,6 +5,7 @@ import (
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecs"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/stream"
 	"github.com/mokiat/rally-mka/internal/engine/graphics"
+	"github.com/mokiat/rally-mka/internal/engine/physics"
 )
 
 const (
@@ -54,12 +55,8 @@ func (b *ChassisBuilder) Build(ecsManager *ecs.Manager) *ecs.Entity {
 		Orientation: sprec.IdentityQuat(),
 	}
 	entity.Motion = &ecs.MotionComponent{
-		Mass: chassisMass,
-		MomentOfInertia: sprec.NewMat3(
-			chassisMomentOfInertia, 0.0, 0.0,
-			0.0, chassisMomentOfInertia, 0.0,
-			0.0, 0.0, chassisMomentOfInertia,
-		),
+		Mass:              chassisMass,
+		MomentOfInertia:   physics.SymmetricMomentOfInertia(chassisMomentOfInertia),
 		DragFactor:        chassisDragFactor,
 		AngularDragFactor: chassisAngularDragFactor,
 	}
