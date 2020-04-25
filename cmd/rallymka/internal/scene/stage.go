@@ -298,6 +298,12 @@ func (s *Stage) setupCarDemo(program *graphics.Program, model *stream.Model, pos
 		SecondBody:      flTire.Physics.Body,
 		IgnoreY:         true,
 	})
+	s.physicsEngine.AddConstraint(physics.LimitTranslationConstraint{
+		FirstBody:  chasis.Physics.Body,
+		SecondBody: flTire.Physics.Body,
+		MaxY:       -0.5,
+		MinY:       -1.0,
+	})
 	flRotation := &physics.MatchAxisConstraint{
 		FirstBody:      chasis.Physics.Body,
 		FirstBodyAxis:  sprec.BasisXVec3(),
@@ -330,6 +336,12 @@ func (s *Stage) setupCarDemo(program *graphics.Program, model *stream.Model, pos
 		FirstBodyAnchor: frTireRelativePosition,
 		SecondBody:      frTire.Physics.Body,
 		IgnoreY:         true,
+	})
+	s.physicsEngine.AddConstraint(physics.LimitTranslationConstraint{
+		FirstBody:  chasis.Physics.Body,
+		SecondBody: frTire.Physics.Body,
+		MaxY:       -0.5,
+		MinY:       -1.0,
 	})
 	frRotation := &physics.MatchAxisConstraint{
 		FirstBody:      chasis.Physics.Body,
@@ -364,6 +376,12 @@ func (s *Stage) setupCarDemo(program *graphics.Program, model *stream.Model, pos
 		SecondBody:      blTire.Physics.Body,
 		IgnoreY:         true,
 	})
+	s.physicsEngine.AddConstraint(physics.LimitTranslationConstraint{
+		FirstBody:  chasis.Physics.Body,
+		SecondBody: blTire.Physics.Body,
+		MaxY:       -0.5,
+		MinY:       -1.0,
+	})
 	s.physicsEngine.AddConstraint(physics.MatchAxisConstraint{
 		FirstBody:      chasis.Physics.Body,
 		FirstBodyAxis:  sprec.BasisXVec3(),
@@ -395,6 +413,12 @@ func (s *Stage) setupCarDemo(program *graphics.Program, model *stream.Model, pos
 		FirstBodyAnchor: brTireRelativePosition,
 		SecondBody:      brTire.Physics.Body,
 		IgnoreY:         true,
+	})
+	s.physicsEngine.AddConstraint(physics.LimitTranslationConstraint{
+		FirstBody:  chasis.Physics.Body,
+		SecondBody: brTire.Physics.Body,
+		MaxY:       -0.5,
+		MinY:       -1.0,
 	})
 	s.physicsEngine.AddConstraint(physics.MatchAxisConstraint{
 		FirstBody:      chasis.Physics.Body,
