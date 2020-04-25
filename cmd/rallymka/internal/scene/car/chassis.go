@@ -30,18 +30,18 @@ type ChassisBuilder struct {
 	modifiers []func(entity *ecs.Entity)
 }
 
-func (b *ChassisBuilder) WithDebug(name string) *ChassisBuilder {
-	b.modifiers = append(b.modifiers, func(entity *ecs.Entity) {
-		entity.Debug = &ecs.DebugComponent{
-			Name: name,
-		}
-	})
-	return b
-}
+// func (b *ChassisBuilder) WithDebug(name string) *ChassisBuilder {
+// 	b.modifiers = append(b.modifiers, func(entity *ecs.Entity) {
+// 		entity.Debug = &ecs.DebugComponent{
+// 			Name: name,
+// 		}
+// 	})
+// 	return b
+// }
 
 func (b *ChassisBuilder) WithPosition(position sprec.Vec3) *ChassisBuilder {
 	b.modifiers = append(b.modifiers, func(entity *ecs.Entity) {
-		entity.Transform.Position = position
+		entity.Physics.Body.Position = position
 	})
 	return b
 }
@@ -50,30 +50,29 @@ func (b *ChassisBuilder) Build(ecsManager *ecs.Manager) *ecs.Entity {
 	bodyNode, _ := b.model.FindNode("body")
 
 	entity := ecsManager.CreateEntity()
-	entity.Transform = &ecs.TransformComponent{
-		Position:    sprec.ZeroVec3(),
-		Orientation: sprec.IdentityQuat(),
-	}
-	entity.Motion = &ecs.MotionComponent{
-		Mass:              chassisMass,
-		MomentOfInertia:   physics.SymmetricMomentOfInertia(chassisMomentOfInertia),
-		DragFactor:        chassisDragFactor,
-		AngularDragFactor: chassisAngularDragFactor,
-	}
-	entity.Collision = &ecs.CollisionComponent{
-		RestitutionCoef: chassisRestitutionCoef,
-		CollisionShape: ecs.BoxShape{
-			MinX: -0.8,
-			MaxX: 0.8,
-			MinY: -0.4,
-			MaxY: 0.8,
-			MinZ: -2.2,
-			MaxZ: 1.5,
+	entity.Physics = &ecs.PhysicsComponent{
+		Body: &physics.Body{
+			Position:          sprec.ZeroVec3(),
+			Orientation:       sprec.IdentityQuat(),
+			Mass:              chassisMass,
+			MomentOfInertia:   physics.SymmetricMomentOfInertia(chassisMomentOfInertia),
+			DragFactor:        chassisDragFactor,
+			AngularDragFactor: chassisAngularDragFactor,
+			RestitutionCoef:   chassisRestitutionCoef,
+			CollisionShape: physics.BoxShape{
+				MinX: -0.8,
+				MaxX: 0.8,
+				MinY: -0.4,
+				MaxY: 0.8,
+				MinZ: -2.2,
+				MaxZ: 1.5,
+			},
 		},
 	}
-	entity.RenderMesh = &ecs.RenderMesh{
+	entity.Render = &ecs.RenderComponent{
 		GeomProgram: b.program,
 		Mesh:        bodyNode.Mesh,
+		Matrix:      sprec.IdentityMat4(),
 	}
 	for _, modifier := range b.modifiers {
 		modifier(entity)

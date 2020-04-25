@@ -5,13 +5,12 @@ import (
 
 	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecs"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecs/constraint"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecs/system"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/scene/car"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/stream"
 	"github.com/mokiat/rally-mka/internal/data"
-	"github.com/mokiat/rally-mka/internal/engine/collision"
 	"github.com/mokiat/rally-mka/internal/engine/graphics"
+	"github.com/mokiat/rally-mka/internal/engine/physics"
 )
 
 const (
@@ -65,7 +64,7 @@ func NewStage(gfxWorker *graphics.Worker) *Stage {
 		ecsRenderer:          ecs.NewRenderer(ecsManager),
 		ecsCarSystem:         system.NewCarSystem(ecsManager),
 		ecsCameraStandSystem: ecs.NewCameraStandSystem(ecsManager),
-		ecsPhysicsSystem:     ecs.NewPhysicsSystem(ecsManager, 15*time.Millisecond),
+		physicsEngine:        physics.NewEngine(15 * time.Millisecond),
 		screenFramebuffer:    &graphics.Framebuffer{},
 		debugVertexArray:     debugVertexArray,
 		debugVertexArrayData: debugVertexArrayData,
@@ -78,7 +77,7 @@ type Stage struct {
 	ecsRenderer          *ecs.Renderer
 	ecsCarSystem         *system.CarSystem
 	ecsCameraStandSystem *ecs.CameraStandSystem
-	ecsPhysicsSystem     *ecs.PhysicsSystem
+	physicsEngine        *physics.Engine
 
 	geometryFramebuffer *graphics.Framebuffer
 	lightingFramebuffer *graphics.Framebuffer
@@ -89,8 +88,6 @@ type Stage struct {
 	debugProgram         *graphics.Program
 	debugVertexArray     *graphics.VertexArray
 	debugVertexArrayData graphics.VertexArrayData
-
-	collisionMeshes []*collision.Mesh
 }
 
 func (s *Stage) Init(data *Data, camera *ecs.Camera) {
@@ -106,55 +103,36 @@ func (s *Stage) Init(data *Data, camera *ecs.Camera) {
 
 	for _, staticMesh := range level.StaticMeshes {
 		entity := s.ecsManager.CreateEntity()
-		entity.Transform = &ecs.TransformComponent{
-			Position:    sprec.ZeroVec3(),
-			Orientation: sprec.IdentityQuat(),
-		}
-		entity.RenderMesh = &ecs.RenderMesh{
+		entity.Render = &ecs.RenderComponent{
 			GeomProgram: data.TerrainProgram.Get(),
 			Mesh:        staticMesh,
+			Matrix:      sprec.IdentityMat4(),
 		}
 	}
 
-	s.collisionMeshes = level.CollisionMeshes
 	for _, collisionMesh := range level.CollisionMeshes {
-		entity := s.ecsManager.CreateEntity()
-		entity.Transform = &ecs.TransformComponent{
-			Position:    sprec.ZeroVec3(),
-			Orientation: sprec.IdentityQuat(),
-		}
-		entity.Collision = &ecs.CollisionComponent{
+		s.physicsEngine.AddBody(&physics.Body{
+			Position:        sprec.ZeroVec3(),
+			Orientation:     sprec.IdentityQuat(),
+			IsStatic:        true,
 			RestitutionCoef: 1.0,
-			CollisionShape: ecs.MeshShape{
+			CollisionShape: physics.MeshShape{
 				Mesh: collisionMesh,
 			},
-		}
+		})
 	}
 
 	for _, staticEntity := range level.StaticEntities {
 		entity := s.ecsManager.CreateEntity()
-		entity.Transform = &ecs.TransformComponent{
-			Position:    staticEntity.Matrix.Translation(),
-			Orientation: sprec.IdentityQuat(),
-			// FIXME
-			// Orientation: ecs.Orientation{
-			// 	VectorX: staticEntity.Matrix.OrientationX(),
-			// 	VectorY: staticEntity.Matrix.OrientationY(),
-			// 	VectorZ: staticEntity.Matrix.OrientationZ(),
-			// },
-		}
-		entity.RenderModel = &ecs.RenderModel{
+		entity.Render = &ecs.RenderComponent{
 			GeomProgram: data.EntityProgram.Get(),
 			Model:       staticEntity.Model.Get(),
+			Matrix:      staticEntity.Matrix,
 		}
 	}
 
 	carProgram := data.CarProgram.Get()
 	carModel := data.CarModel.Get()
-
-	// ----------------------------------------------
-
-	// targetEntity := s.spawnCar(carProgram, carModel)
 
 	// ----------------------------------------------
 
@@ -183,7 +161,7 @@ func (s *Stage) Init(data *Data, camera *ecs.Camera) {
 	standEntity.CameraStand = &ecs.CameraStand{
 		Target:         standTarget,
 		Camera:         camera,
-		AnchorPosition: sprec.Vec3Sum(standTarget.Transform.Position, sprec.NewVec3(0.0, 0.0, -cameraDistance)),
+		AnchorPosition: sprec.Vec3Sum(standTarget.Physics.Body.Position, sprec.NewVec3(0.0, 0.0, -cameraDistance)),
 		AnchorDistance: anchorDistance,
 		CameraDistance: cameraDistance,
 	}
@@ -202,22 +180,52 @@ func (s *Stage) setupChandelierDemo(program *graphics.Program, model *stream.Mod
 	fakeFixtureTire := car.Tire(program, model, car.FrontRightTireLocation).
 		WithPosition(position).
 		Build(s.ecsManager)
-	s.ecsPhysicsSystem.AddConstraint(constraint.FixedTranslation{
-		Entity:   fakeFixtureTire,
-		Position: position,
+	s.physicsEngine.AddBody(fakeFixtureTire.Physics.Body)
+	s.physicsEngine.AddConstraint(physics.FixedTranslationConstraint{
+		Fixture: position,
+		Body:    fakeFixtureTire.Physics.Body,
 	})
 
 	playTire := car.Tire(program, model, car.FrontRightTireLocation).
 		WithPosition(sprec.Vec3Sum(position, sprec.NewVec3(-2.3, 0.0, 0.0))).
 		Build(s.ecsManager)
-	s.ecsPhysicsSystem.AddConstraint(constraint.Chandelier{
-		Entity:       playTire,
-		EntityAnchor: sprec.NewVec3(0.3, 0.0, 0.0),
-		Length:       2.0,
-		Fixture:      position,
+	s.physicsEngine.AddBody(playTire.Physics.Body)
+	s.physicsEngine.AddConstraint(physics.ChandelierConstraint{
+		Fixture:    position,
+		Body:       playTire.Physics.Body,
+		BodyAnchor: sprec.NewVec3(0.3, 0.0, 0.0),
+		Length:     2.0,
 	})
 
 	return fakeFixtureTire
+}
+
+func (s *Stage) setupCoiloverDemo(program *graphics.Program, model *stream.Model, position sprec.Vec3) *ecs.Entity {
+	fixtureTire := car.Tire(program, model, car.FrontRightTireLocation).
+		WithPosition(position).
+		Build(s.ecsManager)
+	s.physicsEngine.AddBody(fixtureTire.Physics.Body)
+	s.physicsEngine.AddConstraint(physics.FixedTranslationConstraint{
+		Fixture: position,
+		Body:    fixtureTire.Physics.Body,
+	})
+
+	fallingTire := car.Tire(program, model, car.FrontRightTireLocation).
+		WithPosition(sprec.Vec3Sum(position, sprec.NewVec3(0.0, -0.8, 0.0))).
+		Build(s.ecsManager)
+	s.physicsEngine.AddBody(fallingTire.Physics.Body)
+	s.physicsEngine.AddConstraint(physics.SpringConstraint{
+		FirstBody:  fixtureTire.Physics.Body,
+		SecondBody: fallingTire.Physics.Body,
+		Length:     1.0,
+		Stiffness:  100.0,
+	})
+	s.physicsEngine.AddConstraint(physics.DamperConstraint{
+		FirstBody:  fixtureTire.Physics.Body,
+		SecondBody: fallingTire.Physics.Body,
+		Strength:   20.0,
+	})
+	return fixtureTire
 }
 
 func (s *Stage) setupRodDemo(program *graphics.Program, model *stream.Model, position sprec.Vec3) *ecs.Entity {
@@ -225,71 +233,49 @@ func (s *Stage) setupRodDemo(program *graphics.Program, model *stream.Model, pos
 	topTire := car.Tire(program, model, car.FrontRightTireLocation).
 		WithPosition(topTirePosition).
 		Build(s.ecsManager)
-	s.ecsPhysicsSystem.AddConstraint(constraint.FixedTranslation{
-		Entity:   topTire,
-		Position: topTirePosition,
+	s.physicsEngine.AddBody(topTire.Physics.Body)
+	s.physicsEngine.AddConstraint(physics.FixedTranslationConstraint{
+		Fixture: topTirePosition,
+		Body:    topTire.Physics.Body,
 	})
 
 	middleTirePosition := sprec.Vec3Sum(topTirePosition, sprec.NewVec3(1.4, 0.0, 0.0))
 	middleTire := car.Tire(program, model, car.FrontRightTireLocation).
 		WithPosition(middleTirePosition).
 		Build(s.ecsManager)
-	s.ecsPhysicsSystem.AddConstraint(constraint.HingedRod{
-		First:        topTire,
-		FirstAnchor:  sprec.NewVec3(0.2, 0.0, 0.0),
-		Second:       middleTire,
-		SecondAnchor: sprec.NewVec3(-0.2, 0.0, 0.0),
-		Length:       1.0,
+	s.physicsEngine.AddBody(middleTire.Physics.Body)
+	s.physicsEngine.AddConstraint(physics.HingedRodConstraint{
+		FirstBody:        topTire.Physics.Body,
+		FirstBodyAnchor:  sprec.NewVec3(0.2, 0.0, 0.0),
+		SecondBody:       middleTire.Physics.Body,
+		SecondBodyAnchor: sprec.NewVec3(-0.2, 0.0, 0.0),
+		Length:           1.0,
 	})
 
 	bottomTirePosition := sprec.Vec3Sum(middleTirePosition, sprec.NewVec3(1.4, 0.0, 0.0))
 	bottomTire := car.Tire(program, model, car.FrontRightTireLocation).
 		WithPosition(bottomTirePosition).
 		Build(s.ecsManager)
-	s.ecsPhysicsSystem.AddConstraint(constraint.HingedRod{
-		First:        middleTire,
-		FirstAnchor:  sprec.NewVec3(0.2, 0.0, 0.0),
-		Second:       bottomTire,
-		SecondAnchor: sprec.NewVec3(-0.2, 0.0, 0.0),
-		Length:       1.0,
+	s.physicsEngine.AddBody(bottomTire.Physics.Body)
+	s.physicsEngine.AddConstraint(physics.HingedRodConstraint{
+		FirstBody:        middleTire.Physics.Body,
+		FirstBodyAnchor:  sprec.NewVec3(0.2, 0.0, 0.0),
+		SecondBody:       bottomTire.Physics.Body,
+		SecondBodyAnchor: sprec.NewVec3(-0.2, 0.0, 0.0),
+		Length:           1.0,
 	})
 
 	return topTire
-}
-
-func (s *Stage) setupCoiloverDemo(program *graphics.Program, model *stream.Model, position sprec.Vec3) *ecs.Entity {
-	fixtureTire := car.Tire(program, model, car.FrontRightTireLocation).
-		WithPosition(position).
-		Build(s.ecsManager)
-	s.ecsPhysicsSystem.AddConstraint(constraint.FixedTranslation{
-		Entity:   fixtureTire,
-		Position: position,
-	})
-
-	fallingTire := car.Tire(program, model, car.FrontRightTireLocation).
-		WithPosition(sprec.Vec3Sum(position, sprec.NewVec3(0.0, -0.8, 0.0))).
-		Build(s.ecsManager)
-	s.ecsPhysicsSystem.AddConstraint(constraint.Spring{
-		Target:    fixtureTire,
-		Entity:    fallingTire,
-		Length:    1.0,
-		Stiffness: 100.0,
-	})
-	s.ecsPhysicsSystem.AddConstraint(constraint.Damper{
-		Target:   fixtureTire,
-		Entity:   fallingTire,
-		Strength: 20.0,
-	})
-	return fixtureTire
 }
 
 func (s *Stage) setupCarDemo(program *graphics.Program, model *stream.Model, position sprec.Vec3) *ecs.Entity {
 	chasis := car.Chassis(program, model).
 		WithPosition(position).
 		Build(s.ecsManager)
+	s.physicsEngine.AddBody(chasis.Physics.Body)
 	// chasis.Motion.AngularVelocity = sprec.NewVec3(0.0, -0.5, 0.0)
 	// chasis.Motion.AngularVelocity = sprec.NewVec3(0.0, 0.0, 1.0)
-	// s.ecsPhysicsSystem.AddConstraint(constraint.FixedTranslation{
+	// s.physicsEngine.AddConstraint(constraint.FixedTranslation{
 	// 	Entity:   chasis,
 	// 	Position: position,
 	// })
@@ -305,130 +291,130 @@ func (s *Stage) setupCarDemo(program *graphics.Program, model *stream.Model, pos
 	flTire := car.Tire(program, model, car.FrontLeftTireLocation).
 		WithPosition(sprec.Vec3Sum(position, flTireRelativePosition)).
 		Build(s.ecsManager)
-	s.ecsPhysicsSystem.AddConstraint(constraint.CopyTranslation{
-		Target:         chasis,
-		Entity:         flTire,
-		RelativeOffset: flTireRelativePosition,
-		SkipY:          true,
+	s.physicsEngine.AddBody(flTire.Physics.Body)
+	s.physicsEngine.AddConstraint(physics.MatchTranslationConstraint{
+		FirstBody:       chasis.Physics.Body,
+		FirstBodyAnchor: flTireRelativePosition,
+		SecondBody:      flTire.Physics.Body,
+		IgnoreY:         true,
 	})
-	flRotation := &constraint.CopyAxis{
-		Target:       chasis,
-		TargetOffset: sprec.IdentityQuat(),
-		TargetAxis:   sprec.BasisXVec3(),
-		Entity:       flTire,
-		EntityAxis:   sprec.BasisXVec3(),
+	flRotation := &physics.MatchAxisConstraint{
+		FirstBody:      chasis.Physics.Body,
+		FirstBodyAxis:  sprec.BasisXVec3(),
+		SecondBody:     flTire.Physics.Body,
+		SecondBodyAxis: sprec.BasisXVec3(),
 	}
-	s.ecsPhysicsSystem.AddConstraint(flRotation)
+	s.physicsEngine.AddConstraint(flRotation)
 	flSpringAttachmentRelativePosition := sprec.Vec3Sum(flTireRelativePosition, sprec.NewVec3(0.0, suspensionLength, 0.0))
-	s.ecsPhysicsSystem.AddConstraint(constraint.Spring{
-		Target:               chasis,
-		TargetRelativeOffset: flSpringAttachmentRelativePosition,
-		Entity:               flTire,
-		Stiffness:            suspensionStiffness,
-		Length:               suspensionLength,
+	s.physicsEngine.AddConstraint(physics.SpringConstraint{
+		FirstBody:       chasis.Physics.Body,
+		FirstBodyAnchor: flSpringAttachmentRelativePosition,
+		SecondBody:      flTire.Physics.Body,
+		Length:          suspensionLength,
+		Stiffness:       suspensionStiffness,
 	})
-	s.ecsPhysicsSystem.AddConstraint(constraint.Damper{
-		Target:               chasis,
-		TargetRelativeOffset: flSpringAttachmentRelativePosition,
-		Entity:               flTire,
-		Strength:             suspensionDampness,
+	s.physicsEngine.AddConstraint(physics.DamperConstraint{
+		FirstBody:       chasis.Physics.Body,
+		FirstBodyAnchor: flSpringAttachmentRelativePosition,
+		SecondBody:      flTire.Physics.Body,
+		Strength:        suspensionDampness,
 	})
 
 	frTireRelativePosition := sprec.NewVec3(-1.0, -0.6-suspensionLength/2.0, 1.25)
 	frTire := car.Tire(program, model, car.FrontRightTireLocation).
 		WithPosition(sprec.Vec3Sum(position, frTireRelativePosition)).
 		Build(s.ecsManager)
-	s.ecsPhysicsSystem.AddConstraint(constraint.CopyTranslation{
-		Target:         chasis,
-		Entity:         frTire,
-		RelativeOffset: frTireRelativePosition,
-		SkipY:          true,
+	s.physicsEngine.AddBody(frTire.Physics.Body)
+	s.physicsEngine.AddConstraint(physics.MatchTranslationConstraint{
+		FirstBody:       chasis.Physics.Body,
+		FirstBodyAnchor: frTireRelativePosition,
+		SecondBody:      frTire.Physics.Body,
+		IgnoreY:         true,
 	})
-	frRotation := &constraint.CopyAxis{
-		Target:       chasis,
-		TargetOffset: sprec.IdentityQuat(),
-		TargetAxis:   sprec.BasisXVec3(),
-		Entity:       frTire,
-		EntityAxis:   sprec.BasisXVec3(),
+	frRotation := &physics.MatchAxisConstraint{
+		FirstBody:      chasis.Physics.Body,
+		FirstBodyAxis:  sprec.BasisXVec3(),
+		SecondBody:     frTire.Physics.Body,
+		SecondBodyAxis: sprec.BasisXVec3(),
 	}
-	s.ecsPhysicsSystem.AddConstraint(frRotation)
+	s.physicsEngine.AddConstraint(frRotation)
 	frSpringAttachmentRelativePosition := sprec.Vec3Sum(frTireRelativePosition, sprec.NewVec3(0.0, suspensionLength, 0.0))
-	s.ecsPhysicsSystem.AddConstraint(constraint.Spring{
-		Target:               chasis,
-		TargetRelativeOffset: frSpringAttachmentRelativePosition,
-		Entity:               frTire,
-		Stiffness:            suspensionStiffness,
-		Length:               suspensionLength,
+	s.physicsEngine.AddConstraint(physics.SpringConstraint{
+		FirstBody:       chasis.Physics.Body,
+		FirstBodyAnchor: frSpringAttachmentRelativePosition,
+		SecondBody:      frTire.Physics.Body,
+		Length:          suspensionLength,
+		Stiffness:       suspensionStiffness,
 	})
-	s.ecsPhysicsSystem.AddConstraint(constraint.Damper{
-		Target:               chasis,
-		TargetRelativeOffset: frSpringAttachmentRelativePosition,
-		Entity:               frTire,
-		Strength:             suspensionDampness,
+	s.physicsEngine.AddConstraint(physics.DamperConstraint{
+		FirstBody:       chasis.Physics.Body,
+		FirstBodyAnchor: frSpringAttachmentRelativePosition,
+		SecondBody:      frTire.Physics.Body,
+		Strength:        suspensionDampness,
 	})
 
 	blTireRelativePosition := sprec.NewVec3(1.0, -0.6-suspensionLength/2.0, -1.45)
 	blTire := car.Tire(program, model, car.BackLeftTireLocation).
 		WithPosition(sprec.Vec3Sum(position, blTireRelativePosition)).
 		Build(s.ecsManager)
-	s.ecsPhysicsSystem.AddConstraint(constraint.CopyTranslation{
-		Target:         chasis,
-		Entity:         blTire,
-		RelativeOffset: blTireRelativePosition,
-		SkipY:          true,
+	s.physicsEngine.AddBody(blTire.Physics.Body)
+	s.physicsEngine.AddConstraint(physics.MatchTranslationConstraint{
+		FirstBody:       chasis.Physics.Body,
+		FirstBodyAnchor: blTireRelativePosition,
+		SecondBody:      blTire.Physics.Body,
+		IgnoreY:         true,
 	})
-	s.ecsPhysicsSystem.AddConstraint(constraint.CopyAxis{
-		Target:       chasis,
-		TargetAxis:   sprec.BasisXVec3(),
-		TargetOffset: sprec.IdentityQuat(),
-		Entity:       blTire,
-		EntityAxis:   sprec.BasisXVec3(),
+	s.physicsEngine.AddConstraint(physics.MatchAxisConstraint{
+		FirstBody:      chasis.Physics.Body,
+		FirstBodyAxis:  sprec.BasisXVec3(),
+		SecondBody:     blTire.Physics.Body,
+		SecondBodyAxis: sprec.BasisXVec3(),
 	})
 	blSpringAttachmentRelativePosition := sprec.Vec3Sum(blTireRelativePosition, sprec.NewVec3(0.0, suspensionLength, 0.0))
-	s.ecsPhysicsSystem.AddConstraint(constraint.Spring{
-		Target:               chasis,
-		TargetRelativeOffset: blSpringAttachmentRelativePosition,
-		Entity:               blTire,
-		Stiffness:            suspensionStiffness,
-		Length:               suspensionLength,
+	s.physicsEngine.AddConstraint(physics.SpringConstraint{
+		FirstBody:       chasis.Physics.Body,
+		FirstBodyAnchor: blSpringAttachmentRelativePosition,
+		SecondBody:      blTire.Physics.Body,
+		Length:          suspensionLength,
+		Stiffness:       suspensionStiffness,
 	})
-	s.ecsPhysicsSystem.AddConstraint(constraint.Damper{
-		Target:               chasis,
-		TargetRelativeOffset: blSpringAttachmentRelativePosition,
-		Entity:               blTire,
-		Strength:             suspensionDampness,
+	s.physicsEngine.AddConstraint(physics.DamperConstraint{
+		FirstBody:       chasis.Physics.Body,
+		FirstBodyAnchor: blSpringAttachmentRelativePosition,
+		SecondBody:      blTire.Physics.Body,
+		Strength:        suspensionDampness,
 	})
 
 	brTireRelativePosition := sprec.NewVec3(-1.0, -0.6-suspensionLength/2.0, -1.45)
 	brTire := car.Tire(program, model, car.BackRightTireLocation).
 		WithPosition(sprec.Vec3Sum(position, brTireRelativePosition)).
 		Build(s.ecsManager)
-	s.ecsPhysicsSystem.AddConstraint(constraint.CopyTranslation{
-		Target:         chasis,
-		Entity:         brTire,
-		RelativeOffset: brTireRelativePosition,
-		SkipY:          true,
+	s.physicsEngine.AddBody(brTire.Physics.Body)
+	s.physicsEngine.AddConstraint(physics.MatchTranslationConstraint{
+		FirstBody:       chasis.Physics.Body,
+		FirstBodyAnchor: brTireRelativePosition,
+		SecondBody:      brTire.Physics.Body,
+		IgnoreY:         true,
 	})
-	s.ecsPhysicsSystem.AddConstraint(constraint.CopyAxis{
-		Target:       chasis,
-		TargetAxis:   sprec.BasisXVec3(),
-		TargetOffset: sprec.IdentityQuat(),
-		Entity:       brTire,
-		EntityAxis:   sprec.BasisXVec3(),
+	s.physicsEngine.AddConstraint(physics.MatchAxisConstraint{
+		FirstBody:      chasis.Physics.Body,
+		FirstBodyAxis:  sprec.BasisXVec3(),
+		SecondBody:     brTire.Physics.Body,
+		SecondBodyAxis: sprec.BasisXVec3(),
 	})
 	brSpringAttachmentRelativePosition := sprec.Vec3Sum(brTireRelativePosition, sprec.NewVec3(0.0, suspensionLength, 0.0))
-	s.ecsPhysicsSystem.AddConstraint(constraint.Spring{
-		Target:               chasis,
-		TargetRelativeOffset: brSpringAttachmentRelativePosition,
-		Entity:               brTire,
-		Stiffness:            suspensionStiffness,
-		Length:               suspensionLength,
+	s.physicsEngine.AddConstraint(physics.SpringConstraint{
+		FirstBody:       chasis.Physics.Body,
+		FirstBodyAnchor: brSpringAttachmentRelativePosition,
+		SecondBody:      brTire.Physics.Body,
+		Length:          suspensionLength,
+		Stiffness:       suspensionStiffness,
 	})
-	s.ecsPhysicsSystem.AddConstraint(constraint.Damper{
-		Target:               chasis,
-		TargetRelativeOffset: brSpringAttachmentRelativePosition,
-		Entity:               brTire,
-		Strength:             suspensionDampness,
+	s.physicsEngine.AddConstraint(physics.DamperConstraint{
+		FirstBody:       chasis.Physics.Body,
+		FirstBodyAnchor: brSpringAttachmentRelativePosition,
+		SecondBody:      brTire.Physics.Body,
+		Strength:        suspensionDampness,
 	})
 
 	car := s.ecsManager.CreateEntity()
@@ -451,7 +437,7 @@ func (s *Stage) Resize(width, height int) {
 }
 
 func (s *Stage) Update(elapsedTime time.Duration, camera *ecs.Camera, input ecs.CarInput) {
-	s.ecsPhysicsSystem.Update(elapsedTime)
+	s.physicsEngine.Update(elapsedTime)
 	s.ecsCarSystem.Update(elapsedTime, input)
 	s.ecsCameraStandSystem.Update()
 }
@@ -475,7 +461,7 @@ func (s *Stage) Render(pipeline *graphics.Pipeline, camera *ecs.Camera) {
 	geometrySequence.DepthFunc = graphics.DepthFuncLessOrEqual
 	geometrySequence.ProjectionMatrix = camera.ProjectionMatrix()
 	geometrySequence.ViewMatrix = camera.InverseViewMatrix()
-	s.renderDebugLines(geometrySequence, s.ecsPhysicsSystem.GetDebug())
+	// s.renderDebugLines(geometrySequence, s.ecsPhysicsSystem.GetDebug())
 	s.ecsRenderer.Render(geometrySequence)
 	pipeline.EndSequence(geometrySequence)
 
@@ -501,45 +487,30 @@ func (s *Stage) Render(pipeline *graphics.Pipeline, camera *ecs.Camera) {
 	pipeline.EndSequence(screenSequence)
 }
 
-func (s *Stage) renderDebugLines(sequence *graphics.Sequence, lines []ecs.DebugLine) {
-	for i, line := range lines {
-		vertexStride := 4 * 7 * 2
-		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+0, line.A.X)
-		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+4, line.A.Y)
-		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+8, line.A.Z)
-		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+12, line.Color.X)
-		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+16, line.Color.Y)
-		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+20, line.Color.Z)
-		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+24, line.Color.W)
-		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+28, line.B.X)
-		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+32, line.B.Y)
-		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+36, line.B.Z)
-		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+40, line.Color.X)
-		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+44, line.Color.Y)
-		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+48, line.Color.Z)
-		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+52, line.Color.W)
-	}
+// func (s *Stage) renderDebugLines(sequence *graphics.Sequence, lines []ecs.DebugLine) {
+// 	for i, line := range lines {
+// 		vertexStride := 4 * 7 * 2
+// 		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+0, line.A.X)
+// 		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+4, line.A.Y)
+// 		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+8, line.A.Z)
+// 		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+12, line.Color.X)
+// 		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+16, line.Color.Y)
+// 		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+20, line.Color.Z)
+// 		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+24, line.Color.W)
+// 		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+28, line.B.X)
+// 		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+32, line.B.Y)
+// 		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+36, line.B.Z)
+// 		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+40, line.Color.X)
+// 		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+44, line.Color.Y)
+// 		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+48, line.Color.Z)
+// 		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+52, line.Color.W)
+// 	}
 
-	item := sequence.BeginItem()
-	item.Primitive = graphics.RenderPrimitiveLines
-	item.Program = s.debugProgram
-	item.ModelMatrix = sprec.IdentityMat4()
-	item.VertexArray = s.debugVertexArray
-	item.IndexCount = int32(len(lines) * 2)
-	sequence.EndItem(item)
-}
-
-func (s *Stage) CheckCollision(line collision.Line) (bestCollision collision.LineCollision, found bool) {
-	closestDistance := line.LengthSquared()
-	for _, mesh := range s.collisionMeshes {
-		if lineCollision, ok := mesh.LineCollision(line); ok {
-			found = true
-			distanceVector := sprec.Vec3Diff(lineCollision.Intersection(), line.Start())
-			if distance := distanceVector.SqrLength(); distance < closestDistance {
-				closestDistance = distance
-				bestCollision = lineCollision
-			}
-		}
-	}
-	return
-}
+// 	item := sequence.BeginItem()
+// 	item.Primitive = graphics.RenderPrimitiveLines
+// 	item.Program = s.debugProgram
+// 	item.ModelMatrix = sprec.IdentityMat4()
+// 	item.VertexArray = s.debugVertexArray
+// 	item.IndexCount = int32(len(lines) * 2)
+// 	sequence.EndItem(item)
+// }

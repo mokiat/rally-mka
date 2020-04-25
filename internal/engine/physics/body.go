@@ -7,6 +7,7 @@ type Body struct {
 
 	Position    sprec.Vec3
 	Orientation sprec.Quat
+	IsStatic    bool
 
 	Mass            float32
 	MomentOfInertia sprec.Mat3

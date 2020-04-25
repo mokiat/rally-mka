@@ -8,31 +8,24 @@ import (
 )
 
 type Entity struct {
-	Debug     *DebugComponent
-	Transform *TransformComponent
-	Motion    *MotionComponent
-	Collision *CollisionComponent
-
-	RenderMesh   *RenderMesh
-	RenderModel  *RenderModel
+	Physics      *PhysicsComponent
+	Render       *RenderComponent
 	RenderSkybox *RenderSkybox
-	Input        *Input
-	CameraStand  *CameraStand
-	Car          *Car
+
+	Input       *Input
+	CameraStand *CameraStand
+	Car         *Car
 }
 
-type DebugComponent struct {
-	Name string
+type PhysicsComponent struct {
+	Body *physics.Body
 }
 
-type RenderModel struct {
+type RenderComponent struct {
+	GeomProgram *graphics.Program
 	Model       *stream.Model
-	GeomProgram *graphics.Program
-}
-
-type RenderMesh struct {
 	Mesh        *stream.Mesh
-	GeomProgram *graphics.Program
+	Matrix      sprec.Mat4
 }
 
 type RenderSkybox struct {

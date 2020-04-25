@@ -43,18 +43,18 @@ type TireBuilder struct {
 	modifiers []func(entity *ecs.Entity)
 }
 
-func (b *TireBuilder) WithDebug(name string) *TireBuilder {
-	b.modifiers = append(b.modifiers, func(entity *ecs.Entity) {
-		entity.Debug = &ecs.DebugComponent{
-			Name: name,
-		}
-	})
-	return b
-}
+// func (b *TireBuilder) WithDebug(name string) *TireBuilder {
+// 	b.modifiers = append(b.modifiers, func(entity *ecs.Entity) {
+// 		entity.Debug = &ecs.DebugComponent{
+// 			Name: name,
+// 		}
+// 	})
+// 	return b
+// }
 
 func (b *TireBuilder) WithPosition(position sprec.Vec3) *TireBuilder {
 	b.modifiers = append(b.modifiers, func(entity *ecs.Entity) {
-		entity.Transform.Position = position
+		entity.Physics.Body.Position = position
 	})
 	return b
 }
@@ -63,26 +63,25 @@ func (b *TireBuilder) Build(ecsManager *ecs.Manager) *ecs.Entity {
 	modelNode, _ := b.model.FindNode(fmt.Sprintf("wheel_%s", b.location))
 
 	entity := ecsManager.CreateEntity()
-	entity.Transform = &ecs.TransformComponent{
-		Position:    sprec.ZeroVec3(),
-		Orientation: sprec.IdentityQuat(),
-	}
-	entity.Motion = &ecs.MotionComponent{
-		Mass:              tireMass,
-		MomentOfInertia:   physics.SymmetricMomentOfInertia(tireMomentOfInertia),
-		DragFactor:        tireDragFactor,
-		AngularDragFactor: tireAngularDragFactor,
-	}
-	entity.Collision = &ecs.CollisionComponent{
-		RestitutionCoef: tireRestitutionCoef,
-		CollisionShape: ecs.CylinderShape{
-			Length: 0.4,
-			Radius: 0.3,
+	entity.Physics = &ecs.PhysicsComponent{
+		Body: &physics.Body{
+			Position:          sprec.ZeroVec3(),
+			Orientation:       sprec.IdentityQuat(),
+			Mass:              tireMass,
+			MomentOfInertia:   physics.SymmetricMomentOfInertia(tireMomentOfInertia),
+			DragFactor:        tireDragFactor,
+			AngularDragFactor: tireAngularDragFactor,
+			RestitutionCoef:   tireRestitutionCoef,
+			CollisionShape: physics.CylinderShape{
+				Length: 0.4,
+				Radius: 0.3,
+			},
 		},
 	}
-	entity.RenderMesh = &ecs.RenderMesh{
+	entity.Render = &ecs.RenderComponent{
 		GeomProgram: b.program,
 		Mesh:        modelNode.Mesh,
+		Matrix:      sprec.IdentityMat4(),
 	}
 	for _, modifier := range b.modifiers {
 		modifier(entity)

@@ -20,20 +20,18 @@ func (s *CameraStandSystem) Update() {
 	}
 }
 
-// var angleSpeed sprec.Angle = sprec.Degrees(0.5)
-// var angle sprec.Angle = sprec.Degrees(200)
-
 var angleSpeed sprec.Angle = sprec.Degrees(0.0)
 var angle sprec.Angle = sprec.Degrees(0)
-
-// var angle sprec.Angle = sprec.Degrees(300)
 
 func (s *CameraStandSystem) updateCameraStand(cameraStand *CameraStand) {
 	angle += angleSpeed
 
 	var targetPosition sprec.Vec3
-	if cameraStand.Target.Transform != nil {
-		targetPosition = cameraStand.Target.Transform.Position
+	switch {
+	case cameraStand.Target.Physics != nil:
+		targetPosition = cameraStand.Target.Physics.Body.Position
+	case cameraStand.Target.Render != nil:
+		targetPosition = cameraStand.Target.Render.Matrix.Translation()
 	}
 	// we use a camera anchor to achieve the smooth effect of a
 	// camera following the target

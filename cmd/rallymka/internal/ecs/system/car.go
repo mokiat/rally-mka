@@ -5,7 +5,7 @@ import (
 
 	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecs"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecs/constraint"
+	"github.com/mokiat/rally-mka/internal/engine/physics"
 )
 
 func NewCarSystem(ecsManager *ecs.Manager) *CarSystem {
@@ -69,10 +69,12 @@ func (s *CarSystem) updateCarInput(car *ecs.Car, elapsedTime time.Duration, inpu
 }
 
 func (s *CarSystem) updateCar(car *ecs.Car) {
-	flRotation := car.FLWheelRotation.(*constraint.CopyAxis)
-	frRotation := car.FRWheelRotation.(*constraint.CopyAxis)
-	flRotation.TargetOffset = sprec.RotationQuat(car.SteeringAngle, sprec.BasisYVec3())
-	frRotation.TargetOffset = sprec.RotationQuat(car.SteeringAngle, sprec.BasisYVec3())
+	flRotation := car.FLWheelRotation.(*physics.MatchAxisConstraint)
+	frRotation := car.FRWheelRotation.(*physics.MatchAxisConstraint)
+
+	rotationQuat := sprec.RotationQuat(car.SteeringAngle, sprec.BasisYVec3())
+	flRotation.FirstBodyAxis = sprec.QuatVec3Rotation(rotationQuat, sprec.BasisXVec3())
+	frRotation.FirstBodyAxis = sprec.QuatVec3Rotation(rotationQuat, sprec.BasisXVec3())
 
 	// FIXME: Acceleration, however, it gets erased at the moment, hence velocity
 
@@ -80,8 +82,8 @@ func (s *CarSystem) updateCar(car *ecs.Car) {
 	// car.FLWheel.Motion.Velocity = sprec.Vec3Sum(car.FLWheel.Motion.Velocity, sprec.Vec3Prod(car.FLWheel.Transform.Orientation.OrientationZ(), car.Acceleration*20))
 	// car.FRWheel.Motion.Velocity = sprec.Vec3Sum(car.FRWheel.Motion.Velocity, sprec.Vec3Prod(car.FRWheel.Transform.Orientation.OrientationZ(), car.Acceleration*20))
 
-	car.FLWheel.Motion.AngularVelocity = sprec.Vec3Sum(car.FLWheel.Motion.AngularVelocity, sprec.Vec3Prod(car.FLWheel.Transform.Orientation.OrientationX(), car.Acceleration*250))
-	car.FRWheel.Motion.AngularVelocity = sprec.Vec3Sum(car.FRWheel.Motion.AngularVelocity, sprec.Vec3Prod(car.FRWheel.Transform.Orientation.OrientationX(), car.Acceleration*250))
-	car.BLWheel.Motion.AngularVelocity = sprec.Vec3Sum(car.BLWheel.Motion.AngularVelocity, sprec.Vec3Prod(car.BLWheel.Transform.Orientation.OrientationX(), car.Acceleration*250))
-	car.BRWheel.Motion.AngularVelocity = sprec.Vec3Sum(car.BRWheel.Motion.AngularVelocity, sprec.Vec3Prod(car.BRWheel.Transform.Orientation.OrientationX(), car.Acceleration*250))
+	car.FLWheel.Physics.Body.AngularVelocity = sprec.Vec3Sum(car.FLWheel.Physics.Body.AngularVelocity, sprec.Vec3Prod(car.FLWheel.Physics.Body.Orientation.OrientationX(), car.Acceleration*250))
+	car.FRWheel.Physics.Body.AngularVelocity = sprec.Vec3Sum(car.FRWheel.Physics.Body.AngularVelocity, sprec.Vec3Prod(car.FRWheel.Physics.Body.Orientation.OrientationX(), car.Acceleration*250))
+	car.BLWheel.Physics.Body.AngularVelocity = sprec.Vec3Sum(car.BLWheel.Physics.Body.AngularVelocity, sprec.Vec3Prod(car.BLWheel.Physics.Body.Orientation.OrientationX(), car.Acceleration*250))
+	car.BRWheel.Physics.Body.AngularVelocity = sprec.Vec3Sum(car.BRWheel.Physics.Body.AngularVelocity, sprec.Vec3Prod(car.BRWheel.Physics.Body.Orientation.OrientationX(), car.Acceleration*250))
 }

@@ -17,31 +17,32 @@ type Renderer struct {
 }
 
 func (r *Renderer) Render(sequence *graphics.Sequence) {
-	r.renderRenderMeshes(sequence)
-	r.renderRenderModels(sequence)
+	r.renderRender(sequence)
 	r.renderRenderSkyboxes(sequence)
 }
 
-func (r *Renderer) renderRenderMeshes(sequence *graphics.Sequence) {
+func (r *Renderer) renderRender(sequence *graphics.Sequence) {
 	for _, entity := range r.ecsManager.Entities() {
-		transformComp := entity.Transform
-		renderMeshComp := entity.RenderMesh
-		if transformComp == nil || renderMeshComp == nil {
+		render := entity.Render
+		if render == nil {
 			continue
 		}
-		r.renderMesh(sequence, renderMeshComp.GeomProgram, transformComp.Matrix(), renderMeshComp.Mesh)
-	}
-}
-
-func (r *Renderer) renderRenderModels(sequence *graphics.Sequence) {
-	for _, entity := range r.ecsManager.Entities() {
-		transformComp := entity.Transform
-		renderModelComp := entity.RenderModel
-		if transformComp == nil || renderModelComp == nil {
-			continue
+		if entity.Physics != nil {
+			body := entity.Physics.Body
+			render.Matrix = sprec.TransformationMat4(
+				body.Orientation.OrientationX(),
+				body.Orientation.OrientationY(),
+				body.Orientation.OrientationZ(),
+				body.Position,
+			)
 		}
-		for _, node := range renderModelComp.Model.Nodes {
-			r.renderModelNode(sequence, renderModelComp.GeomProgram, transformComp.Matrix(), node)
+		if render.Model != nil {
+			for _, node := range render.Model.Nodes {
+				r.renderModelNode(sequence, render.GeomProgram, render.Matrix, node)
+			}
+		}
+		if render.Mesh != nil {
+			r.renderMesh(sequence, render.GeomProgram, render.Matrix, render.Mesh)
 		}
 	}
 }
