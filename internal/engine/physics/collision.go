@@ -1,16 +1,9 @@
-package ecs
+package physics
 
 import (
 	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/rally-mka/internal/engine/collision"
-	"github.com/mokiat/rally-mka/internal/engine/physics"
 )
-
-type CollisionComponent struct {
-	RestitutionCoef float32
-	CollisionShape  interface{}
-	Group           int
-}
 
 type BoxShape struct {
 	MinX float32
@@ -31,8 +24,8 @@ type MeshShape struct {
 }
 
 type GroundCollisionConstraint struct {
-	physics.NilConstraint
-	Entity           *Entity
+	NilConstraint
+	Body             *Body
 	OriginalPosition sprec.Vec3
 	Normal           sprec.Vec3
 	ContactPoint     sprec.Vec3
@@ -40,10 +33,8 @@ type GroundCollisionConstraint struct {
 }
 
 func (c GroundCollisionConstraint) ApplyForce() {
-	transformComp := c.Entity.Transform
-	motionComp := c.Entity.Motion
-	relativeContactPosition := sprec.Vec3Diff(c.ContactPoint, transformComp.Position)
-	contactVelocity := sprec.Vec3Sum(motionComp.Velocity, sprec.Vec3Cross(motionComp.AngularVelocity, relativeContactPosition))
+	contactRadiusWS := sprec.Vec3Diff(c.ContactPoint, c.Body.Position)
+	contactVelocity := sprec.Vec3Sum(c.Body.Velocity, sprec.Vec3Cross(c.Body.AngularVelocity, contactRadiusWS))
 
 	lateralVelocity := sprec.Vec3Diff(contactVelocity, sprec.Vec3Prod(c.Normal, sprec.Vec3Dot(contactVelocity, c.Normal)))
 	maxFriction := float32(100.0)
@@ -51,35 +42,14 @@ func (c GroundCollisionConstraint) ApplyForce() {
 		lateralVelocity = sprec.ResizedVec3(lateralVelocity, maxFriction)
 	}
 
-	c.Entity.Motion.ApplyOffsetImpulse(relativeContactPosition, sprec.Vec3Prod(lateralVelocity, -motionComp.Mass/10))
+	c.Body.ApplyOffsetImpulse(contactRadiusWS, sprec.Vec3Prod(lateralVelocity, -c.Body.Mass/10))
 }
 
-// func (c GroundCollisionConstraint) ApplyCorrectionForces() {
-// 	transformComp := c.Entity.Transform
-// 	motionComp := c.Entity.Motion
-
-// 	relativeContactPosition := sprec.Vec3Diff(c.ContactPoint, transformComp.Position)
-// 	contactAcceleration := sprec.Vec3Sum(motionComp.Acceleration, sprec.Vec3Cross(motionComp.AngularAcceleration, relativeContactPosition))
-
-// 	normalAcceleration := sprec.Vec3Dot(c.Normal, contactAcceleration)
-// 	if normalAcceleration > 0 {
-// 		return // moving away from ground
-// 	}
-
-// 	totalMass := 1.0 / ((1.0 / motionComp.Mass) + sprec.Vec3Dot(sprec.Mat3Vec3Prod(sprec.InverseMat3(motionComp.MomentOfInertia), sprec.Vec3Cross(relativeContactPosition, c.Normal)), sprec.Vec3Cross(relativeContactPosition, c.Normal)))
-// 	forceStrength := totalMass * sprec.Vec3Dot(c.Normal, contactAcceleration)
-// 	motionComp.ApplyOffsetForce(relativeContactPosition, sprec.Vec3Prod(c.Normal, -forceStrength))
-// }
-
 func (c GroundCollisionConstraint) ApplyImpulse() {
-	transformComp := c.Entity.Transform
-	motionComp := c.Entity.Motion
-	collisionComp := c.Entity.Collision
+	contactRadiusWS := sprec.Vec3Diff(c.ContactPoint, c.Body.Position)
+	contactVelocity := sprec.Vec3Sum(c.Body.Velocity, sprec.Vec3Cross(c.Body.AngularVelocity, contactRadiusWS))
 
-	relativeContactPosition := sprec.Vec3Diff(c.ContactPoint, transformComp.Position)
-	contactVelocity := sprec.Vec3Sum(motionComp.Velocity, sprec.Vec3Cross(motionComp.AngularVelocity, relativeContactPosition))
-
-	jacobian := sprec.InverseVec3(c.Normal)
+	normal := sprec.InverseVec3(c.Normal)
 	normalVelocity := sprec.Vec3Dot(c.Normal, contactVelocity)
 	if normalVelocity > 0 {
 		return // moving away from ground
@@ -98,9 +68,9 @@ func (c GroundCollisionConstraint) ApplyImpulse() {
 
 	restitutionClamp := float32(0.0) // TODO: Delete, use above one
 
-	totalMass := (1 + collisionComp.RestitutionCoef*restitutionClamp) / ((1.0 / motionComp.Mass) + sprec.Vec3Dot(sprec.Mat3Vec3Prod(sprec.InverseMat3(motionComp.MomentOfInertia), sprec.Vec3Cross(relativeContactPosition, jacobian)), sprec.Vec3Cross(relativeContactPosition, jacobian)))
-	impulseStrength := totalMass*sprec.Vec3Dot(jacobian, contactVelocity) + totalMass*c.Depth // FIXME
-	motionComp.ApplyOffsetImpulse(relativeContactPosition, sprec.InverseVec3(sprec.Vec3Prod(jacobian, impulseStrength)))
+	totalMass := (1 + c.Body.RestitutionCoef*restitutionClamp) / ((1.0 / c.Body.Mass) + sprec.Vec3Dot(sprec.Mat3Vec3Prod(sprec.InverseMat3(c.Body.MomentOfInertia), sprec.Vec3Cross(contactRadiusWS, normal)), sprec.Vec3Cross(contactRadiusWS, normal)))
+	impulseStrength := totalMass*sprec.Vec3Dot(normal, contactVelocity) + totalMass*c.Depth // FIXME
+	c.Body.ApplyOffsetImpulse(contactRadiusWS, sprec.InverseVec3(sprec.Vec3Prod(normal, impulseStrength)))
 
 	// tangentRadius := radius.DecVec3(c.Normal.Mul(math.Vec3DotProduct(radius, c.Normal)))
 	// impulse := -normalVelocity * (1 + c.Body.RestitutionCoef*restitutionClamp) / ((1 / c.Body.Mass) + (tangentRadius.LengthSquared() / c.Body.MomentOfInertia))

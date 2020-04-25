@@ -1,0 +1,69 @@
+package physics
+
+import "github.com/mokiat/gomath/sprec"
+
+type HingedRodConstraint struct {
+	NilConstraint
+	FirstBody        *Body
+	FirstBodyAnchor  sprec.Vec3
+	SecondBody       *Body
+	SecondBodyAnchor sprec.Vec3
+	Length           float32
+}
+
+func (c HingedRodConstraint) ApplyImpulse() {
+	result := c.Calculate()
+	if sprec.Abs(result.Drift) > 0.0001 {
+		result.Jacobian.Apply(c.FirstBody, c.SecondBody)
+	}
+}
+
+func (c HingedRodConstraint) ApplyNudge() {
+	result := c.Calculate()
+	if sprec.Abs(result.Drift) > 0.0001 {
+		result.Jacobian.ApplyNudge(c.FirstBody, c.SecondBody, result.Drift)
+	}
+}
+
+func (c HingedRodConstraint) Calculate() HingedRodConstraintResult {
+	firstRadiusWS := sprec.QuatVec3Rotation(c.FirstBody.Orientation, c.FirstBodyAnchor)
+	secondRadiusWS := sprec.QuatVec3Rotation(c.SecondBody.Orientation, c.SecondBodyAnchor)
+	firstAnchorWS := sprec.Vec3Sum(c.FirstBody.Position, firstRadiusWS)
+	secondAnchorWS := sprec.Vec3Sum(c.SecondBody.Position, secondRadiusWS)
+	deltaPosition := sprec.Vec3Diff(secondAnchorWS, firstAnchorWS)
+	normal := sprec.BasisXVec3()
+	if deltaPosition.SqrLength() > 0.000001 {
+		normal = sprec.UnitVec3(deltaPosition)
+	}
+
+	return HingedRodConstraintResult{
+		Jacobian: DoubleBodyJacobian{
+			SlopeVelocityFirst: sprec.NewVec3(
+				-normal.X,
+				-normal.Y,
+				-normal.Z,
+			),
+			SlopeAngularVelocityFirst: sprec.NewVec3(
+				-(normal.Z*firstRadiusWS.Y - normal.Y*firstRadiusWS.Z),
+				-(normal.X*firstRadiusWS.Z - normal.Z*firstRadiusWS.X),
+				-(normal.Y*firstRadiusWS.X - normal.X*firstRadiusWS.Y),
+			),
+			SlopeVelocitySecond: sprec.NewVec3(
+				normal.X,
+				normal.Y,
+				normal.Z,
+			),
+			SlopeAngularVelocitySecond: sprec.NewVec3(
+				normal.Z*secondRadiusWS.Y-normal.Y*secondRadiusWS.Z,
+				normal.X*secondRadiusWS.Z-normal.Z*secondRadiusWS.X,
+				normal.Y*secondRadiusWS.X-normal.X*secondRadiusWS.Y,
+			),
+		},
+		Drift: deltaPosition.Length() - c.Length,
+	}
+}
+
+type HingedRodConstraintResult struct {
+	Jacobian DoubleBodyJacobian
+	Drift    float32
+}
