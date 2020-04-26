@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/mokiat/gomath/sprec"
-	"github.com/mokiat/rally-mka/internal/engine/collision"
+	"github.com/mokiat/rally-mka/internal/engine/physics/collision"
 )
 
 const (

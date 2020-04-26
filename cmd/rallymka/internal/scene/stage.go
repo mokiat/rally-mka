@@ -276,9 +276,9 @@ func (s *Stage) setupCarDemo(program *graphics.Program, model *stream.Model, pos
 	s.physicsEngine.AddBody(chasis.Physics.Body)
 	// chasis.Motion.AngularVelocity = sprec.NewVec3(0.0, -0.5, 0.0)
 	// chasis.Motion.AngularVelocity = sprec.NewVec3(0.0, 0.0, 1.0)
-	// s.physicsEngine.AddConstraint(constraint.FixedTranslation{
-	// 	Entity:   chasis,
-	// 	Position: position,
+	// s.physicsEngine.AddConstraint(physics.FixedTranslationConstraint{
+	// 	Fixture: position,
+	// 	Body:    chasis.Physics.Body,
 	// })
 
 	// suspensionLength := float32(1.0)
