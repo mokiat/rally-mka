@@ -72,8 +72,12 @@ func (b *TireBuilder) Build(ecsManager *ecs.Manager) *ecs.Entity {
 			DragFactor:        tireDragFactor,
 			AngularDragFactor: tireAngularDragFactor,
 			RestitutionCoef:   tireRestitutionCoef,
-			CollisionShape: physics.CylinderShape{
-				Length: 0.4,
+			// CollisionShape: physics.CylinderShape{
+			// 	Length: 0.4,
+			// 	Radius: 0.3,
+			// },
+			// using sphere shape at is easier to do in physics engine at the moment
+			CollisionShape: physics.SphereShape{
 				Radius: 0.3,
 			},
 		},

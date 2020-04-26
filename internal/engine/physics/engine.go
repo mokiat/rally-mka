@@ -39,6 +39,10 @@ type Engine struct {
 	collisionConstraints []Constraint
 }
 
+func (e *Engine) Bodies() []*Body {
+	return e.bodies
+}
+
 func (e *Engine) Update(elapsedTime time.Duration) {
 	e.accumulatedTime += elapsedTime
 	for e.accumulatedTime > e.step {
@@ -251,6 +255,40 @@ func (e *Engine) checkCollisionTwoBodies(first, second *Body) {
 			sin := sprec.Sin(sprec.Degrees(360.0 * float32(i) / 12.0))
 			direction := sprec.Vec3Sum(sprec.Vec3Prod(halfLength, cos), sprec.Vec3Prod(halfHeight, sin))
 			checkLineCollision(first.Position, sprec.Vec3Sum(first.Position, direction))
+		}
+
+	case SphereShape:
+		var bestCollision collision.LineCollision
+		var found bool
+		for _, triangle := range secondCollisionShape.Mesh.Triangles() {
+			deltaPosition := sprec.Vec3Diff(first.Position, triangle.Center())
+			if deltaPosition.Length() > firstCollisionShape.Radius+triangle.BoudingSphereRadius() {
+				continue
+			}
+
+			distance := sprec.Vec3Dot(triangle.Normal(), deltaPosition)
+			if distance > firstCollisionShape.Radius {
+				continue
+			}
+			projectedPoint := sprec.Vec3Diff(first.Position, sprec.Vec3Prod(triangle.Normal(), distance))
+			if triangle.Contains(projectedPoint) {
+				bestCollision = collision.NewLineCollision(
+					projectedPoint,
+					triangle.Normal(),
+					distance,
+					firstCollisionShape.Radius-distance,
+				)
+				found = true
+			}
+		}
+		if found {
+			e.collisionConstraints = append(e.collisionConstraints, GroundCollisionConstraint{
+				Body:             first,
+				OriginalPosition: first.Position,
+				Normal:           bestCollision.Normal(),
+				ContactPoint:     bestCollision.Intersection(),
+				Depth:            sprec.Abs(bestCollision.BottomHeight()), // FIXME: Shouldn't it just be negative or positive
+			})
 		}
 	}
 }

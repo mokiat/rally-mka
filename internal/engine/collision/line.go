@@ -34,6 +34,15 @@ func (l Line) LengthSquared() float32 {
 	return l.length * l.length
 }
 
+func NewLineCollision(intersection, normal sprec.Vec3, topHeight, bottomHeight float32) LineCollision {
+	return LineCollision{
+		intersection: intersection,
+		normal:       normal,
+		topHeight:    topHeight,
+		bottomHeight: bottomHeight,
+	}
+}
+
 type LineCollision struct {
 	intersection sprec.Vec3
 	normal       sprec.Vec3

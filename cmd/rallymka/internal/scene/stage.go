@@ -33,7 +33,7 @@ type CarInput struct {
 	Handbrake bool
 }
 
-const maxDebugLines = 1024
+const maxDebugLines = 1024 * 6
 
 var arrayTask *graphics.Task
 
@@ -88,6 +88,7 @@ type Stage struct {
 	debugProgram         *graphics.Program
 	debugVertexArray     *graphics.VertexArray
 	debugVertexArrayData graphics.VertexArrayData
+	debugLines           []DebugLine
 }
 
 func (s *Stage) Init(data *Data, camera *ecs.Camera) {
@@ -283,6 +284,7 @@ func (s *Stage) setupCarDemo(program *graphics.Program, model *stream.Model, pos
 	// suspensionLength := float32(1.0)
 	// suspensionStiffness := float32(5000.0)
 	// suspensionDampness := float32(0.4)
+	suspensionEnabled := true
 	suspensionLength := float32(0.5)
 	suspensionStiffness := float32(6000.0)
 	suspensionDampness := float32(0.9)
@@ -296,7 +298,7 @@ func (s *Stage) setupCarDemo(program *graphics.Program, model *stream.Model, pos
 		FirstBody:       chasis.Physics.Body,
 		FirstBodyAnchor: flTireRelativePosition,
 		SecondBody:      flTire.Physics.Body,
-		IgnoreY:         true,
+		IgnoreY:         suspensionEnabled,
 	})
 	s.physicsEngine.AddConstraint(physics.LimitTranslationConstraint{
 		FirstBody:  chasis.Physics.Body,
@@ -335,7 +337,7 @@ func (s *Stage) setupCarDemo(program *graphics.Program, model *stream.Model, pos
 		FirstBody:       chasis.Physics.Body,
 		FirstBodyAnchor: frTireRelativePosition,
 		SecondBody:      frTire.Physics.Body,
-		IgnoreY:         true,
+		IgnoreY:         suspensionEnabled,
 	})
 	s.physicsEngine.AddConstraint(physics.LimitTranslationConstraint{
 		FirstBody:  chasis.Physics.Body,
@@ -374,7 +376,7 @@ func (s *Stage) setupCarDemo(program *graphics.Program, model *stream.Model, pos
 		FirstBody:       chasis.Physics.Body,
 		FirstBodyAnchor: blTireRelativePosition,
 		SecondBody:      blTire.Physics.Body,
-		IgnoreY:         true,
+		IgnoreY:         suspensionEnabled,
 	})
 	s.physicsEngine.AddConstraint(physics.LimitTranslationConstraint{
 		FirstBody:  chasis.Physics.Body,
@@ -412,7 +414,7 @@ func (s *Stage) setupCarDemo(program *graphics.Program, model *stream.Model, pos
 		FirstBody:       chasis.Physics.Body,
 		FirstBodyAnchor: brTireRelativePosition,
 		SecondBody:      brTire.Physics.Body,
-		IgnoreY:         true,
+		IgnoreY:         suspensionEnabled,
 	})
 	s.physicsEngine.AddConstraint(physics.LimitTranslationConstraint{
 		FirstBody:  chasis.Physics.Body,
@@ -485,7 +487,8 @@ func (s *Stage) Render(pipeline *graphics.Pipeline, camera *ecs.Camera) {
 	geometrySequence.DepthFunc = graphics.DepthFuncLessOrEqual
 	geometrySequence.ProjectionMatrix = camera.ProjectionMatrix()
 	geometrySequence.ViewMatrix = camera.InverseViewMatrix()
-	// s.renderDebugLines(geometrySequence, s.ecsPhysicsSystem.GetDebug())
+	// s.refreshDebugLines()
+	s.renderDebugLines(geometrySequence)
 	s.ecsRenderer.Render(geometrySequence)
 	pipeline.EndSequence(geometrySequence)
 
@@ -511,30 +514,59 @@ func (s *Stage) Render(pipeline *graphics.Pipeline, camera *ecs.Camera) {
 	pipeline.EndSequence(screenSequence)
 }
 
-// func (s *Stage) renderDebugLines(sequence *graphics.Sequence, lines []ecs.DebugLine) {
-// 	for i, line := range lines {
-// 		vertexStride := 4 * 7 * 2
-// 		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+0, line.A.X)
-// 		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+4, line.A.Y)
-// 		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+8, line.A.Z)
-// 		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+12, line.Color.X)
-// 		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+16, line.Color.Y)
-// 		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+20, line.Color.Z)
-// 		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+24, line.Color.W)
-// 		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+28, line.B.X)
-// 		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+32, line.B.Y)
-// 		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+36, line.B.Z)
-// 		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+40, line.Color.X)
-// 		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+44, line.Color.Y)
-// 		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+48, line.Color.Z)
-// 		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+52, line.Color.W)
-// 	}
+type DebugLine struct {
+	A     sprec.Vec3
+	B     sprec.Vec3
+	Color sprec.Vec4
+}
 
-// 	item := sequence.BeginItem()
-// 	item.Primitive = graphics.RenderPrimitiveLines
-// 	item.Program = s.debugProgram
-// 	item.ModelMatrix = sprec.IdentityMat4()
-// 	item.VertexArray = s.debugVertexArray
-// 	item.IndexCount = int32(len(lines) * 2)
-// 	sequence.EndItem(item)
-// }
+func (s *Stage) refreshDebugLines() {
+	s.debugLines = s.debugLines[:0]
+	for _, body := range s.physicsEngine.Bodies() {
+		switch shape := body.CollisionShape.(type) {
+		case physics.MeshShape:
+			for _, triangle := range shape.Mesh.Triangles() {
+				s.addDebugLine(triangle.A(), triangle.B(), sprec.NewVec4(1.0, 1.0, 1.0, 1.0))
+				s.addDebugLine(triangle.B(), triangle.C(), sprec.NewVec4(1.0, 1.0, 1.0, 1.0))
+				s.addDebugLine(triangle.C(), triangle.A(), sprec.NewVec4(1.0, 1.0, 1.0, 1.0))
+				s.addDebugLine(triangle.Center(), sprec.Vec3Sum(triangle.Center(), triangle.Normal()), sprec.NewVec4(1.0, 0.0, 0.0, 1.0))
+			}
+		}
+	}
+}
+
+func (s *Stage) addDebugLine(a, b sprec.Vec3, color sprec.Vec4) {
+	s.debugLines = append(s.debugLines, DebugLine{
+		A:     a,
+		B:     b,
+		Color: color,
+	})
+}
+
+func (s *Stage) renderDebugLines(sequence *graphics.Sequence) {
+	for i, line := range s.debugLines {
+		vertexStride := 4 * 7 * 2
+		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+0, line.A.X)
+		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+4, line.A.Y)
+		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+8, line.A.Z)
+		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+12, line.Color.X)
+		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+16, line.Color.Y)
+		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+20, line.Color.Z)
+		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+24, line.Color.W)
+		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+28, line.B.X)
+		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+32, line.B.Y)
+		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+36, line.B.Z)
+		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+40, line.Color.X)
+		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+44, line.Color.Y)
+		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+48, line.Color.Z)
+		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+52, line.Color.W)
+	}
+
+	item := sequence.BeginItem()
+	item.Primitive = graphics.RenderPrimitiveLines
+	item.Program = s.debugProgram
+	item.ModelMatrix = sprec.IdentityMat4()
+	item.VertexArray = s.debugVertexArray
+	item.IndexCount = int32(len(s.debugLines) * 2)
+	sequence.EndItem(item)
+}

@@ -14,6 +14,10 @@ type BoxShape struct {
 	MaxZ float32
 }
 
+type SphereShape struct {
+	Radius float32
+}
+
 type CylinderShape struct {
 	Length float32
 	Radius float32

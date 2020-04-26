@@ -78,6 +78,12 @@ func (s *CarSystem) updateCar(car *ecs.Car) {
 
 	// FIXME: Acceleration, however, it gets erased at the moment, hence velocity
 
+	// TODO: Remove, just for debugging
+	if car.HandbrakePulled {
+		car.Body.Physics.Body.AngularVelocity = sprec.Vec3Sum(car.Body.Physics.Body.AngularVelocity, sprec.NewVec3(0.0, 0.0, 0.1))
+		car.Body.Physics.Body.Velocity = sprec.Vec3Sum(car.Body.Physics.Body.Velocity, sprec.NewVec3(0.0, 0.2, 0.0))
+	}
+
 	// FIXME: With rotation this is no-longer correct as the Z axis moves around, making the wheel wobble
 	// car.FLWheel.Motion.Velocity = sprec.Vec3Sum(car.FLWheel.Motion.Velocity, sprec.Vec3Prod(car.FLWheel.Transform.Orientation.OrientationZ(), car.Acceleration*20))
 	// car.FRWheel.Motion.Velocity = sprec.Vec3Sum(car.FRWheel.Motion.Velocity, sprec.Vec3Prod(car.FRWheel.Transform.Orientation.OrientationZ(), car.Acceleration*20))
