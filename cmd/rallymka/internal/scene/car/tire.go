@@ -43,14 +43,12 @@ type TireBuilder struct {
 	modifiers []func(entity *ecs.Entity)
 }
 
-// func (b *TireBuilder) WithDebug(name string) *TireBuilder {
-// 	b.modifiers = append(b.modifiers, func(entity *ecs.Entity) {
-// 		entity.Debug = &ecs.DebugComponent{
-// 			Name: name,
-// 		}
-// 	})
-// 	return b
-// }
+func (b *TireBuilder) WithName(name string) *TireBuilder {
+	b.modifiers = append(b.modifiers, func(entity *ecs.Entity) {
+		entity.Physics.Body.Name = name
+	})
+	return b
+}
 
 func (b *TireBuilder) WithPosition(position sprec.Vec3) *TireBuilder {
 	b.modifiers = append(b.modifiers, func(entity *ecs.Entity) {

@@ -9,8 +9,9 @@ import (
 )
 
 const (
-	chassisRadius            = 2
-	chassisMass              = 1300.0 / 10.0
+	chassisRadius = 2
+	chassisMass   = 1300.0 / 5.0
+	// chassisMass              = 1300.0 / 10.0
 	chassisMomentOfInertia   = chassisMass * chassisRadius * chassisRadius / 2.0
 	chassisDragFactor        = 0.0 // 0.5 * 6.8 * 1.0
 	chassisAngularDragFactor = 0.0 // 0.5 * 6.8 * 1.0
@@ -30,14 +31,12 @@ type ChassisBuilder struct {
 	modifiers []func(entity *ecs.Entity)
 }
 
-// func (b *ChassisBuilder) WithDebug(name string) *ChassisBuilder {
-// 	b.modifiers = append(b.modifiers, func(entity *ecs.Entity) {
-// 		entity.Debug = &ecs.DebugComponent{
-// 			Name: name,
-// 		}
-// 	})
-// 	return b
-// }
+func (b *ChassisBuilder) WithName(name string) *ChassisBuilder {
+	b.modifiers = append(b.modifiers, func(entity *ecs.Entity) {
+		entity.Physics.Body.Name = name
+	})
+	return b
+}
 
 func (b *ChassisBuilder) WithPosition(position sprec.Vec3) *ChassisBuilder {
 	b.modifiers = append(b.modifiers, func(entity *ecs.Entity) {

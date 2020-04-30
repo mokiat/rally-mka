@@ -2,6 +2,7 @@ package collision
 
 import (
 	"github.com/mokiat/gomath/sprec"
+	"github.com/mokiat/rally-mka/internal/engine/shape"
 )
 
 func MakeTriangle(a, b, c sprec.Vec3) Triangle {
@@ -25,21 +26,13 @@ func (t Triangle) BoudingSphereRadius() float32 {
 	lngA := sprec.Vec3Diff(t.a, center).Length()
 	lngB := sprec.Vec3Diff(t.b, center).Length()
 	lngC := sprec.Vec3Diff(t.c, center).Length()
-	if lngA > lngB && lngA > lngC {
-		return lngA
-	}
-	if lngB > lngC {
-		return lngB
-	}
-	return lngC
+	return sprec.Max(lngA, sprec.Max(lngB, lngC))
 }
 
 func (t Triangle) Surface() float32 {
-	lngAB := sprec.Vec3Diff(t.b, t.a).Length()
-	lngBC := sprec.Vec3Diff(t.c, t.b).Length()
-	lngCA := sprec.Vec3Diff(t.a, t.c).Length()
-	semiperimeter := (lngAB + lngBC + lngCA) / 2.0
-	return sprec.Sqrt(semiperimeter * (semiperimeter - lngAB) * (semiperimeter - lngBC) * (semiperimeter - lngCA))
+	vecAB := sprec.Vec3Diff(t.b, t.a)
+	vecAC := sprec.Vec3Diff(t.c, t.a)
+	return sprec.Vec3Cross(vecAB, vecAC).Length() / 2.0
 }
 
 func (t Triangle) A() sprec.Vec3 {
@@ -66,9 +59,9 @@ func (t Triangle) Contains(point sprec.Vec3) bool {
 	return isInTriangle(point, t.a, t.b, t.c, t.normal)
 }
 
-func (t Triangle) LineCollision(line Line) (LineCollision, bool) {
-	surfaceToStart := sprec.Vec3Diff(line.start, t.a)
-	surfaceToEnd := sprec.Vec3Diff(line.end, t.a)
+func (t Triangle) LineCollision(line shape.Line) (LineCollision, bool) {
+	surfaceToStart := sprec.Vec3Diff(line.A, t.a)
+	surfaceToEnd := sprec.Vec3Diff(line.B, t.a)
 
 	topHeight := sprec.Vec3Dot(t.normal, surfaceToStart)
 	bottomHeight := sprec.Vec3Dot(t.normal, surfaceToEnd)
@@ -82,8 +75,8 @@ func (t Triangle) LineCollision(line Line) (LineCollision, bool) {
 	}
 
 	factor := topHeight / height
-	delta := sprec.Vec3Diff(line.end, line.start)
-	intersection := sprec.Vec3Sum(sprec.Vec3Prod(delta, factor), line.start)
+	delta := sprec.Vec3Diff(line.B, line.A)
+	intersection := sprec.Vec3Sum(sprec.Vec3Prod(delta, factor), line.A)
 
 	if !isInTriangle(intersection, t.a, t.b, t.c, t.normal) {
 		return LineCollision{}, false

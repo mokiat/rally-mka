@@ -5,11 +5,14 @@ import (
 
 	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/rally-mka/internal/engine/physics/collision"
+	"github.com/mokiat/rally-mka/internal/engine/shape"
 )
 
 const (
-	gravity     = 9.8
-	windDensity = 1.2
+	gravity = 9.8
+	// gravity = 0.0
+	// windDensity = 1.2
+	windDensity = 0.0
 
 	impulseIterations = 100
 	nudgeIterations   = 100
@@ -69,6 +72,7 @@ func (e *Engine) AddConstraint(constraint Constraint) {
 }
 
 func (e *Engine) runSimulation(elapsedSeconds float32) {
+	e.detectCollisions()
 	e.applyForces()
 	e.integrate(elapsedSeconds)
 	e.applyImpulses()
@@ -76,7 +80,6 @@ func (e *Engine) runSimulation(elapsedSeconds float32) {
 	e.applyMotion(elapsedSeconds)
 	// TODO: Should the following two be swapped
 	e.applyNudges()
-	e.detectCollisions()
 }
 
 func (e *Engine) applyForces() {
@@ -166,6 +169,10 @@ func (e *Engine) applyNudges() {
 }
 
 func (e *Engine) detectCollisions() {
+	for _, body := range e.bodies {
+		body.InCollision = false
+	}
+
 	e.collisionConstraints = e.collisionConstraints[:0]
 	for i := 0; i < len(e.bodies); i++ {
 		for j := i + 1; j < len(e.bodies); j++ {
@@ -188,7 +195,9 @@ func (e *Engine) checkCollisionTwoBodies(first, second *Body) {
 	secondCollisionShape := second.CollisionShape.(MeshShape)
 
 	checkLineCollision := func(a, b sprec.Vec3) {
-		if result, ok := secondCollisionShape.Mesh.LineCollision(collision.MakeLine(a, b)); ok {
+		if result, ok := secondCollisionShape.Mesh.LineCollision(shape.NewLine(a, b)); ok {
+			first.InCollision = true
+			second.InCollision = true
 			e.collisionConstraints = append(e.collisionConstraints, GroundCollisionConstraint{
 				Body:             first,
 				OriginalPosition: first.Position,
@@ -197,7 +206,9 @@ func (e *Engine) checkCollisionTwoBodies(first, second *Body) {
 				Depth:            sprec.Abs(result.BottomHeight()), // FIXME: Shouldn't it just be negative or positive
 			})
 		}
-		if result, ok := secondCollisionShape.Mesh.LineCollision(collision.MakeLine(b, a)); ok {
+		if result, ok := secondCollisionShape.Mesh.LineCollision(shape.NewLine(b, a)); ok {
+			first.InCollision = true
+			second.InCollision = true
 			e.collisionConstraints = append(e.collisionConstraints, GroundCollisionConstraint{
 				Body:             first,
 				OriginalPosition: first.Position,
@@ -259,7 +270,7 @@ func (e *Engine) checkCollisionTwoBodies(first, second *Body) {
 
 	case SphereShape:
 		var bestCollision collision.LineCollision
-		var found bool
+		found := false
 		for _, triangle := range secondCollisionShape.Mesh.Triangles() {
 			deltaPosition := sprec.Vec3Diff(first.Position, triangle.Center())
 			if deltaPosition.Length() > firstCollisionShape.Radius+triangle.BoudingSphereRadius() {
@@ -267,7 +278,7 @@ func (e *Engine) checkCollisionTwoBodies(first, second *Body) {
 			}
 
 			distance := sprec.Vec3Dot(triangle.Normal(), deltaPosition)
-			if distance > firstCollisionShape.Radius {
+			if distance > firstCollisionShape.Radius || distance < -firstCollisionShape.Radius {
 				continue
 			}
 			projectedPoint := sprec.Vec3Diff(first.Position, sprec.Vec3Prod(triangle.Normal(), distance))
@@ -282,6 +293,8 @@ func (e *Engine) checkCollisionTwoBodies(first, second *Body) {
 			}
 		}
 		if found {
+			first.InCollision = true
+			second.InCollision = true
 			e.collisionConstraints = append(e.collisionConstraints, GroundCollisionConstraint{
 				Body:             first,
 				OriginalPosition: first.Position,

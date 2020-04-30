@@ -2,6 +2,7 @@ package collision
 
 import (
 	"github.com/mokiat/gomath/sprec"
+	"github.com/mokiat/rally-mka/internal/engine/shape"
 )
 
 func NewMesh(triangles []Triangle) *Mesh {
@@ -23,19 +24,19 @@ func (m *Mesh) Triangles() []Triangle {
 	return m.triangles
 }
 
-func (m *Mesh) LineCollision(line Line) (bestCollision LineCollision, found bool) {
-	if startDistance := sprec.Vec3Diff(m.center, line.start).Length(); startDistance > line.Length()+m.radius {
+func (m *Mesh) LineCollision(line shape.Line) (bestCollision LineCollision, found bool) {
+	if startDistance := sprec.Vec3Diff(m.center, line.A).Length(); startDistance > line.Length()+m.radius {
 		return
 	}
-	if endDistance := sprec.Vec3Diff(m.center, line.end).Length(); endDistance > line.Length()+m.radius {
+	if endDistance := sprec.Vec3Diff(m.center, line.B).Length(); endDistance > line.Length()+m.radius {
 		return
 	}
 
-	closestDistance := line.LengthSquared()
+	closestDistance := line.SqrLength()
 	for _, triangle := range m.triangles {
 		if lineCollision, ok := triangle.LineCollision(line); ok {
 			found = true
-			distanceVector := sprec.Vec3Diff(lineCollision.intersection, line.start)
+			distanceVector := sprec.Vec3Diff(lineCollision.intersection, line.A)
 			distance := distanceVector.SqrLength()
 			if distance < closestDistance {
 				closestDistance = distance

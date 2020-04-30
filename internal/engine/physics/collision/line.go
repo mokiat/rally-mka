@@ -1,38 +1,6 @@
 package collision
 
-import (
-	"github.com/mokiat/gomath/sprec"
-)
-
-func MakeLine(start, end sprec.Vec3) Line {
-	return Line{
-		start:  start,
-		end:    end,
-		length: sprec.Vec3Diff(end, start).Length(),
-	}
-}
-
-type Line struct {
-	start  sprec.Vec3
-	end    sprec.Vec3
-	length float32
-}
-
-func (l Line) Start() sprec.Vec3 {
-	return l.start
-}
-
-func (l Line) End() sprec.Vec3 {
-	return l.end
-}
-
-func (l Line) Length() float32 {
-	return l.length
-}
-
-func (l Line) LengthSquared() float32 {
-	return l.length * l.length
-}
+import "github.com/mokiat/gomath/sprec"
 
 func NewLineCollision(intersection, normal sprec.Vec3, topHeight, bottomHeight float32) LineCollision {
 	return LineCollision{

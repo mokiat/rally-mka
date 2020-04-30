@@ -24,6 +24,7 @@ type Body struct {
 	RestitutionCoef float32
 	CollisionShape  interface{}
 	CollisionGroup  int
+	InCollision     bool
 }
 
 func (b *Body) Translate(offset sprec.Vec3) {

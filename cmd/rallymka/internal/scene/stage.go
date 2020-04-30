@@ -91,6 +91,8 @@ type Stage struct {
 	debugLines           []DebugLine
 }
 
+var targetEntity *ecs.Entity
+
 func (s *Stage) Init(data *Data, camera *ecs.Camera) {
 	level := data.Level.Get()
 
@@ -152,7 +154,7 @@ func (s *Stage) Init(data *Data, camera *ecs.Camera) {
 
 	// ----------------------------------------------
 
-	targetEntity :=
+	targetEntity =
 		s.setupCarDemo(carProgram, carModel, sprec.NewVec3(0.0, 2.0, 10.0))
 
 	// ----------------------------------------------
@@ -206,26 +208,34 @@ func (s *Stage) setupCoiloverDemo(program *graphics.Program, model *stream.Model
 		WithPosition(position).
 		Build(s.ecsManager)
 	s.physicsEngine.AddBody(fixtureTire.Physics.Body)
-	s.physicsEngine.AddConstraint(physics.FixedTranslationConstraint{
-		Fixture: position,
-		Body:    fixtureTire.Physics.Body,
-	})
+	// s.physicsEngine.AddConstraint(physics.FixedTranslationConstraint{
+	// 	Fixture: position,
+	// 	Body:    fixtureTire.Physics.Body,
+	// })
 
 	fallingTire := car.Tire(program, model, car.FrontRightTireLocation).
 		WithPosition(sprec.Vec3Sum(position, sprec.NewVec3(0.0, -0.8, 0.0))).
 		Build(s.ecsManager)
 	s.physicsEngine.AddBody(fallingTire.Physics.Body)
-	s.physicsEngine.AddConstraint(physics.SpringConstraint{
-		FirstBody:  fixtureTire.Physics.Body,
-		SecondBody: fallingTire.Physics.Body,
-		Length:     1.0,
-		Stiffness:  100.0,
+	s.physicsEngine.AddConstraint(physics.CoiloverConstraint{
+		FirstBody:       fixtureTire.Physics.Body,
+		FirstBodyAnchor: sprec.NewVec3(0.0, -2.0, 0.0),
+		SecondBody:      fallingTire.Physics.Body,
+		// Length:       1.0,
+		Frequency:    0.1,
+		DampingRatio: 0.5,
 	})
-	s.physicsEngine.AddConstraint(physics.DamperConstraint{
-		FirstBody:  fixtureTire.Physics.Body,
-		SecondBody: fallingTire.Physics.Body,
-		Strength:   20.0,
-	})
+	// s.physicsEngine.AddConstraint(physics.SpringConstraint{
+	// 	FirstBody:  fixtureTire.Physics.Body,
+	// 	SecondBody: fallingTire.Physics.Body,
+	// 	Length:     1.0,
+	// 	Stiffness:  100.0,
+	// })
+	// s.physicsEngine.AddConstraint(&physics.DamperConstraint{
+	// 	FirstBody:  fixtureTire.Physics.Body,
+	// 	SecondBody: fallingTire.Physics.Body,
+	// 	Strength:   20.0,
+	// })
 	return fixtureTire
 }
 
@@ -271,6 +281,7 @@ func (s *Stage) setupRodDemo(program *graphics.Program, model *stream.Model, pos
 
 func (s *Stage) setupCarDemo(program *graphics.Program, model *stream.Model, position sprec.Vec3) *ecs.Entity {
 	chasis := car.Chassis(program, model).
+		WithName("chasis").
 		WithPosition(position).
 		Build(s.ecsManager)
 	s.physicsEngine.AddBody(chasis.Physics.Body)
@@ -281,16 +292,13 @@ func (s *Stage) setupCarDemo(program *graphics.Program, model *stream.Model, pos
 	// 	Body:    chasis.Physics.Body,
 	// })
 
-	// suspensionLength := float32(1.0)
-	// suspensionStiffness := float32(5000.0)
-	// suspensionDampness := float32(0.4)
 	suspensionEnabled := true
-	suspensionLength := float32(0.5)
-	suspensionStiffness := float32(6000.0)
-	suspensionDampness := float32(0.9)
+	suspensionWidth := float32(1.0)
+	suspensionLength := float32(0.3)
 
-	flTireRelativePosition := sprec.NewVec3(1.0, -0.6-suspensionLength/2.0, 1.25)
+	flTireRelativePosition := sprec.NewVec3(suspensionWidth, -0.6-suspensionLength/2.0, 1.25)
 	flTire := car.Tire(program, model, car.FrontLeftTireLocation).
+		WithName("front-left-tire").
 		WithPosition(sprec.Vec3Sum(position, flTireRelativePosition)).
 		Build(s.ecsManager)
 	s.physicsEngine.AddBody(flTire.Physics.Body)
@@ -306,6 +314,7 @@ func (s *Stage) setupCarDemo(program *graphics.Program, model *stream.Model, pos
 		MaxY:       -0.5,
 		MinY:       -1.0,
 	})
+	// TODO: Use CopyAxisConstraint, instead of MatchAxisConstraint to stabalize system
 	flRotation := &physics.MatchAxisConstraint{
 		FirstBody:      chasis.Physics.Body,
 		FirstBodyAxis:  sprec.BasisXVec3(),
@@ -313,23 +322,29 @@ func (s *Stage) setupCarDemo(program *graphics.Program, model *stream.Model, pos
 		SecondBodyAxis: sprec.BasisXVec3(),
 	}
 	s.physicsEngine.AddConstraint(flRotation)
-	flSpringAttachmentRelativePosition := sprec.Vec3Sum(flTireRelativePosition, sprec.NewVec3(0.0, suspensionLength, 0.0))
-	s.physicsEngine.AddConstraint(physics.SpringConstraint{
+	s.physicsEngine.AddConstraint(physics.CoiloverConstraint{
 		FirstBody:       chasis.Physics.Body,
-		FirstBodyAnchor: flSpringAttachmentRelativePosition,
+		FirstBodyAnchor: flTireRelativePosition,
 		SecondBody:      flTire.Physics.Body,
-		Length:          suspensionLength,
-		Stiffness:       suspensionStiffness,
 	})
-	s.physicsEngine.AddConstraint(physics.DamperConstraint{
-		FirstBody:       chasis.Physics.Body,
-		FirstBodyAnchor: flSpringAttachmentRelativePosition,
-		SecondBody:      flTire.Physics.Body,
-		Strength:        suspensionDampness,
-	})
+	// flSpringAttachmentRelativePosition := sprec.Vec3Sum(flTireRelativePosition, sprec.NewVec3(0.0, suspensionLength, 0.0))
+	// s.physicsEngine.AddConstraint(physics.SpringConstraint{
+	// 	FirstBody:       chasis.Physics.Body,
+	// 	FirstBodyAnchor: flSpringAttachmentRelativePosition,
+	// 	SecondBody:      flTire.Physics.Body,
+	// 	Length:          suspensionLength,
+	// 	Stiffness:       suspensionStiffness,
+	// })
+	// s.physicsEngine.AddConstraint(&physics.DamperConstraint{
+	// 	FirstBody:       chasis.Physics.Body,
+	// 	FirstBodyAnchor: flSpringAttachmentRelativePosition,
+	// 	SecondBody:      flTire.Physics.Body,
+	// 	Strength:        suspensionDampness,
+	// })
 
-	frTireRelativePosition := sprec.NewVec3(-1.0, -0.6-suspensionLength/2.0, 1.25)
+	frTireRelativePosition := sprec.NewVec3(-suspensionWidth, -0.6-suspensionLength/2.0, 1.25)
 	frTire := car.Tire(program, model, car.FrontRightTireLocation).
+		WithName("front-right-tire").
 		WithPosition(sprec.Vec3Sum(position, frTireRelativePosition)).
 		Build(s.ecsManager)
 	s.physicsEngine.AddBody(frTire.Physics.Body)
@@ -352,23 +367,29 @@ func (s *Stage) setupCarDemo(program *graphics.Program, model *stream.Model, pos
 		SecondBodyAxis: sprec.BasisXVec3(),
 	}
 	s.physicsEngine.AddConstraint(frRotation)
-	frSpringAttachmentRelativePosition := sprec.Vec3Sum(frTireRelativePosition, sprec.NewVec3(0.0, suspensionLength, 0.0))
-	s.physicsEngine.AddConstraint(physics.SpringConstraint{
+	s.physicsEngine.AddConstraint(physics.CoiloverConstraint{
 		FirstBody:       chasis.Physics.Body,
-		FirstBodyAnchor: frSpringAttachmentRelativePosition,
+		FirstBodyAnchor: frTireRelativePosition,
 		SecondBody:      frTire.Physics.Body,
-		Length:          suspensionLength,
-		Stiffness:       suspensionStiffness,
 	})
-	s.physicsEngine.AddConstraint(physics.DamperConstraint{
-		FirstBody:       chasis.Physics.Body,
-		FirstBodyAnchor: frSpringAttachmentRelativePosition,
-		SecondBody:      frTire.Physics.Body,
-		Strength:        suspensionDampness,
-	})
+	// frSpringAttachmentRelativePosition := sprec.Vec3Sum(frTireRelativePosition, sprec.NewVec3(0.0, suspensionLength, 0.0))
+	// s.physicsEngine.AddConstraint(physics.SpringConstraint{
+	// 	FirstBody:       chasis.Physics.Body,
+	// 	FirstBodyAnchor: frSpringAttachmentRelativePosition,
+	// 	SecondBody:      frTire.Physics.Body,
+	// 	Length:          suspensionLength,
+	// 	Stiffness:       suspensionStiffness,
+	// })
+	// s.physicsEngine.AddConstraint(&physics.DamperConstraint{
+	// 	FirstBody:       chasis.Physics.Body,
+	// 	FirstBodyAnchor: frSpringAttachmentRelativePosition,
+	// 	SecondBody:      frTire.Physics.Body,
+	// 	Strength:        suspensionDampness,
+	// })
 
-	blTireRelativePosition := sprec.NewVec3(1.0, -0.6-suspensionLength/2.0, -1.45)
+	blTireRelativePosition := sprec.NewVec3(suspensionWidth, -0.6-suspensionLength/2.0, -1.45)
 	blTire := car.Tire(program, model, car.BackLeftTireLocation).
+		WithName("back-left-tire").
 		WithPosition(sprec.Vec3Sum(position, blTireRelativePosition)).
 		Build(s.ecsManager)
 	s.physicsEngine.AddBody(blTire.Physics.Body)
@@ -390,23 +411,29 @@ func (s *Stage) setupCarDemo(program *graphics.Program, model *stream.Model, pos
 		SecondBody:     blTire.Physics.Body,
 		SecondBodyAxis: sprec.BasisXVec3(),
 	})
-	blSpringAttachmentRelativePosition := sprec.Vec3Sum(blTireRelativePosition, sprec.NewVec3(0.0, suspensionLength, 0.0))
-	s.physicsEngine.AddConstraint(physics.SpringConstraint{
+	s.physicsEngine.AddConstraint(physics.CoiloverConstraint{
 		FirstBody:       chasis.Physics.Body,
-		FirstBodyAnchor: blSpringAttachmentRelativePosition,
+		FirstBodyAnchor: blTireRelativePosition,
 		SecondBody:      blTire.Physics.Body,
-		Length:          suspensionLength,
-		Stiffness:       suspensionStiffness,
 	})
-	s.physicsEngine.AddConstraint(physics.DamperConstraint{
-		FirstBody:       chasis.Physics.Body,
-		FirstBodyAnchor: blSpringAttachmentRelativePosition,
-		SecondBody:      blTire.Physics.Body,
-		Strength:        suspensionDampness,
-	})
+	// blSpringAttachmentRelativePosition := sprec.Vec3Sum(blTireRelativePosition, sprec.NewVec3(0.0, suspensionLength, 0.0))
+	// s.physicsEngine.AddConstraint(physics.SpringConstraint{
+	// 	FirstBody:       chasis.Physics.Body,
+	// 	FirstBodyAnchor: blSpringAttachmentRelativePosition,
+	// 	SecondBody:      blTire.Physics.Body,
+	// 	Length:          suspensionLength,
+	// 	Stiffness:       suspensionStiffness,
+	// })
+	// s.physicsEngine.AddConstraint(&physics.DamperConstraint{
+	// 	FirstBody:       chasis.Physics.Body,
+	// 	FirstBodyAnchor: blSpringAttachmentRelativePosition,
+	// 	SecondBody:      blTire.Physics.Body,
+	// 	Strength:        suspensionDampness,
+	// })
 
-	brTireRelativePosition := sprec.NewVec3(-1.0, -0.6-suspensionLength/2.0, -1.45)
+	brTireRelativePosition := sprec.NewVec3(-suspensionWidth, -0.6-suspensionLength/2.0, -1.45)
 	brTire := car.Tire(program, model, car.BackRightTireLocation).
+		WithName("back-right-tire").
 		WithPosition(sprec.Vec3Sum(position, brTireRelativePosition)).
 		Build(s.ecsManager)
 	s.physicsEngine.AddBody(brTire.Physics.Body)
@@ -428,20 +455,25 @@ func (s *Stage) setupCarDemo(program *graphics.Program, model *stream.Model, pos
 		SecondBody:     brTire.Physics.Body,
 		SecondBodyAxis: sprec.BasisXVec3(),
 	})
-	brSpringAttachmentRelativePosition := sprec.Vec3Sum(brTireRelativePosition, sprec.NewVec3(0.0, suspensionLength, 0.0))
-	s.physicsEngine.AddConstraint(physics.SpringConstraint{
+	s.physicsEngine.AddConstraint(physics.CoiloverConstraint{
 		FirstBody:       chasis.Physics.Body,
-		FirstBodyAnchor: brSpringAttachmentRelativePosition,
+		FirstBodyAnchor: brTireRelativePosition,
 		SecondBody:      brTire.Physics.Body,
-		Length:          suspensionLength,
-		Stiffness:       suspensionStiffness,
 	})
-	s.physicsEngine.AddConstraint(physics.DamperConstraint{
-		FirstBody:       chasis.Physics.Body,
-		FirstBodyAnchor: brSpringAttachmentRelativePosition,
-		SecondBody:      brTire.Physics.Body,
-		Strength:        suspensionDampness,
-	})
+	// brSpringAttachmentRelativePosition := sprec.Vec3Sum(brTireRelativePosition, sprec.NewVec3(0.0, suspensionLength, 0.0))
+	// s.physicsEngine.AddConstraint(physics.SpringConstraint{
+	// 	FirstBody:       chasis.Physics.Body,
+	// 	FirstBodyAnchor: brSpringAttachmentRelativePosition,
+	// 	SecondBody:      brTire.Physics.Body,
+	// 	Length:          suspensionLength,
+	// 	Stiffness:       suspensionStiffness,
+	// })
+	// s.physicsEngine.AddConstraint(&physics.DamperConstraint{
+	// 	FirstBody:       chasis.Physics.Body,
+	// 	FirstBodyAnchor: brSpringAttachmentRelativePosition,
+	// 	SecondBody:      brTire.Physics.Body,
+	// 	Strength:        suspensionDampness,
+	// })
 
 	car := s.ecsManager.CreateEntity()
 	car.Car = &ecs.Car{
@@ -523,13 +555,80 @@ type DebugLine struct {
 func (s *Stage) refreshDebugLines() {
 	s.debugLines = s.debugLines[:0]
 	for _, body := range s.physicsEngine.Bodies() {
+		color := sprec.NewVec4(1.0, 1.0, 1.0, 1.0)
+		if body.InCollision {
+			color = sprec.NewVec4(1.0, 0.0, 0.0, 1.0)
+		}
 		switch shape := body.CollisionShape.(type) {
+		case physics.SphereShape:
+			minX := sprec.Vec3Prod(body.Orientation.OrientationX(), shape.Radius)
+			maxX := sprec.Vec3Prod(body.Orientation.OrientationX(), -shape.Radius)
+			minY := sprec.Vec3Prod(body.Orientation.OrientationY(), shape.Radius)
+			maxY := sprec.Vec3Prod(body.Orientation.OrientationY(), -shape.Radius)
+			minZ := sprec.Vec3Prod(body.Orientation.OrientationZ(), shape.Radius)
+			maxZ := sprec.Vec3Prod(body.Orientation.OrientationZ(), -shape.Radius)
+			p1 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, minX), minZ), maxY)
+			p2 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, minX), maxZ), maxY)
+			p3 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, maxX), maxZ), maxY)
+			p4 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, maxX), minZ), maxY)
+			p5 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, minX), minZ), minY)
+			p6 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, minX), maxZ), minY)
+			p7 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, maxX), maxZ), minY)
+			p8 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, maxX), minZ), minY)
+
+			s.addDebugLine(p1, p2, color)
+			s.addDebugLine(p2, p3, color)
+			s.addDebugLine(p3, p4, color)
+			s.addDebugLine(p4, p1, color)
+
+			s.addDebugLine(p5, p6, color)
+			s.addDebugLine(p6, p7, color)
+			s.addDebugLine(p7, p8, color)
+			s.addDebugLine(p8, p5, color)
+
+			s.addDebugLine(p1, p5, color)
+			s.addDebugLine(p2, p6, color)
+			s.addDebugLine(p3, p7, color)
+			s.addDebugLine(p4, p8, color)
+
+		case physics.BoxShape:
+			minX := sprec.Vec3Prod(body.Orientation.OrientationX(), shape.MinX)
+			maxX := sprec.Vec3Prod(body.Orientation.OrientationX(), shape.MaxX)
+			minY := sprec.Vec3Prod(body.Orientation.OrientationY(), shape.MinY)
+			maxY := sprec.Vec3Prod(body.Orientation.OrientationY(), shape.MaxY)
+			minZ := sprec.Vec3Prod(body.Orientation.OrientationZ(), shape.MinZ)
+			maxZ := sprec.Vec3Prod(body.Orientation.OrientationZ(), shape.MaxZ)
+
+			p1 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, minX), minZ), maxY)
+			p2 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, minX), maxZ), maxY)
+			p3 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, maxX), maxZ), maxY)
+			p4 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, maxX), minZ), maxY)
+			p5 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, minX), minZ), minY)
+			p6 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, minX), maxZ), minY)
+			p7 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, maxX), maxZ), minY)
+			p8 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, maxX), minZ), minY)
+
+			s.addDebugLine(p1, p2, color)
+			s.addDebugLine(p2, p3, color)
+			s.addDebugLine(p3, p4, color)
+			s.addDebugLine(p4, p1, color)
+
+			s.addDebugLine(p5, p6, color)
+			s.addDebugLine(p6, p7, color)
+			s.addDebugLine(p7, p8, color)
+			s.addDebugLine(p8, p5, color)
+
+			s.addDebugLine(p1, p5, color)
+			s.addDebugLine(p2, p6, color)
+			s.addDebugLine(p3, p7, color)
+			s.addDebugLine(p4, p8, color)
+
 		case physics.MeshShape:
 			for _, triangle := range shape.Mesh.Triangles() {
-				s.addDebugLine(triangle.A(), triangle.B(), sprec.NewVec4(1.0, 1.0, 1.0, 1.0))
-				s.addDebugLine(triangle.B(), triangle.C(), sprec.NewVec4(1.0, 1.0, 1.0, 1.0))
-				s.addDebugLine(triangle.C(), triangle.A(), sprec.NewVec4(1.0, 1.0, 1.0, 1.0))
-				s.addDebugLine(triangle.Center(), sprec.Vec3Sum(triangle.Center(), triangle.Normal()), sprec.NewVec4(1.0, 0.0, 0.0, 1.0))
+				s.addDebugLine(triangle.A(), triangle.B(), color)
+				s.addDebugLine(triangle.B(), triangle.C(), color)
+				s.addDebugLine(triangle.C(), triangle.A(), color)
+				s.addDebugLine(triangle.Center(), sprec.Vec3Sum(triangle.Center(), triangle.Normal()), sprec.NewVec4(0.0, 1.0, 0.0, 1.0))
 			}
 		}
 	}
