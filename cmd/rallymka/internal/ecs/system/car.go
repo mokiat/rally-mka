@@ -30,7 +30,7 @@ func (s *CarSystem) Update(elapsedTime time.Duration, input ecs.CarInput) {
 func (s *CarSystem) updateCarInput(car *ecs.Car, elapsedTime time.Duration, input ecs.CarInput) {
 	// TODO: Move constants as part of car descriptor
 	// const turnSpeed = 100       // FIXME ORIGINAL: 120
-	const turnSpeed = 50 // FIXME ORIGINAL: 120
+	const turnSpeed = 80 // FIXME ORIGINAL: 120
 	// const returnSpeed = 50      // FIXME ORIGINAL: 60
 	const returnSpeed = 150     // FIXME ORIGINAL: 60
 	const maxWheelAngle = 30    // FIXME ORIGINAL: 30
@@ -90,32 +90,35 @@ func (s *CarSystem) updateCar(car *ecs.Car) {
 	// car.FLWheel.Motion.Velocity = sprec.Vec3Sum(car.FLWheel.Motion.Velocity, sprec.Vec3Prod(car.FLWheel.Transform.Orientation.OrientationZ(), car.Acceleration*20))
 	// car.FRWheel.Motion.Velocity = sprec.Vec3Sum(car.FRWheel.Motion.Velocity, sprec.Vec3Prod(car.FRWheel.Transform.Orientation.OrientationZ(), car.Acceleration*20))
 
-	accelRatio := float32(250)
+	accelRatioFront := float32(200)
+	accelRatioBack := float32(300)
 	// accelRatio := float32(250)
+	frontBreaks := float32(0.10)
+	rearBreaks := float32(0.90)
 	if car.Acceleration > 0.0001 {
 		if sprec.Vec3Dot(car.Body.Physics.Body.Velocity, car.Body.Render.Matrix.OrientationZ()) < -5.0 {
-			car.FLWheel.Physics.Body.AngularVelocity = sprec.Vec3Prod(car.FLWheel.Physics.Body.AngularVelocity, 0.85)
-			car.FRWheel.Physics.Body.AngularVelocity = sprec.Vec3Prod(car.FRWheel.Physics.Body.AngularVelocity, 0.85)
-			car.BLWheel.Physics.Body.AngularVelocity = sprec.Vec3Prod(car.BLWheel.Physics.Body.AngularVelocity, 0.90)
-			car.BRWheel.Physics.Body.AngularVelocity = sprec.Vec3Prod(car.BRWheel.Physics.Body.AngularVelocity, 0.90)
+			car.FLWheel.Physics.Body.AngularVelocity = sprec.Vec3Prod(car.FLWheel.Physics.Body.AngularVelocity, 1.0-frontBreaks)
+			car.FRWheel.Physics.Body.AngularVelocity = sprec.Vec3Prod(car.FRWheel.Physics.Body.AngularVelocity, 1.0-frontBreaks)
+			car.BLWheel.Physics.Body.AngularVelocity = sprec.Vec3Prod(car.BLWheel.Physics.Body.AngularVelocity, 1.0-rearBreaks)
+			car.BRWheel.Physics.Body.AngularVelocity = sprec.Vec3Prod(car.BRWheel.Physics.Body.AngularVelocity, 1.0-rearBreaks)
 		} else {
-			car.FLWheel.Physics.Body.AngularVelocity = sprec.Vec3Sum(car.FLWheel.Physics.Body.AngularVelocity, sprec.Vec3Prod(car.FLWheel.Physics.Body.Orientation.OrientationX(), car.Acceleration*accelRatio))
-			car.FRWheel.Physics.Body.AngularVelocity = sprec.Vec3Sum(car.FRWheel.Physics.Body.AngularVelocity, sprec.Vec3Prod(car.FRWheel.Physics.Body.Orientation.OrientationX(), car.Acceleration*accelRatio))
-			car.BLWheel.Physics.Body.AngularVelocity = sprec.Vec3Sum(car.BLWheel.Physics.Body.AngularVelocity, sprec.Vec3Prod(car.BLWheel.Physics.Body.Orientation.OrientationX(), car.Acceleration*accelRatio))
-			car.BRWheel.Physics.Body.AngularVelocity = sprec.Vec3Sum(car.BRWheel.Physics.Body.AngularVelocity, sprec.Vec3Prod(car.BRWheel.Physics.Body.Orientation.OrientationX(), car.Acceleration*accelRatio))
+			car.FLWheel.Physics.Body.AngularVelocity = sprec.Vec3Sum(car.FLWheel.Physics.Body.AngularVelocity, sprec.Vec3Prod(car.FLWheel.Physics.Body.Orientation.OrientationX(), car.Acceleration*accelRatioFront))
+			car.FRWheel.Physics.Body.AngularVelocity = sprec.Vec3Sum(car.FRWheel.Physics.Body.AngularVelocity, sprec.Vec3Prod(car.FRWheel.Physics.Body.Orientation.OrientationX(), car.Acceleration*accelRatioFront))
+			car.BLWheel.Physics.Body.AngularVelocity = sprec.Vec3Sum(car.BLWheel.Physics.Body.AngularVelocity, sprec.Vec3Prod(car.BLWheel.Physics.Body.Orientation.OrientationX(), car.Acceleration*accelRatioBack))
+			car.BRWheel.Physics.Body.AngularVelocity = sprec.Vec3Sum(car.BRWheel.Physics.Body.AngularVelocity, sprec.Vec3Prod(car.BRWheel.Physics.Body.Orientation.OrientationX(), car.Acceleration*accelRatioBack))
 		}
 	}
 	if car.Acceleration < -0.001 {
 		if sprec.Vec3Dot(car.Body.Physics.Body.Velocity, car.Body.Render.Matrix.OrientationZ()) > 5.0 {
-			car.FLWheel.Physics.Body.AngularVelocity = sprec.Vec3Prod(car.FLWheel.Physics.Body.AngularVelocity, 0.85)
-			car.FRWheel.Physics.Body.AngularVelocity = sprec.Vec3Prod(car.FRWheel.Physics.Body.AngularVelocity, 0.85)
-			car.BLWheel.Physics.Body.AngularVelocity = sprec.Vec3Prod(car.BLWheel.Physics.Body.AngularVelocity, 0.90)
-			car.BRWheel.Physics.Body.AngularVelocity = sprec.Vec3Prod(car.BRWheel.Physics.Body.AngularVelocity, 0.90)
+			car.FLWheel.Physics.Body.AngularVelocity = sprec.Vec3Prod(car.FLWheel.Physics.Body.AngularVelocity, 1.0-frontBreaks)
+			car.FRWheel.Physics.Body.AngularVelocity = sprec.Vec3Prod(car.FRWheel.Physics.Body.AngularVelocity, 1.0-frontBreaks)
+			car.BLWheel.Physics.Body.AngularVelocity = sprec.Vec3Prod(car.BLWheel.Physics.Body.AngularVelocity, 1.0-rearBreaks)
+			car.BRWheel.Physics.Body.AngularVelocity = sprec.Vec3Prod(car.BRWheel.Physics.Body.AngularVelocity, 1.0-rearBreaks)
 		} else {
-			car.FLWheel.Physics.Body.AngularVelocity = sprec.Vec3Sum(car.FLWheel.Physics.Body.AngularVelocity, sprec.Vec3Prod(car.FLWheel.Physics.Body.Orientation.OrientationX(), car.Acceleration*accelRatio))
-			car.FRWheel.Physics.Body.AngularVelocity = sprec.Vec3Sum(car.FRWheel.Physics.Body.AngularVelocity, sprec.Vec3Prod(car.FRWheel.Physics.Body.Orientation.OrientationX(), car.Acceleration*accelRatio))
-			car.BLWheel.Physics.Body.AngularVelocity = sprec.Vec3Sum(car.BLWheel.Physics.Body.AngularVelocity, sprec.Vec3Prod(car.BLWheel.Physics.Body.Orientation.OrientationX(), car.Acceleration*accelRatio))
-			car.BRWheel.Physics.Body.AngularVelocity = sprec.Vec3Sum(car.BRWheel.Physics.Body.AngularVelocity, sprec.Vec3Prod(car.BRWheel.Physics.Body.Orientation.OrientationX(), car.Acceleration*accelRatio))
+			car.FLWheel.Physics.Body.AngularVelocity = sprec.Vec3Sum(car.FLWheel.Physics.Body.AngularVelocity, sprec.Vec3Prod(car.FLWheel.Physics.Body.Orientation.OrientationX(), car.Acceleration*accelRatioFront))
+			car.FRWheel.Physics.Body.AngularVelocity = sprec.Vec3Sum(car.FRWheel.Physics.Body.AngularVelocity, sprec.Vec3Prod(car.FRWheel.Physics.Body.Orientation.OrientationX(), car.Acceleration*accelRatioFront))
+			car.BLWheel.Physics.Body.AngularVelocity = sprec.Vec3Sum(car.BLWheel.Physics.Body.AngularVelocity, sprec.Vec3Prod(car.BLWheel.Physics.Body.Orientation.OrientationX(), car.Acceleration*accelRatioBack))
+			car.BRWheel.Physics.Body.AngularVelocity = sprec.Vec3Sum(car.BRWheel.Physics.Body.AngularVelocity, sprec.Vec3Prod(car.BRWheel.Physics.Body.Orientation.OrientationX(), car.Acceleration*accelRatioBack))
 		}
 	}
 }
