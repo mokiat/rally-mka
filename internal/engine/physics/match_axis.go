@@ -25,17 +25,18 @@ func (c MatchAxisConstraint) ApplyNudge() {
 }
 
 func (c MatchAxisConstraint) Calculate() MatchAxisConstraintResult {
-	firstRadiusWS := sprec.QuatVec3Rotation(c.FirstBody.Orientation, c.FirstBodyAxis)
-	secondRadiusWS := sprec.QuatVec3Rotation(c.SecondBody.Orientation, c.SecondBodyAxis)
-	deltaPosition := sprec.Vec3Diff(secondRadiusWS, firstRadiusWS)
+	// FIXME: Does not handle when axis are pointing in opposite directions
+	firstAxisWS := sprec.QuatVec3Rotation(c.FirstBody.Orientation, c.FirstBodyAxis)
+	secondAxisWS := sprec.QuatVec3Rotation(c.SecondBody.Orientation, c.SecondBodyAxis)
+	cross := sprec.Vec3Cross(firstAxisWS, secondAxisWS)
 	return MatchAxisConstraintResult{
 		Jacobian: DoubleBodyJacobian{
 			SlopeVelocityFirst:         sprec.ZeroVec3(),
-			SlopeAngularVelocityFirst:  sprec.InverseVec3(sprec.Vec3Cross(firstRadiusWS, secondRadiusWS)),
+			SlopeAngularVelocityFirst:  sprec.InverseVec3(cross),
 			SlopeVelocitySecond:        sprec.ZeroVec3(),
-			SlopeAngularVelocitySecond: sprec.Vec3Cross(firstRadiusWS, secondRadiusWS),
+			SlopeAngularVelocitySecond: cross,
 		},
-		Drift: deltaPosition.Length(),
+		Drift: cross.Length(),
 	}
 }
 
