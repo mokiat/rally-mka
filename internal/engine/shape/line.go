@@ -2,36 +2,30 @@ package shape
 
 import "github.com/mokiat/gomath/sprec"
 
-func NewLine(a, b sprec.Vec3) Line {
-	return Line{
-		A: a,
-		B: b,
+func NewStaticLine(a, b sprec.Vec3) StaticLine {
+	return StaticLine{
+		a: a,
+		b: b,
 	}
 }
 
-func RotatedLine(line Line, rotation sprec.Quat) Line {
-	return Line{
-		A: sprec.QuatVec3Rotation(rotation, line.A),
-		B: sprec.QuatVec3Rotation(rotation, line.B),
-	}
+type StaticLine struct {
+	a sprec.Vec3
+	b sprec.Vec3
 }
 
-func TranslatedLine(line Line, translation sprec.Vec3) Line {
-	return Line{
-		A: sprec.Vec3Sum(line.A, translation),
-		B: sprec.Vec3Sum(line.B, translation),
-	}
+func (l StaticLine) A() sprec.Vec3 {
+	return l.a
 }
 
-type Line struct {
-	A sprec.Vec3
-	B sprec.Vec3
+func (l StaticLine) B() sprec.Vec3 {
+	return l.b
 }
 
-func (l Line) SqrLength() float32 {
-	return sprec.Vec3Diff(l.B, l.A).SqrLength()
+func (l StaticLine) SqrLength() float32 {
+	return sprec.Vec3Diff(l.b, l.a).SqrLength()
 }
 
-func (l Line) Length() float32 {
-	return sprec.Vec3Diff(l.B, l.A).Length()
+func (l StaticLine) Length() float32 {
+	return sprec.Vec3Diff(l.b, l.a).Length()
 }

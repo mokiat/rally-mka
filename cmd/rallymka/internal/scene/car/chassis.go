@@ -6,6 +6,7 @@ import (
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/stream"
 	"github.com/mokiat/rally-mka/internal/engine/graphics"
 	"github.com/mokiat/rally-mka/internal/engine/physics"
+	"github.com/mokiat/rally-mka/internal/engine/shape"
 )
 
 const (
@@ -58,13 +59,12 @@ func (b *ChassisBuilder) Build(ecsManager *ecs.Manager) *ecs.Entity {
 			DragFactor:        chassisDragFactor,
 			AngularDragFactor: chassisAngularDragFactor,
 			RestitutionCoef:   chassisRestitutionCoef,
-			CollisionShape: physics.BoxShape{
-				MinX: -0.8,
-				MaxX: 0.8,
-				MinY: -0.4,
-				MaxY: 0.8,
-				MinZ: -2.2,
-				MaxZ: 1.5,
+			CollisionShapes: []shape.Placement{
+				{
+					Position:    sprec.NewVec3(0.0, 0.2, -0.3),
+					Orientation: sprec.IdentityQuat(),
+					Shape:       shape.NewStaticBox(1.6, 1.2, 3.8),
+				},
 			},
 		},
 	}

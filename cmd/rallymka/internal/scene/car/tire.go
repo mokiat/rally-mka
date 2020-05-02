@@ -8,6 +8,7 @@ import (
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/stream"
 	"github.com/mokiat/rally-mka/internal/engine/graphics"
 	"github.com/mokiat/rally-mka/internal/engine/physics"
+	"github.com/mokiat/rally-mka/internal/engine/shape"
 )
 
 const (
@@ -70,13 +71,13 @@ func (b *TireBuilder) Build(ecsManager *ecs.Manager) *ecs.Entity {
 			DragFactor:        tireDragFactor,
 			AngularDragFactor: tireAngularDragFactor,
 			RestitutionCoef:   tireRestitutionCoef,
-			// CollisionShape: physics.CylinderShape{
-			// 	Length: 0.4,
-			// 	Radius: 0.3,
-			// },
 			// using sphere shape at is easier to do in physics engine at the moment
-			CollisionShape: physics.SphereShape{
-				Radius: 0.3,
+			CollisionShapes: []shape.Placement{
+				{
+					Position:    sprec.ZeroVec3(),
+					Orientation: sprec.IdentityQuat(),
+					Shape:       shape.NewStaticSphere(0.3),
+				},
 			},
 		},
 	}

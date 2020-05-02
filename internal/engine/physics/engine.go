@@ -4,15 +4,12 @@ import (
 	"time"
 
 	"github.com/mokiat/gomath/sprec"
-	"github.com/mokiat/rally-mka/internal/engine/physics/collision"
 	"github.com/mokiat/rally-mka/internal/engine/shape"
 )
 
 const (
-	gravity = 9.8
-	// gravity = 0.0
-	// windDensity = 1.2
-	windDensity = 0.0
+	gravity     = 9.8
+	windDensity = 1.2
 
 	impulseIterations = 100
 	nudgeIterations   = 100
@@ -26,6 +23,8 @@ func NewEngine(step time.Duration) *Engine {
 		gravity:      sprec.NewVec3(0.0, -gravity, 0.0),
 		windVelocity: sprec.NewVec3(0.0, 0.0, 0.0),
 		windDensity:  windDensity,
+
+		intersectionSet: shape.NewIntersectionResultSet(128),
 	}
 }
 
@@ -40,6 +39,8 @@ type Engine struct {
 	bodies               []*Body
 	constraints          []Constraint
 	collisionConstraints []Constraint
+
+	intersectionSet *shape.IntersectionResultSet
 }
 
 func (e *Engine) Bodies() []*Body {
@@ -78,7 +79,8 @@ func (e *Engine) runSimulation(elapsedSeconds float32) {
 	e.applyImpulses()
 	e.applyBaumgartes()
 	e.applyMotion(elapsedSeconds)
-	// TODO: Should the following two be swapped
+	// XXX: Nudges should probably be moved after collisions
+	// once collision starts using them. For now it is stable
 	e.applyNudges()
 }
 
@@ -94,11 +96,6 @@ func (e *Engine) applyForces() {
 		deltaWindVelocity := sprec.Vec3Diff(e.windVelocity, body.Velocity)
 		body.ApplyForce(sprec.Vec3Prod(deltaWindVelocity, e.windDensity*body.DragFactor*deltaWindVelocity.Length()))
 		body.ApplyTorque(sprec.Vec3Prod(body.AngularVelocity, -e.windDensity*body.AngularDragFactor*body.AngularVelocity.Length()))
-
-		// TODO: Where to get the radius and length (maybe a magnus tensor)?
-		// radius := float32(0.3)
-		// length := float32(0.4)
-		// body.ApplyForce(sprec.Vec3Prod(sprec.Vec3Cross(deltaWindVelocity, sprec.Vec3Prod(body.AngularVelocity, 2*sprec.Pi*radius*radius)), e.windDensity*length))
 	}
 
 	for _, constraint := range e.constraints {
@@ -112,9 +109,6 @@ func (e *Engine) applyForces() {
 }
 
 func (e *Engine) integrate(elapsedSeconds float32) {
-	// we use semi-implicit euler as it is simple and
-	// stable with harmonic motion (like springs)
-
 	for _, body := range e.bodies {
 		if body.IsStatic {
 			continue
@@ -184,124 +178,52 @@ func (e *Engine) detectCollisions() {
 }
 
 func (e *Engine) checkCollisionTwoBodies(first, second *Body) {
-	// FIXME: Temp hack section
+	if first.IsStatic && second.IsStatic {
+		return
+	}
+
+	// FIXME: Temporary, to prevent non-static entities from colliding for now
+	// Currently, only static to non-static is supported
 	if !first.IsStatic && !second.IsStatic {
 		return
 	}
-	if first.IsStatic {
-		first, second = second, first
-	}
 
-	secondCollisionShape := second.CollisionShape.(MeshShape)
+	for _, firstPlacement := range first.CollisionShapes {
+		firstPlacementWS := firstPlacement.Transformed(first.Position, first.Orientation)
 
-	checkLineCollision := func(a, b sprec.Vec3) {
-		if result, ok := secondCollisionShape.Mesh.LineCollision(shape.NewLine(a, b)); ok {
-			first.InCollision = true
-			second.InCollision = true
-			e.collisionConstraints = append(e.collisionConstraints, GroundCollisionConstraint{
-				Body:             first,
-				OriginalPosition: first.Position,
-				Normal:           result.Normal(),
-				ContactPoint:     result.Intersection(),
-				Depth:            sprec.Abs(result.BottomHeight()), // FIXME: Shouldn't it just be negative or positive
-			})
-		}
-		if result, ok := secondCollisionShape.Mesh.LineCollision(shape.NewLine(b, a)); ok {
-			first.InCollision = true
-			second.InCollision = true
-			e.collisionConstraints = append(e.collisionConstraints, GroundCollisionConstraint{
-				Body:             first,
-				OriginalPosition: first.Position,
-				Normal:           result.Normal(),
-				ContactPoint:     result.Intersection(),
-				Depth:            sprec.Abs(result.BottomHeight()), // FIXME: Shouldn't it just be negative or positive
-			})
-		}
-	}
+		for _, secondPlacement := range second.CollisionShapes {
+			secondPlacementWS := secondPlacement.Transformed(second.Position, second.Orientation)
 
-	switch firstCollisionShape := first.CollisionShape.(type) {
-	case BoxShape:
-		minX := sprec.Vec3Prod(first.Orientation.OrientationX(), firstCollisionShape.MinX)
-		maxX := sprec.Vec3Prod(first.Orientation.OrientationX(), firstCollisionShape.MaxX)
-		minY := sprec.Vec3Prod(first.Orientation.OrientationY(), firstCollisionShape.MinY)
-		maxY := sprec.Vec3Prod(first.Orientation.OrientationY(), firstCollisionShape.MaxY)
-		minZ := sprec.Vec3Prod(first.Orientation.OrientationZ(), firstCollisionShape.MinZ)
-		maxZ := sprec.Vec3Prod(first.Orientation.OrientationZ(), firstCollisionShape.MaxZ)
+			e.intersectionSet.Reset()
+			shape.CheckIntersection(firstPlacementWS, secondPlacementWS, e.intersectionSet)
 
-		p1 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(first.Position, minX), minZ), maxY)
-		p2 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(first.Position, minX), maxZ), maxY)
-		p3 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(first.Position, maxX), maxZ), maxY)
-		p4 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(first.Position, maxX), minZ), maxY)
-		p5 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(first.Position, minX), minZ), minY)
-		p6 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(first.Position, minX), maxZ), minY)
-		p7 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(first.Position, maxX), maxZ), minY)
-		p8 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(first.Position, maxX), minZ), minY)
-
-		checkLineCollision(p1, p2)
-		checkLineCollision(p2, p3)
-		checkLineCollision(p3, p4)
-		checkLineCollision(p4, p1)
-
-		checkLineCollision(p5, p6)
-		checkLineCollision(p6, p7)
-		checkLineCollision(p7, p8)
-		checkLineCollision(p8, p5)
-
-		checkLineCollision(p1, p5)
-		checkLineCollision(p2, p6)
-		checkLineCollision(p3, p7)
-		checkLineCollision(p4, p8)
-
-	case CylinderShape:
-		halfWidth := sprec.Vec3Prod(first.Orientation.OrientationX(), firstCollisionShape.Length)
-		halfHeight := sprec.Vec3Prod(first.Orientation.OrientationY(), firstCollisionShape.Radius)
-		halfLength := sprec.Vec3Prod(first.Orientation.OrientationZ(), firstCollisionShape.Radius)
-
-		checkLineCollision(first.Position, sprec.Vec3Sum(first.Position, halfWidth))
-		checkLineCollision(first.Position, sprec.Vec3Diff(first.Position, halfWidth))
-
-		const precision = 48
-		for i := 0; i < precision; i++ {
-			cos := sprec.Cos(sprec.Degrees(360.0 * float32(i) / 12.0))
-			sin := sprec.Sin(sprec.Degrees(360.0 * float32(i) / 12.0))
-			direction := sprec.Vec3Sum(sprec.Vec3Prod(halfLength, cos), sprec.Vec3Prod(halfHeight, sin))
-			checkLineCollision(first.Position, sprec.Vec3Sum(first.Position, direction))
-		}
-
-	case SphereShape:
-		var bestCollision collision.LineCollision
-		found := false
-		for _, triangle := range secondCollisionShape.Mesh.Triangles() {
-			deltaPosition := sprec.Vec3Diff(first.Position, triangle.Center())
-			if deltaPosition.Length() > firstCollisionShape.Radius+triangle.BoudingSphereRadius() {
-				continue
+			if e.intersectionSet.Found() {
+				first.InCollision = true
+				second.InCollision = true
 			}
 
-			distance := sprec.Vec3Dot(triangle.Normal(), deltaPosition)
-			if distance > firstCollisionShape.Radius || distance < -firstCollisionShape.Radius {
-				continue
+			for _, intersection := range e.intersectionSet.Intersections() {
+				// TODO: Once both non-static are supported, a dual-body collision constraint
+				// should be used instead of individual uni-body constraints
+
+				if !first.IsStatic {
+					e.collisionConstraints = append(e.collisionConstraints, GroundCollisionConstraint{
+						Body:         first,
+						Normal:       intersection.FirstDisplaceNormal,
+						ContactPoint: intersection.FirstContact,
+						Depth:        intersection.Depth,
+					})
+				}
+
+				if !second.IsStatic {
+					e.collisionConstraints = append(e.collisionConstraints, GroundCollisionConstraint{
+						Body:         second,
+						Normal:       intersection.SecondDisplaceNormal,
+						ContactPoint: intersection.SecondContact,
+						Depth:        intersection.Depth,
+					})
+				}
 			}
-			projectedPoint := sprec.Vec3Diff(first.Position, sprec.Vec3Prod(triangle.Normal(), distance))
-			if triangle.Contains(projectedPoint) {
-				bestCollision = collision.NewLineCollision(
-					projectedPoint,
-					triangle.Normal(),
-					distance,
-					firstCollisionShape.Radius-distance,
-				)
-				found = true
-			}
-		}
-		if found {
-			first.InCollision = true
-			second.InCollision = true
-			e.collisionConstraints = append(e.collisionConstraints, GroundCollisionConstraint{
-				Body:             first,
-				OriginalPosition: first.Position,
-				Normal:           bestCollision.Normal(),
-				ContactPoint:     bestCollision.Intersection(),
-				Depth:            sprec.Abs(bestCollision.BottomHeight()), // FIXME: Shouldn't it just be negative or positive
-			})
 		}
 	}
 }

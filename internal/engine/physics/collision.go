@@ -2,38 +2,36 @@ package physics
 
 import (
 	"github.com/mokiat/gomath/sprec"
-	"github.com/mokiat/rally-mka/internal/engine/physics/collision"
 )
 
-type BoxShape struct {
-	MinX float32
-	MaxX float32
-	MinY float32
-	MaxY float32
-	MinZ float32
-	MaxZ float32
-}
+// type BoxShape struct {
+// 	MinX float32
+// 	MaxX float32
+// 	MinY float32
+// 	MaxY float32
+// 	MinZ float32
+// 	MaxZ float32
+// }
 
-type SphereShape struct {
-	Radius float32
-}
+// type SphereShape struct {
+// 	Radius float32
+// }
 
-type CylinderShape struct {
-	Length float32
-	Radius float32
-}
+// type CylinderShape struct {
+// 	Length float32
+// 	Radius float32
+// }
 
-type MeshShape struct {
-	Mesh *collision.Mesh
-}
+// type MeshShape struct {
+// 	Mesh *collision.Mesh
+// }
 
 type GroundCollisionConstraint struct {
 	NilConstraint
-	Body             *Body
-	OriginalPosition sprec.Vec3
-	Normal           sprec.Vec3
-	ContactPoint     sprec.Vec3
-	Depth            float32
+	Body         *Body
+	Normal       sprec.Vec3
+	ContactPoint sprec.Vec3
+	Depth        float32
 }
 
 // func (c GroundCollisionConstraint) ApplyForce() {

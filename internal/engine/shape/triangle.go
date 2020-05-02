@@ -2,62 +2,66 @@ package shape
 
 import "github.com/mokiat/gomath/sprec"
 
-func NewTriangle(a, b, c sprec.Vec3) Triangle {
-	return Triangle{
-		A: a,
-		B: b,
-		C: c,
+func NewStaticTriangle(a, b, c sprec.Vec3) StaticTriangle {
+	return StaticTriangle{
+		a: a,
+		b: b,
+		c: c,
 	}
 }
 
-func RotatedTriangle(triangle Triangle, rotation sprec.Quat) Triangle {
-	return Triangle{
-		A: sprec.QuatVec3Rotation(rotation, triangle.A),
-		B: sprec.QuatVec3Rotation(rotation, triangle.B),
-		C: sprec.QuatVec3Rotation(rotation, triangle.C),
+type StaticTriangle struct {
+	a sprec.Vec3
+	b sprec.Vec3
+	c sprec.Vec3
+}
+
+func (t StaticTriangle) Transformed(translation sprec.Vec3, rotation sprec.Quat) StaticTriangle {
+	return StaticTriangle{
+		a: sprec.Vec3Sum(translation, sprec.QuatVec3Rotation(rotation, t.a)),
+		b: sprec.Vec3Sum(translation, sprec.QuatVec3Rotation(rotation, t.b)),
+		c: sprec.Vec3Sum(translation, sprec.QuatVec3Rotation(rotation, t.c)),
 	}
 }
 
-func TranslatedTriangle(triangle Triangle, translation sprec.Vec3) Triangle {
-	return Triangle{
-		A: sprec.Vec3Sum(triangle.A, translation),
-		B: sprec.Vec3Sum(triangle.B, translation),
-		C: sprec.Vec3Sum(triangle.C, translation),
-	}
+func (t StaticTriangle) A() sprec.Vec3 {
+	return t.a
 }
 
-type Triangle struct {
-	A sprec.Vec3
-	B sprec.Vec3
-	C sprec.Vec3
+func (t StaticTriangle) B() sprec.Vec3 {
+	return t.b
 }
 
-func (t Triangle) Center() sprec.Vec3 {
-	a := sprec.Vec3Quot(t.A, 3.0)
-	b := sprec.Vec3Quot(t.B, 3.0)
-	c := sprec.Vec3Quot(t.C, 3.0)
-	return sprec.Vec3Sum(sprec.Vec3Sum(a, b), c)
+func (t StaticTriangle) C() sprec.Vec3 {
+	return t.c
 }
 
-func (t Triangle) Normal() sprec.Vec3 {
-	vecAB := sprec.Vec3Diff(t.B, t.A)
-	vecAC := sprec.Vec3Diff(t.C, t.A)
+func (t StaticTriangle) Normal() sprec.Vec3 {
+	vecAB := sprec.Vec3Diff(t.b, t.a)
+	vecAC := sprec.Vec3Diff(t.c, t.a)
 	return sprec.UnitVec3(sprec.Vec3Cross(vecAB, vecAC))
 }
 
-func (t Triangle) Perimeter() float32 {
-	lngAB := sprec.Vec3Diff(t.B, t.A).Length()
-	lngBC := sprec.Vec3Diff(t.C, t.B).Length()
-	lngCA := sprec.Vec3Diff(t.A, t.C).Length()
-	return lngAB + lngBC + lngCA
-}
-
-func (t Triangle) Area() float32 {
-	vecAB := sprec.Vec3Diff(t.B, t.A)
-	vecAC := sprec.Vec3Diff(t.C, t.A)
+func (t StaticTriangle) Area() float32 {
+	vecAB := sprec.Vec3Diff(t.b, t.a)
+	vecAC := sprec.Vec3Diff(t.c, t.a)
 	return sprec.Vec3Cross(vecAB, vecAC).Length() / 2.0
 }
 
-func (t Triangle) IsLookingTowards(direction sprec.Vec3) bool {
+func (t StaticTriangle) IsLookingTowards(direction sprec.Vec3) bool {
 	return sprec.Vec3Dot(t.Normal(), direction) > 0.0
+}
+
+func (t StaticTriangle) ContainsPoint(point sprec.Vec3) bool {
+	normal := t.Normal()
+	if triangleABP := NewStaticTriangle(t.a, t.b, point); !triangleABP.IsLookingTowards(normal) {
+		return false
+	}
+	if triangleBCP := NewStaticTriangle(t.b, t.c, point); !triangleBCP.IsLookingTowards(normal) {
+		return false
+	}
+	if triangleCAP := NewStaticTriangle(t.c, t.a, point); !triangleCAP.IsLookingTowards(normal) {
+		return false
+	}
+	return true
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/mokiat/rally-mka/internal/data"
 	"github.com/mokiat/rally-mka/internal/engine/graphics"
 	"github.com/mokiat/rally-mka/internal/engine/physics"
+	"github.com/mokiat/rally-mka/internal/engine/shape"
 )
 
 const (
@@ -119,9 +120,7 @@ func (s *Stage) Init(data *Data, camera *ecs.Camera) {
 			Orientation:     sprec.IdentityQuat(),
 			IsStatic:        true,
 			RestitutionCoef: 1.0,
-			CollisionShape: physics.MeshShape{
-				Mesh: collisionMesh,
-			},
+			CollisionShapes: []shape.Placement{collisionMesh},
 		})
 	}
 
@@ -553,85 +552,85 @@ type DebugLine struct {
 }
 
 func (s *Stage) refreshDebugLines() {
-	s.debugLines = s.debugLines[:0]
-	for _, body := range s.physicsEngine.Bodies() {
-		color := sprec.NewVec4(1.0, 1.0, 1.0, 1.0)
-		if body.InCollision {
-			color = sprec.NewVec4(1.0, 0.0, 0.0, 1.0)
-		}
-		switch shape := body.CollisionShape.(type) {
-		case physics.SphereShape:
-			minX := sprec.Vec3Prod(body.Orientation.OrientationX(), shape.Radius)
-			maxX := sprec.Vec3Prod(body.Orientation.OrientationX(), -shape.Radius)
-			minY := sprec.Vec3Prod(body.Orientation.OrientationY(), shape.Radius)
-			maxY := sprec.Vec3Prod(body.Orientation.OrientationY(), -shape.Radius)
-			minZ := sprec.Vec3Prod(body.Orientation.OrientationZ(), shape.Radius)
-			maxZ := sprec.Vec3Prod(body.Orientation.OrientationZ(), -shape.Radius)
-			p1 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, minX), minZ), maxY)
-			p2 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, minX), maxZ), maxY)
-			p3 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, maxX), maxZ), maxY)
-			p4 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, maxX), minZ), maxY)
-			p5 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, minX), minZ), minY)
-			p6 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, minX), maxZ), minY)
-			p7 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, maxX), maxZ), minY)
-			p8 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, maxX), minZ), minY)
+	// s.debugLines = s.debugLines[:0]
+	// for _, body := range s.physicsEngine.Bodies() {
+	// 	color := sprec.NewVec4(1.0, 1.0, 1.0, 1.0)
+	// 	if body.InCollision {
+	// 		color = sprec.NewVec4(1.0, 0.0, 0.0, 1.0)
+	// 	}
+	// 	switch shape := body.CollisionShape.(type) {
+	// 	case physics.SphereShape:
+	// 		minX := sprec.Vec3Prod(body.Orientation.OrientationX(), shape.Radius)
+	// 		maxX := sprec.Vec3Prod(body.Orientation.OrientationX(), -shape.Radius)
+	// 		minY := sprec.Vec3Prod(body.Orientation.OrientationY(), shape.Radius)
+	// 		maxY := sprec.Vec3Prod(body.Orientation.OrientationY(), -shape.Radius)
+	// 		minZ := sprec.Vec3Prod(body.Orientation.OrientationZ(), shape.Radius)
+	// 		maxZ := sprec.Vec3Prod(body.Orientation.OrientationZ(), -shape.Radius)
+	// 		p1 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, minX), minZ), maxY)
+	// 		p2 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, minX), maxZ), maxY)
+	// 		p3 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, maxX), maxZ), maxY)
+	// 		p4 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, maxX), minZ), maxY)
+	// 		p5 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, minX), minZ), minY)
+	// 		p6 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, minX), maxZ), minY)
+	// 		p7 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, maxX), maxZ), minY)
+	// 		p8 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, maxX), minZ), minY)
 
-			s.addDebugLine(p1, p2, color)
-			s.addDebugLine(p2, p3, color)
-			s.addDebugLine(p3, p4, color)
-			s.addDebugLine(p4, p1, color)
+	// 		s.addDebugLine(p1, p2, color)
+	// 		s.addDebugLine(p2, p3, color)
+	// 		s.addDebugLine(p3, p4, color)
+	// 		s.addDebugLine(p4, p1, color)
 
-			s.addDebugLine(p5, p6, color)
-			s.addDebugLine(p6, p7, color)
-			s.addDebugLine(p7, p8, color)
-			s.addDebugLine(p8, p5, color)
+	// 		s.addDebugLine(p5, p6, color)
+	// 		s.addDebugLine(p6, p7, color)
+	// 		s.addDebugLine(p7, p8, color)
+	// 		s.addDebugLine(p8, p5, color)
 
-			s.addDebugLine(p1, p5, color)
-			s.addDebugLine(p2, p6, color)
-			s.addDebugLine(p3, p7, color)
-			s.addDebugLine(p4, p8, color)
+	// 		s.addDebugLine(p1, p5, color)
+	// 		s.addDebugLine(p2, p6, color)
+	// 		s.addDebugLine(p3, p7, color)
+	// 		s.addDebugLine(p4, p8, color)
 
-		case physics.BoxShape:
-			minX := sprec.Vec3Prod(body.Orientation.OrientationX(), shape.MinX)
-			maxX := sprec.Vec3Prod(body.Orientation.OrientationX(), shape.MaxX)
-			minY := sprec.Vec3Prod(body.Orientation.OrientationY(), shape.MinY)
-			maxY := sprec.Vec3Prod(body.Orientation.OrientationY(), shape.MaxY)
-			minZ := sprec.Vec3Prod(body.Orientation.OrientationZ(), shape.MinZ)
-			maxZ := sprec.Vec3Prod(body.Orientation.OrientationZ(), shape.MaxZ)
+	// 	case physics.BoxShape:
+	// 		minX := sprec.Vec3Prod(body.Orientation.OrientationX(), shape.MinX)
+	// 		maxX := sprec.Vec3Prod(body.Orientation.OrientationX(), shape.MaxX)
+	// 		minY := sprec.Vec3Prod(body.Orientation.OrientationY(), shape.MinY)
+	// 		maxY := sprec.Vec3Prod(body.Orientation.OrientationY(), shape.MaxY)
+	// 		minZ := sprec.Vec3Prod(body.Orientation.OrientationZ(), shape.MinZ)
+	// 		maxZ := sprec.Vec3Prod(body.Orientation.OrientationZ(), shape.MaxZ)
 
-			p1 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, minX), minZ), maxY)
-			p2 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, minX), maxZ), maxY)
-			p3 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, maxX), maxZ), maxY)
-			p4 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, maxX), minZ), maxY)
-			p5 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, minX), minZ), minY)
-			p6 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, minX), maxZ), minY)
-			p7 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, maxX), maxZ), minY)
-			p8 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, maxX), minZ), minY)
+	// 		p1 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, minX), minZ), maxY)
+	// 		p2 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, minX), maxZ), maxY)
+	// 		p3 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, maxX), maxZ), maxY)
+	// 		p4 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, maxX), minZ), maxY)
+	// 		p5 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, minX), minZ), minY)
+	// 		p6 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, minX), maxZ), minY)
+	// 		p7 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, maxX), maxZ), minY)
+	// 		p8 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, maxX), minZ), minY)
 
-			s.addDebugLine(p1, p2, color)
-			s.addDebugLine(p2, p3, color)
-			s.addDebugLine(p3, p4, color)
-			s.addDebugLine(p4, p1, color)
+	// 		s.addDebugLine(p1, p2, color)
+	// 		s.addDebugLine(p2, p3, color)
+	// 		s.addDebugLine(p3, p4, color)
+	// 		s.addDebugLine(p4, p1, color)
 
-			s.addDebugLine(p5, p6, color)
-			s.addDebugLine(p6, p7, color)
-			s.addDebugLine(p7, p8, color)
-			s.addDebugLine(p8, p5, color)
+	// 		s.addDebugLine(p5, p6, color)
+	// 		s.addDebugLine(p6, p7, color)
+	// 		s.addDebugLine(p7, p8, color)
+	// 		s.addDebugLine(p8, p5, color)
 
-			s.addDebugLine(p1, p5, color)
-			s.addDebugLine(p2, p6, color)
-			s.addDebugLine(p3, p7, color)
-			s.addDebugLine(p4, p8, color)
+	// 		s.addDebugLine(p1, p5, color)
+	// 		s.addDebugLine(p2, p6, color)
+	// 		s.addDebugLine(p3, p7, color)
+	// 		s.addDebugLine(p4, p8, color)
 
-		case physics.MeshShape:
-			for _, triangle := range shape.Mesh.Triangles() {
-				s.addDebugLine(triangle.A(), triangle.B(), color)
-				s.addDebugLine(triangle.B(), triangle.C(), color)
-				s.addDebugLine(triangle.C(), triangle.A(), color)
-				s.addDebugLine(triangle.Center(), sprec.Vec3Sum(triangle.Center(), triangle.Normal()), sprec.NewVec4(0.0, 1.0, 0.0, 1.0))
-			}
-		}
-	}
+	// 	case physics.MeshShape:
+	// 		for _, triangle := range shape.Mesh.Triangles() {
+	// 			s.addDebugLine(triangle.A(), triangle.B(), color)
+	// 			s.addDebugLine(triangle.B(), triangle.C(), color)
+	// 			s.addDebugLine(triangle.C(), triangle.A(), color)
+	// 			s.addDebugLine(triangle.Center(), sprec.Vec3Sum(triangle.Center(), triangle.Normal()), sprec.NewVec4(0.0, 1.0, 0.0, 1.0))
+	// 		}
+	// 	}
+	// }
 }
 
 func (s *Stage) addDebugLine(a, b sprec.Vec3, color sprec.Vec4) {

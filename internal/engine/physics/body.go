@@ -1,6 +1,9 @@
 package physics
 
-import "github.com/mokiat/gomath/sprec"
+import (
+	"github.com/mokiat/gomath/sprec"
+	"github.com/mokiat/rally-mka/internal/engine/shape"
+)
 
 type Body struct {
 	Name string
@@ -22,8 +25,7 @@ type Body struct {
 	AngularDragFactor float32
 
 	RestitutionCoef float32
-	CollisionShape  interface{}
-	CollisionGroup  int
+	CollisionShapes []shape.Placement
 	InCollision     bool
 }
 

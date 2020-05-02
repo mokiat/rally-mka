@@ -33,11 +33,13 @@ func (s *CarSystem) updateCarInput(car *ecs.Car, elapsedTime time.Duration, inpu
 	const turnSpeed = 80 // FIXME ORIGINAL: 120
 	// const returnSpeed = 50      // FIXME ORIGINAL: 60
 	const returnSpeed = 150     // FIXME ORIGINAL: 60
-	const maxWheelAngle = 30    // FIXME ORIGINAL: 30
+	const maxWheelAngle = 40    // FIXME ORIGINAL: 30
 	const maxAcceleration = 0.8 // FIXME ORIGINAL: 0.6
 	const maxDeceleration = 0.6 // FIXME ORIGINAL: 0.3
 
 	elapsedSeconds := float32(elapsedTime.Seconds())
+
+	actualMaxWheelAngle := maxWheelAngle / (1.0 + 0.05*car.Body.Physics.Body.Velocity.Length())
 
 	switch {
 	case input.TurnLeft == input.TurnRight:
@@ -52,12 +54,12 @@ func (s *CarSystem) updateCarInput(car *ecs.Car, elapsedTime time.Duration, inpu
 			}
 		}
 	case input.TurnLeft:
-		if car.SteeringAngle += sprec.Degrees(elapsedSeconds * turnSpeed); car.SteeringAngle > sprec.Degrees(maxWheelAngle) {
-			car.SteeringAngle = sprec.Degrees(maxWheelAngle)
+		if car.SteeringAngle += sprec.Degrees(elapsedSeconds * turnSpeed); car.SteeringAngle > sprec.Degrees(actualMaxWheelAngle) {
+			car.SteeringAngle = sprec.Degrees(actualMaxWheelAngle)
 		}
 	case input.TurnRight:
-		if car.SteeringAngle -= sprec.Degrees(elapsedSeconds * turnSpeed); car.SteeringAngle < -sprec.Degrees(maxWheelAngle) {
-			car.SteeringAngle = -sprec.Degrees(maxWheelAngle)
+		if car.SteeringAngle -= sprec.Degrees(elapsedSeconds * turnSpeed); car.SteeringAngle < -sprec.Degrees(actualMaxWheelAngle) {
+			car.SteeringAngle = -sprec.Degrees(actualMaxWheelAngle)
 		}
 	}
 	car.Acceleration = 0.0
@@ -90,9 +92,11 @@ func (s *CarSystem) updateCar(car *ecs.Car) {
 	// car.FLWheel.Motion.Velocity = sprec.Vec3Sum(car.FLWheel.Motion.Velocity, sprec.Vec3Prod(car.FLWheel.Transform.Orientation.OrientationZ(), car.Acceleration*20))
 	// car.FRWheel.Motion.Velocity = sprec.Vec3Sum(car.FRWheel.Motion.Velocity, sprec.Vec3Prod(car.FRWheel.Transform.Orientation.OrientationZ(), car.Acceleration*20))
 
-	accelRatioFront := float32(200)
-	accelRatioBack := float32(300)
-	// accelRatio := float32(250)
+	// accelRatioFront := float32(230)
+	// accelRatioBack := float32(300)
+	accelRatioFront := float32(100)
+	accelRatioBack := float32(200)
+
 	frontBreaks := float32(0.10)
 	rearBreaks := float32(0.90)
 	if car.Acceleration > 0.0001 {
