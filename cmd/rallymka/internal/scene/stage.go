@@ -136,27 +136,17 @@ func (s *Stage) Init(data *Data, camera *ecs.Camera) {
 	carProgram := data.CarProgram.Get()
 	carModel := data.CarModel.Get()
 
-	// ----------------------------------------------
-
 	// targetEntity :=
 	// 	s.setupChandelierDemo(carProgram, carModel, sprec.NewVec3(0.0, 10.0, 0.0))
-
-	// ----------------------------------------------
 
 	// targetEntity :=
 	// 	s.setupCoiloverDemo(carProgram, carModel, sprec.NewVec3(0.0, 10.0, -5.0))
 
-	// ----------------------------------------------
-
 	// targetEntity :=
 	// 	s.setupRodDemo(carProgram, carModel, sprec.NewVec3(0.0, 10.0, 5.0))
 
-	// ----------------------------------------------
-
 	targetEntity =
 		s.setupCarDemo(carProgram, carModel, sprec.NewVec3(0.0, 2.0, 10.0))
-
-	// ----------------------------------------------
 
 	standTarget := targetEntity
 	standEntity := s.ecsManager.CreateEntity()
@@ -207,10 +197,10 @@ func (s *Stage) setupCoiloverDemo(program *graphics.Program, model *stream.Model
 		WithPosition(position).
 		Build(s.ecsManager)
 	s.physicsEngine.AddBody(fixtureTire.Physics.Body)
-	// s.physicsEngine.AddConstraint(physics.FixedTranslationConstraint{
-	// 	Fixture: position,
-	// 	Body:    fixtureTire.Physics.Body,
-	// })
+	s.physicsEngine.AddConstraint(physics.FixedTranslationConstraint{
+		Fixture: position,
+		Body:    fixtureTire.Physics.Body,
+	})
 
 	fallingTire := car.Tire(program, model, car.FrontRightTireLocation).
 		WithPosition(sprec.Vec3Sum(position, sprec.NewVec3(0.0, -0.8, 0.0))).
@@ -220,21 +210,9 @@ func (s *Stage) setupCoiloverDemo(program *graphics.Program, model *stream.Model
 		FirstBody:       fixtureTire.Physics.Body,
 		FirstBodyAnchor: sprec.NewVec3(0.0, -2.0, 0.0),
 		SecondBody:      fallingTire.Physics.Body,
-		// Length:       1.0,
-		Frequency:    0.1,
-		DampingRatio: 0.5,
+		Frequency:       0.1,
+		DampingRatio:    0.5,
 	})
-	// s.physicsEngine.AddConstraint(physics.SpringConstraint{
-	// 	FirstBody:  fixtureTire.Physics.Body,
-	// 	SecondBody: fallingTire.Physics.Body,
-	// 	Length:     1.0,
-	// 	Stiffness:  100.0,
-	// })
-	// s.physicsEngine.AddConstraint(&physics.DamperConstraint{
-	// 	FirstBody:  fixtureTire.Physics.Body,
-	// 	SecondBody: fallingTire.Physics.Body,
-	// 	Strength:   20.0,
-	// })
 	return fixtureTire
 }
 
@@ -284,8 +262,6 @@ func (s *Stage) setupCarDemo(program *graphics.Program, model *stream.Model, pos
 		WithPosition(position).
 		Build(s.ecsManager)
 	s.physicsEngine.AddBody(chasis.Physics.Body)
-	// chasis.Motion.AngularVelocity = sprec.NewVec3(0.0, -0.5, 0.0)
-	// chasis.Motion.AngularVelocity = sprec.NewVec3(0.0, 0.0, 1.0)
 	// s.physicsEngine.AddConstraint(physics.FixedTranslationConstraint{
 	// 	Fixture: position,
 	// 	Body:    chasis.Physics.Body,
@@ -313,7 +289,6 @@ func (s *Stage) setupCarDemo(program *graphics.Program, model *stream.Model, pos
 		MaxY:       -0.5,
 		MinY:       -1.0,
 	})
-	// TODO: Use CopyAxisConstraint, instead of MatchAxisConstraint to stabalize system
 	flRotation := &physics.MatchAxisConstraint{
 		FirstBody:      chasis.Physics.Body,
 		FirstBodyAxis:  sprec.BasisXVec3(),
@@ -326,20 +301,6 @@ func (s *Stage) setupCarDemo(program *graphics.Program, model *stream.Model, pos
 		FirstBodyAnchor: flTireRelativePosition,
 		SecondBody:      flTire.Physics.Body,
 	})
-	// flSpringAttachmentRelativePosition := sprec.Vec3Sum(flTireRelativePosition, sprec.NewVec3(0.0, suspensionLength, 0.0))
-	// s.physicsEngine.AddConstraint(physics.SpringConstraint{
-	// 	FirstBody:       chasis.Physics.Body,
-	// 	FirstBodyAnchor: flSpringAttachmentRelativePosition,
-	// 	SecondBody:      flTire.Physics.Body,
-	// 	Length:          suspensionLength,
-	// 	Stiffness:       suspensionStiffness,
-	// })
-	// s.physicsEngine.AddConstraint(&physics.DamperConstraint{
-	// 	FirstBody:       chasis.Physics.Body,
-	// 	FirstBodyAnchor: flSpringAttachmentRelativePosition,
-	// 	SecondBody:      flTire.Physics.Body,
-	// 	Strength:        suspensionDampness,
-	// })
 
 	frTireRelativePosition := sprec.NewVec3(-suspensionWidth, -0.6-suspensionLength/2.0, 1.25)
 	frTire := car.Tire(program, model, car.FrontRightTireLocation).
@@ -371,20 +332,6 @@ func (s *Stage) setupCarDemo(program *graphics.Program, model *stream.Model, pos
 		FirstBodyAnchor: frTireRelativePosition,
 		SecondBody:      frTire.Physics.Body,
 	})
-	// frSpringAttachmentRelativePosition := sprec.Vec3Sum(frTireRelativePosition, sprec.NewVec3(0.0, suspensionLength, 0.0))
-	// s.physicsEngine.AddConstraint(physics.SpringConstraint{
-	// 	FirstBody:       chasis.Physics.Body,
-	// 	FirstBodyAnchor: frSpringAttachmentRelativePosition,
-	// 	SecondBody:      frTire.Physics.Body,
-	// 	Length:          suspensionLength,
-	// 	Stiffness:       suspensionStiffness,
-	// })
-	// s.physicsEngine.AddConstraint(&physics.DamperConstraint{
-	// 	FirstBody:       chasis.Physics.Body,
-	// 	FirstBodyAnchor: frSpringAttachmentRelativePosition,
-	// 	SecondBody:      frTire.Physics.Body,
-	// 	Strength:        suspensionDampness,
-	// })
 
 	blTireRelativePosition := sprec.NewVec3(suspensionWidth, -0.6-suspensionLength/2.0, -1.45)
 	blTire := car.Tire(program, model, car.BackLeftTireLocation).
@@ -415,20 +362,6 @@ func (s *Stage) setupCarDemo(program *graphics.Program, model *stream.Model, pos
 		FirstBodyAnchor: blTireRelativePosition,
 		SecondBody:      blTire.Physics.Body,
 	})
-	// blSpringAttachmentRelativePosition := sprec.Vec3Sum(blTireRelativePosition, sprec.NewVec3(0.0, suspensionLength, 0.0))
-	// s.physicsEngine.AddConstraint(physics.SpringConstraint{
-	// 	FirstBody:       chasis.Physics.Body,
-	// 	FirstBodyAnchor: blSpringAttachmentRelativePosition,
-	// 	SecondBody:      blTire.Physics.Body,
-	// 	Length:          suspensionLength,
-	// 	Stiffness:       suspensionStiffness,
-	// })
-	// s.physicsEngine.AddConstraint(&physics.DamperConstraint{
-	// 	FirstBody:       chasis.Physics.Body,
-	// 	FirstBodyAnchor: blSpringAttachmentRelativePosition,
-	// 	SecondBody:      blTire.Physics.Body,
-	// 	Strength:        suspensionDampness,
-	// })
 
 	brTireRelativePosition := sprec.NewVec3(-suspensionWidth, -0.6-suspensionLength/2.0, -1.45)
 	brTire := car.Tire(program, model, car.BackRightTireLocation).
@@ -459,20 +392,6 @@ func (s *Stage) setupCarDemo(program *graphics.Program, model *stream.Model, pos
 		FirstBodyAnchor: brTireRelativePosition,
 		SecondBody:      brTire.Physics.Body,
 	})
-	// brSpringAttachmentRelativePosition := sprec.Vec3Sum(brTireRelativePosition, sprec.NewVec3(0.0, suspensionLength, 0.0))
-	// s.physicsEngine.AddConstraint(physics.SpringConstraint{
-	// 	FirstBody:       chasis.Physics.Body,
-	// 	FirstBodyAnchor: brSpringAttachmentRelativePosition,
-	// 	SecondBody:      brTire.Physics.Body,
-	// 	Length:          suspensionLength,
-	// 	Stiffness:       suspensionStiffness,
-	// })
-	// s.physicsEngine.AddConstraint(&physics.DamperConstraint{
-	// 	FirstBody:       chasis.Physics.Body,
-	// 	FirstBodyAnchor: brSpringAttachmentRelativePosition,
-	// 	SecondBody:      brTire.Physics.Body,
-	// 	Strength:        suspensionDampness,
-	// })
 
 	car := s.ecsManager.CreateEntity()
 	car.Car = &ecs.Car{
@@ -552,85 +471,76 @@ type DebugLine struct {
 }
 
 func (s *Stage) refreshDebugLines() {
-	// s.debugLines = s.debugLines[:0]
-	// for _, body := range s.physicsEngine.Bodies() {
-	// 	color := sprec.NewVec4(1.0, 1.0, 1.0, 1.0)
-	// 	if body.InCollision {
-	// 		color = sprec.NewVec4(1.0, 0.0, 0.0, 1.0)
-	// 	}
-	// 	switch shape := body.CollisionShape.(type) {
-	// 	case physics.SphereShape:
-	// 		minX := sprec.Vec3Prod(body.Orientation.OrientationX(), shape.Radius)
-	// 		maxX := sprec.Vec3Prod(body.Orientation.OrientationX(), -shape.Radius)
-	// 		minY := sprec.Vec3Prod(body.Orientation.OrientationY(), shape.Radius)
-	// 		maxY := sprec.Vec3Prod(body.Orientation.OrientationY(), -shape.Radius)
-	// 		minZ := sprec.Vec3Prod(body.Orientation.OrientationZ(), shape.Radius)
-	// 		maxZ := sprec.Vec3Prod(body.Orientation.OrientationZ(), -shape.Radius)
-	// 		p1 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, minX), minZ), maxY)
-	// 		p2 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, minX), maxZ), maxY)
-	// 		p3 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, maxX), maxZ), maxY)
-	// 		p4 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, maxX), minZ), maxY)
-	// 		p5 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, minX), minZ), minY)
-	// 		p6 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, minX), maxZ), minY)
-	// 		p7 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, maxX), maxZ), minY)
-	// 		p8 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, maxX), minZ), minY)
+	s.debugLines = s.debugLines[:0]
+	for _, body := range s.physicsEngine.Bodies() {
+		color := sprec.NewVec4(1.0, 1.0, 1.0, 1.0)
+		if body.InCollision {
+			color = sprec.NewVec4(1.0, 0.0, 0.0, 1.0)
+		}
+		for _, placement := range body.CollisionShapes {
+			placementWS := placement.Transformed(body.Position, body.Orientation)
+			s.renderDebugPlacement(placementWS, color)
+		}
+	}
+}
 
-	// 		s.addDebugLine(p1, p2, color)
-	// 		s.addDebugLine(p2, p3, color)
-	// 		s.addDebugLine(p3, p4, color)
-	// 		s.addDebugLine(p4, p1, color)
+func (s *Stage) renderDebugPlacement(placement shape.Placement, color sprec.Vec4) {
+	switch shape := placement.Shape.(type) {
+	case shape.StaticSphere:
+		s.renderDebugSphere(placement, shape, color)
+	case shape.StaticBox:
+		s.renderDebugBox(placement, shape, color)
+	case shape.StaticMesh:
+		s.renderDebugMesh(placement, shape, color)
+	}
+}
 
-	// 		s.addDebugLine(p5, p6, color)
-	// 		s.addDebugLine(p6, p7, color)
-	// 		s.addDebugLine(p7, p8, color)
-	// 		s.addDebugLine(p8, p5, color)
+func (s *Stage) renderDebugSphere(placement shape.Placement, sphere shape.StaticSphere, color sprec.Vec4) {
+	// FIXME: Draw sphere, not box!
+	box := shape.NewStaticBox(sphere.Radius()*2.0, sphere.Radius()*2.0, sphere.Radius()*2.0)
+	s.renderDebugBox(placement, box, color)
+}
 
-	// 		s.addDebugLine(p1, p5, color)
-	// 		s.addDebugLine(p2, p6, color)
-	// 		s.addDebugLine(p3, p7, color)
-	// 		s.addDebugLine(p4, p8, color)
+func (s *Stage) renderDebugBox(placement shape.Placement, box shape.StaticBox, color sprec.Vec4) {
+	minX := sprec.Vec3Prod(placement.Orientation.OrientationX(), -box.Width()/2.0)
+	maxX := sprec.Vec3Prod(placement.Orientation.OrientationX(), box.Width()/2.0)
+	minY := sprec.Vec3Prod(placement.Orientation.OrientationY(), -box.Height()/2.0)
+	maxY := sprec.Vec3Prod(placement.Orientation.OrientationY(), box.Height()/2.0)
+	minZ := sprec.Vec3Prod(placement.Orientation.OrientationZ(), -box.Length()/2.0)
+	maxZ := sprec.Vec3Prod(placement.Orientation.OrientationZ(), box.Length()/2.0)
 
-	// 	case physics.BoxShape:
-	// 		minX := sprec.Vec3Prod(body.Orientation.OrientationX(), shape.MinX)
-	// 		maxX := sprec.Vec3Prod(body.Orientation.OrientationX(), shape.MaxX)
-	// 		minY := sprec.Vec3Prod(body.Orientation.OrientationY(), shape.MinY)
-	// 		maxY := sprec.Vec3Prod(body.Orientation.OrientationY(), shape.MaxY)
-	// 		minZ := sprec.Vec3Prod(body.Orientation.OrientationZ(), shape.MinZ)
-	// 		maxZ := sprec.Vec3Prod(body.Orientation.OrientationZ(), shape.MaxZ)
+	p1 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(placement.Position, minX), minZ), maxY)
+	p2 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(placement.Position, minX), maxZ), maxY)
+	p3 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(placement.Position, maxX), maxZ), maxY)
+	p4 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(placement.Position, maxX), minZ), maxY)
+	p5 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(placement.Position, minX), minZ), minY)
+	p6 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(placement.Position, minX), maxZ), minY)
+	p7 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(placement.Position, maxX), maxZ), minY)
+	p8 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(placement.Position, maxX), minZ), minY)
 
-	// 		p1 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, minX), minZ), maxY)
-	// 		p2 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, minX), maxZ), maxY)
-	// 		p3 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, maxX), maxZ), maxY)
-	// 		p4 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, maxX), minZ), maxY)
-	// 		p5 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, minX), minZ), minY)
-	// 		p6 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, minX), maxZ), minY)
-	// 		p7 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, maxX), maxZ), minY)
-	// 		p8 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(body.Position, maxX), minZ), minY)
+	s.addDebugLine(p1, p2, color)
+	s.addDebugLine(p2, p3, color)
+	s.addDebugLine(p3, p4, color)
+	s.addDebugLine(p4, p1, color)
 
-	// 		s.addDebugLine(p1, p2, color)
-	// 		s.addDebugLine(p2, p3, color)
-	// 		s.addDebugLine(p3, p4, color)
-	// 		s.addDebugLine(p4, p1, color)
+	s.addDebugLine(p5, p6, color)
+	s.addDebugLine(p6, p7, color)
+	s.addDebugLine(p7, p8, color)
+	s.addDebugLine(p8, p5, color)
 
-	// 		s.addDebugLine(p5, p6, color)
-	// 		s.addDebugLine(p6, p7, color)
-	// 		s.addDebugLine(p7, p8, color)
-	// 		s.addDebugLine(p8, p5, color)
+	s.addDebugLine(p1, p5, color)
+	s.addDebugLine(p2, p6, color)
+	s.addDebugLine(p3, p7, color)
+	s.addDebugLine(p4, p8, color)
+}
 
-	// 		s.addDebugLine(p1, p5, color)
-	// 		s.addDebugLine(p2, p6, color)
-	// 		s.addDebugLine(p3, p7, color)
-	// 		s.addDebugLine(p4, p8, color)
-
-	// 	case physics.MeshShape:
-	// 		for _, triangle := range shape.Mesh.Triangles() {
-	// 			s.addDebugLine(triangle.A(), triangle.B(), color)
-	// 			s.addDebugLine(triangle.B(), triangle.C(), color)
-	// 			s.addDebugLine(triangle.C(), triangle.A(), color)
-	// 			s.addDebugLine(triangle.Center(), sprec.Vec3Sum(triangle.Center(), triangle.Normal()), sprec.NewVec4(0.0, 1.0, 0.0, 1.0))
-	// 		}
-	// 	}
-	// }
+func (s *Stage) renderDebugMesh(placement shape.Placement, mesh shape.StaticMesh, color sprec.Vec4) {
+	for _, triangle := range mesh.Triangles() {
+		triangleWS := triangle.Transformed(placement.Position, placement.Orientation)
+		s.addDebugLine(triangleWS.A(), triangleWS.B(), color)
+		s.addDebugLine(triangleWS.B(), triangleWS.C(), color)
+		s.addDebugLine(triangleWS.C(), triangleWS.A(), color)
+	}
 }
 
 func (s *Stage) addDebugLine(a, b sprec.Vec3, color sprec.Vec4) {
