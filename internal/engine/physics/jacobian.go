@@ -39,62 +39,39 @@ func (j Jacobian) CorrectPosition(body *Body, drift float32) {
 	j.ApplyNudge(body, lambda)
 }
 
-type DoubleBodyJacobian struct {
-	SlopeVelocityFirst         sprec.Vec3
-	SlopeAngularVelocityFirst  sprec.Vec3
-	SlopeVelocitySecond        sprec.Vec3
-	SlopeAngularVelocitySecond sprec.Vec3
+type PairJacobian struct {
+	First  Jacobian
+	Second Jacobian
 }
 
-func (j DoubleBodyJacobian) EffectiveVelocity(firstBody, secondBody *Body) float32 {
-	return sprec.Vec3Dot(j.SlopeVelocityFirst, firstBody.Velocity) +
-		sprec.Vec3Dot(j.SlopeAngularVelocityFirst, firstBody.AngularVelocity) +
-		sprec.Vec3Dot(j.SlopeVelocitySecond, secondBody.Velocity) +
-		sprec.Vec3Dot(j.SlopeAngularVelocitySecond, secondBody.AngularVelocity)
+func (j PairJacobian) EffectiveVelocity(firstBody, secondBody *Body) float32 {
+	return j.First.EffectiveVelocity(firstBody) + j.Second.EffectiveVelocity(secondBody)
 }
 
-func (j DoubleBodyJacobian) EffectiveMass(firstBody, secondBody *Body) float32 {
-	inverseMass := sprec.Vec3Dot(j.SlopeVelocityFirst, j.SlopeVelocityFirst)/firstBody.Mass +
-		sprec.Vec3Dot(sprec.Mat3Vec3Prod(sprec.InverseMat3(firstBody.MomentOfInertia), j.SlopeAngularVelocityFirst), j.SlopeAngularVelocityFirst) +
-		sprec.Vec3Dot(j.SlopeVelocitySecond, j.SlopeVelocitySecond)/secondBody.Mass +
-		sprec.Vec3Dot(sprec.Mat3Vec3Prod(sprec.InverseMat3(secondBody.MomentOfInertia), j.SlopeAngularVelocitySecond), j.SlopeAngularVelocitySecond)
-	return 1.0 / inverseMass
+func (j PairJacobian) InverseEffectiveMass(firstBody, secondBody *Body) float32 {
+	return j.First.InverseEffectiveMass(firstBody) + j.Second.InverseEffectiveMass(secondBody)
 }
 
-func (j DoubleBodyJacobian) ApplyLambda(firstBody, secondBody *Body, lambda float32) {
-	firstBody.ApplyImpulse(sprec.Vec3Prod(j.SlopeVelocityFirst, lambda))
-	firstBody.ApplyAngularImpulse(sprec.Vec3Prod(j.SlopeAngularVelocityFirst, lambda))
-	secondBody.ApplyImpulse(sprec.Vec3Prod(j.SlopeVelocitySecond, lambda))
-	secondBody.ApplyAngularImpulse(sprec.Vec3Prod(j.SlopeAngularVelocitySecond, lambda))
+func (j PairJacobian) ApplyImpulse(firstBody, secondBody *Body, lambda float32) {
+	firstBody.ApplyImpulse(sprec.Vec3Prod(j.First.SlopeVelocity, lambda))
+	firstBody.ApplyAngularImpulse(sprec.Vec3Prod(j.First.SlopeAngularVelocity, lambda))
+	secondBody.ApplyImpulse(sprec.Vec3Prod(j.Second.SlopeVelocity, lambda))
+	secondBody.ApplyAngularImpulse(sprec.Vec3Prod(j.Second.SlopeAngularVelocity, lambda))
 }
 
-func (j DoubleBodyJacobian) Apply(firstBody, secondBody *Body) {
-	lambdaUpper := -(sprec.Vec3Dot(j.SlopeVelocityFirst, firstBody.Velocity) +
-		sprec.Vec3Dot(j.SlopeAngularVelocityFirst, firstBody.AngularVelocity) +
-		sprec.Vec3Dot(j.SlopeVelocitySecond, secondBody.Velocity) +
-		sprec.Vec3Dot(j.SlopeAngularVelocitySecond, secondBody.AngularVelocity))
-	lambdaLower := sprec.Vec3Dot(j.SlopeVelocityFirst, j.SlopeVelocityFirst)/firstBody.Mass +
-		sprec.Vec3Dot(sprec.Mat3Vec3Prod(sprec.InverseMat3(firstBody.MomentOfInertia), j.SlopeAngularVelocityFirst), j.SlopeAngularVelocityFirst) +
-		sprec.Vec3Dot(j.SlopeVelocitySecond, j.SlopeVelocitySecond)/secondBody.Mass +
-		sprec.Vec3Dot(sprec.Mat3Vec3Prod(sprec.InverseMat3(secondBody.MomentOfInertia), j.SlopeAngularVelocitySecond), j.SlopeAngularVelocitySecond)
-	lambda := lambdaUpper / lambdaLower
-
-	firstBody.ApplyImpulse(sprec.Vec3Prod(j.SlopeVelocityFirst, lambda))
-	firstBody.ApplyAngularImpulse(sprec.Vec3Prod(j.SlopeAngularVelocityFirst, lambda))
-	secondBody.ApplyImpulse(sprec.Vec3Prod(j.SlopeVelocitySecond, lambda))
-	secondBody.ApplyAngularImpulse(sprec.Vec3Prod(j.SlopeAngularVelocitySecond, lambda))
+func (j PairJacobian) ApplyNudge(firstBody, secondBody *Body, lambda float32) {
+	firstBody.ApplyNudge(sprec.Vec3Prod(j.First.SlopeVelocity, lambda))
+	firstBody.ApplyAngularNudge(sprec.Vec3Prod(j.First.SlopeAngularVelocity, lambda))
+	secondBody.ApplyNudge(sprec.Vec3Prod(j.Second.SlopeVelocity, lambda))
+	secondBody.ApplyAngularNudge(sprec.Vec3Prod(j.Second.SlopeAngularVelocity, lambda))
 }
 
-func (j DoubleBodyJacobian) ApplyNudge(firstBody, secondBody *Body, drift float32) {
-	lambdaUpper := -driftCorrectionAmount * drift
-	lambdaLower := sprec.Vec3Dot(j.SlopeVelocityFirst, j.SlopeVelocityFirst)/firstBody.Mass +
-		sprec.Vec3Dot(sprec.Mat3Vec3Prod(sprec.InverseMat3(firstBody.MomentOfInertia), j.SlopeAngularVelocityFirst), j.SlopeAngularVelocityFirst) +
-		sprec.Vec3Dot(j.SlopeVelocitySecond, j.SlopeVelocitySecond)/secondBody.Mass +
-		sprec.Vec3Dot(sprec.Mat3Vec3Prod(sprec.InverseMat3(secondBody.MomentOfInertia), j.SlopeAngularVelocitySecond), j.SlopeAngularVelocitySecond)
-	lambda := lambdaUpper / lambdaLower
+func (j PairJacobian) CorrectVelocity(firstBody, secondBody *Body) {
+	lambda := -j.EffectiveVelocity(firstBody, secondBody) / j.InverseEffectiveMass(firstBody, secondBody)
+	j.ApplyImpulse(firstBody, secondBody, lambda)
+}
 
-	firstBody.ApplyNudge(sprec.Vec3Prod(j.SlopeVelocityFirst, lambda))
-	firstBody.ApplyAngularNudge(sprec.Vec3Prod(j.SlopeAngularVelocityFirst, lambda))
-	secondBody.ApplyNudge(sprec.Vec3Prod(j.SlopeVelocitySecond, lambda))
-	secondBody.ApplyAngularNudge(sprec.Vec3Prod(j.SlopeAngularVelocitySecond, lambda))
+func (j PairJacobian) CorrectPosition(firstBody, secondBody *Body, drift float32) {
+	lambda := -driftCorrectionAmount * drift / j.InverseEffectiveMass(firstBody, secondBody)
+	j.ApplyNudge(firstBody, secondBody, lambda)
 }

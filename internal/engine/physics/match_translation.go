@@ -15,14 +15,14 @@ type MatchTranslationConstraint struct {
 func (c MatchTranslationConstraint) ApplyImpulse() {
 	result := c.Calculate()
 	if sprec.Abs(result.Drift) > 0.0001 {
-		result.Jacobian.Apply(c.FirstBody, c.SecondBody)
+		result.Jacobian.CorrectVelocity(c.FirstBody, c.SecondBody)
 	}
 }
 
 func (c MatchTranslationConstraint) ApplyNudge() {
 	result := c.Calculate()
 	if sprec.Abs(result.Drift) > 0.0001 {
-		result.Jacobian.ApplyNudge(c.FirstBody, c.SecondBody, result.Drift)
+		result.Jacobian.CorrectPosition(c.FirstBody, c.SecondBody, result.Drift)
 	}
 }
 
@@ -45,29 +45,33 @@ func (c MatchTranslationConstraint) Calculate() MatchTranslationResultConstraint
 	}
 
 	return MatchTranslationResultConstraint{
-		Jacobian: DoubleBodyJacobian{
-			SlopeVelocityFirst: sprec.NewVec3(
-				-normal.X,
-				-normal.Y,
-				-normal.Z,
-			),
-			SlopeAngularVelocityFirst: sprec.NewVec3(
-				-(normal.Z*firstRadiusWS.Y - normal.Y*firstRadiusWS.Z),
-				-(normal.X*firstRadiusWS.Z - normal.Z*firstRadiusWS.X),
-				-(normal.Y*firstRadiusWS.X - normal.X*firstRadiusWS.Y),
-			),
-			SlopeVelocitySecond: sprec.NewVec3(
-				normal.X,
-				normal.Y,
-				normal.Z,
-			),
-			SlopeAngularVelocitySecond: sprec.ZeroVec3(),
+		Jacobian: PairJacobian{
+			First: Jacobian{
+				SlopeVelocity: sprec.NewVec3(
+					-normal.X,
+					-normal.Y,
+					-normal.Z,
+				),
+				SlopeAngularVelocity: sprec.NewVec3(
+					-(normal.Z*firstRadiusWS.Y - normal.Y*firstRadiusWS.Z),
+					-(normal.X*firstRadiusWS.Z - normal.Z*firstRadiusWS.X),
+					-(normal.Y*firstRadiusWS.X - normal.X*firstRadiusWS.Y),
+				),
+			},
+			Second: Jacobian{
+				SlopeVelocity: sprec.NewVec3(
+					normal.X,
+					normal.Y,
+					normal.Z,
+				),
+				SlopeAngularVelocity: sprec.ZeroVec3(),
+			},
 		},
 		Drift: deltaPosition.Length(),
 	}
 }
 
 type MatchTranslationResultConstraint struct {
-	Jacobian DoubleBodyJacobian
+	Jacobian PairJacobian
 	Drift    float32
 }

@@ -13,14 +13,14 @@ type MatchAxisConstraint struct {
 func (c MatchAxisConstraint) ApplyImpulse() {
 	result := c.Calculate()
 	if sprec.Abs(result.Drift) > 0.0001 {
-		result.Jacobian.Apply(c.FirstBody, c.SecondBody)
+		result.Jacobian.CorrectVelocity(c.FirstBody, c.SecondBody)
 	}
 }
 
 func (c MatchAxisConstraint) ApplyNudge() {
 	result := c.Calculate()
 	if sprec.Abs(result.Drift) > 0.0001 {
-		result.Jacobian.ApplyNudge(c.FirstBody, c.SecondBody, result.Drift)
+		result.Jacobian.CorrectPosition(c.FirstBody, c.SecondBody, result.Drift)
 	}
 }
 
@@ -30,17 +30,21 @@ func (c MatchAxisConstraint) Calculate() MatchAxisConstraintResult {
 	secondAxisWS := sprec.QuatVec3Rotation(c.SecondBody.Orientation, c.SecondBodyAxis)
 	cross := sprec.Vec3Cross(firstAxisWS, secondAxisWS)
 	return MatchAxisConstraintResult{
-		Jacobian: DoubleBodyJacobian{
-			SlopeVelocityFirst:         sprec.ZeroVec3(),
-			SlopeAngularVelocityFirst:  sprec.InverseVec3(cross),
-			SlopeVelocitySecond:        sprec.ZeroVec3(),
-			SlopeAngularVelocitySecond: cross,
+		Jacobian: PairJacobian{
+			First: Jacobian{
+				SlopeVelocity:        sprec.ZeroVec3(),
+				SlopeAngularVelocity: sprec.InverseVec3(cross),
+			},
+			Second: Jacobian{
+				SlopeVelocity:        sprec.ZeroVec3(),
+				SlopeAngularVelocity: cross,
+			},
 		},
 		Drift: cross.Length(),
 	}
 }
 
 type MatchAxisConstraintResult struct {
-	Jacobian DoubleBodyJacobian
+	Jacobian PairJacobian
 	Drift    float32
 }

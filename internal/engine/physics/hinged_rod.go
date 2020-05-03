@@ -14,14 +14,14 @@ type HingedRodConstraint struct {
 func (c HingedRodConstraint) ApplyImpulse() {
 	result := c.Calculate()
 	if sprec.Abs(result.Drift) > 0.0001 {
-		result.Jacobian.Apply(c.FirstBody, c.SecondBody)
+		result.Jacobian.CorrectVelocity(c.FirstBody, c.SecondBody)
 	}
 }
 
 func (c HingedRodConstraint) ApplyNudge() {
 	result := c.Calculate()
 	if sprec.Abs(result.Drift) > 0.0001 {
-		result.Jacobian.ApplyNudge(c.FirstBody, c.SecondBody, result.Drift)
+		result.Jacobian.CorrectPosition(c.FirstBody, c.SecondBody, result.Drift)
 	}
 }
 
@@ -37,33 +37,37 @@ func (c HingedRodConstraint) Calculate() HingedRodConstraintResult {
 	}
 
 	return HingedRodConstraintResult{
-		Jacobian: DoubleBodyJacobian{
-			SlopeVelocityFirst: sprec.NewVec3(
-				-normal.X,
-				-normal.Y,
-				-normal.Z,
-			),
-			SlopeAngularVelocityFirst: sprec.NewVec3(
-				-(normal.Z*firstRadiusWS.Y - normal.Y*firstRadiusWS.Z),
-				-(normal.X*firstRadiusWS.Z - normal.Z*firstRadiusWS.X),
-				-(normal.Y*firstRadiusWS.X - normal.X*firstRadiusWS.Y),
-			),
-			SlopeVelocitySecond: sprec.NewVec3(
-				normal.X,
-				normal.Y,
-				normal.Z,
-			),
-			SlopeAngularVelocitySecond: sprec.NewVec3(
-				normal.Z*secondRadiusWS.Y-normal.Y*secondRadiusWS.Z,
-				normal.X*secondRadiusWS.Z-normal.Z*secondRadiusWS.X,
-				normal.Y*secondRadiusWS.X-normal.X*secondRadiusWS.Y,
-			),
+		Jacobian: PairJacobian{
+			First: Jacobian{
+				SlopeVelocity: sprec.NewVec3(
+					-normal.X,
+					-normal.Y,
+					-normal.Z,
+				),
+				SlopeAngularVelocity: sprec.NewVec3(
+					-(normal.Z*firstRadiusWS.Y - normal.Y*firstRadiusWS.Z),
+					-(normal.X*firstRadiusWS.Z - normal.Z*firstRadiusWS.X),
+					-(normal.Y*firstRadiusWS.X - normal.X*firstRadiusWS.Y),
+				),
+			},
+			Second: Jacobian{
+				SlopeVelocity: sprec.NewVec3(
+					normal.X,
+					normal.Y,
+					normal.Z,
+				),
+				SlopeAngularVelocity: sprec.NewVec3(
+					normal.Z*secondRadiusWS.Y-normal.Y*secondRadiusWS.Z,
+					normal.X*secondRadiusWS.Z-normal.Z*secondRadiusWS.X,
+					normal.Y*secondRadiusWS.X-normal.X*secondRadiusWS.Y,
+				),
+			},
 		},
 		Drift: deltaPosition.Length() - c.Length,
 	}
 }
 
 type HingedRodConstraintResult struct {
-	Jacobian DoubleBodyJacobian
+	Jacobian PairJacobian
 	Drift    float32
 }
