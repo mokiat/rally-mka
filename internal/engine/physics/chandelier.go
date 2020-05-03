@@ -13,14 +13,14 @@ type ChandelierConstraint struct {
 func (c ChandelierConstraint) ApplyImpulse() {
 	result := c.Calculate()
 	if sprec.Abs(result.Drift) > 0.0001 {
-		result.Jacobian.Apply(c.Body)
+		result.Jacobian.CorrectVelocity(c.Body)
 	}
 }
 
 func (c ChandelierConstraint) ApplyNudge() {
 	result := c.Calculate()
 	if sprec.Abs(result.Drift) > 0.0001 {
-		result.Jacobian.ApplyNudge(c.Body, result.Drift)
+		result.Jacobian.CorrectPosition(c.Body, result.Drift)
 	}
 }
 
@@ -34,7 +34,7 @@ func (c ChandelierConstraint) Calculate() ChandelierConstraintResult {
 	}
 
 	return ChandelierConstraintResult{
-		Jacobian: SingleBodyJacobian{
+		Jacobian: Jacobian{
 			SlopeVelocity: sprec.NewVec3(
 				normal.X,
 				normal.Y,
@@ -51,6 +51,6 @@ func (c ChandelierConstraint) Calculate() ChandelierConstraintResult {
 }
 
 type ChandelierConstraintResult struct {
-	Jacobian SingleBodyJacobian
+	Jacobian Jacobian
 	Drift    float32
 }
