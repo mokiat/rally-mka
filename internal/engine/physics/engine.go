@@ -74,6 +74,7 @@ func (e *Engine) AddConstraint(constraint Constraint) {
 
 func (e *Engine) runSimulation(elapsedSeconds float32) {
 	e.detectCollisions()
+	e.resetConstraints()
 	e.applyForces()
 	e.integrate(elapsedSeconds)
 	e.applyImpulses()
@@ -82,6 +83,15 @@ func (e *Engine) runSimulation(elapsedSeconds float32) {
 	// XXX: Nudges should probably be moved after collisions
 	// once collision starts using them. For now it is stable
 	e.applyNudges()
+}
+
+func (e *Engine) resetConstraints() {
+	for _, constraint := range e.constraints {
+		constraint.Reset()
+	}
+	for _, constraint := range e.collisionConstraints {
+		constraint.Reset()
+	}
 }
 
 func (e *Engine) applyForces() {

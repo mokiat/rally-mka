@@ -136,14 +136,14 @@ func (s *Stage) Init(data *Data, camera *ecs.Camera) {
 	carProgram := data.CarProgram.Get()
 	carModel := data.CarModel.Get()
 
-	// targetEntity :=
+	// targetEntity =
 	// 	s.setupChandelierDemo(carProgram, carModel, sprec.NewVec3(0.0, 10.0, 0.0))
 
-	// targetEntity :=
-	// 	s.setupCoiloverDemo(carProgram, carModel, sprec.NewVec3(0.0, 10.0, -5.0))
-
-	// targetEntity :=
+	// targetEntity =
 	// 	s.setupRodDemo(carProgram, carModel, sprec.NewVec3(0.0, 10.0, 5.0))
+
+	// targetEntity =
+	// 	s.setupCoiloverDemo(carProgram, carModel, sprec.NewVec3(0.0, 10.0, -5.0))
 
 	targetEntity =
 		s.setupCarDemo(carProgram, carModel, sprec.NewVec3(0.0, 2.0, 10.0))
@@ -203,16 +203,16 @@ func (s *Stage) setupCoiloverDemo(program *graphics.Program, model *stream.Model
 	})
 
 	fallingTire := car.Tire(program, model, car.FrontRightTireLocation).
-		WithPosition(sprec.Vec3Sum(position, sprec.NewVec3(0.0, -0.8, 0.0))).
+		WithPosition(sprec.Vec3Sum(position, sprec.NewVec3(0.0, 2.0, 0.0))).
 		Build(s.ecsManager)
 	s.physicsEngine.AddBody(fallingTire.Physics.Body)
-	s.physicsEngine.AddConstraint(physics.CoiloverConstraint{
-		FirstBody:       fixtureTire.Physics.Body,
-		FirstBodyAnchor: sprec.NewVec3(0.0, -2.0, 0.0),
-		SecondBody:      fallingTire.Physics.Body,
-		Frequency:       0.1,
-		DampingRatio:    0.5,
+	s.physicsEngine.AddConstraint(&physics.CoiloverConstraint{
+		FirstBody:    fixtureTire.Physics.Body,
+		SecondBody:   fallingTire.Physics.Body,
+		FrequencyHz:  4.5,
+		DampingRatio: 0.1,
 	})
+
 	return fixtureTire
 }
 
@@ -262,14 +262,12 @@ func (s *Stage) setupCarDemo(program *graphics.Program, model *stream.Model, pos
 		WithPosition(position).
 		Build(s.ecsManager)
 	s.physicsEngine.AddBody(chasis.Physics.Body)
-	// s.physicsEngine.AddConstraint(physics.FixedTranslationConstraint{
-	// 	Fixture: position,
-	// 	Body:    chasis.Physics.Body,
-	// })
 
 	suspensionEnabled := true
 	suspensionWidth := float32(1.0)
 	suspensionLength := float32(0.3)
+	suspensionFrequencyHz := float32(4.5)
+	suspensionDampingRatio := float32(1.0)
 
 	flTireRelativePosition := sprec.NewVec3(suspensionWidth, -0.6-suspensionLength/2.0, 1.25)
 	flTire := car.Tire(program, model, car.FrontLeftTireLocation).
@@ -296,10 +294,12 @@ func (s *Stage) setupCarDemo(program *graphics.Program, model *stream.Model, pos
 		SecondBodyAxis: sprec.BasisXVec3(),
 	}
 	s.physicsEngine.AddConstraint(flRotation)
-	s.physicsEngine.AddConstraint(physics.CoiloverConstraint{
+	s.physicsEngine.AddConstraint(&physics.CoiloverConstraint{
 		FirstBody:       chasis.Physics.Body,
 		FirstBodyAnchor: flTireRelativePosition,
 		SecondBody:      flTire.Physics.Body,
+		FrequencyHz:     suspensionFrequencyHz,
+		DampingRatio:    suspensionDampingRatio,
 	})
 
 	frTireRelativePosition := sprec.NewVec3(-suspensionWidth, -0.6-suspensionLength/2.0, 1.25)
@@ -327,10 +327,12 @@ func (s *Stage) setupCarDemo(program *graphics.Program, model *stream.Model, pos
 		SecondBodyAxis: sprec.BasisXVec3(),
 	}
 	s.physicsEngine.AddConstraint(frRotation)
-	s.physicsEngine.AddConstraint(physics.CoiloverConstraint{
+	s.physicsEngine.AddConstraint(&physics.CoiloverConstraint{
 		FirstBody:       chasis.Physics.Body,
 		FirstBodyAnchor: frTireRelativePosition,
 		SecondBody:      frTire.Physics.Body,
+		FrequencyHz:     suspensionFrequencyHz,
+		DampingRatio:    suspensionDampingRatio,
 	})
 
 	blTireRelativePosition := sprec.NewVec3(suspensionWidth, -0.6-suspensionLength/2.0, -1.45)
@@ -357,10 +359,12 @@ func (s *Stage) setupCarDemo(program *graphics.Program, model *stream.Model, pos
 		SecondBody:     blTire.Physics.Body,
 		SecondBodyAxis: sprec.BasisXVec3(),
 	})
-	s.physicsEngine.AddConstraint(physics.CoiloverConstraint{
+	s.physicsEngine.AddConstraint(&physics.CoiloverConstraint{
 		FirstBody:       chasis.Physics.Body,
 		FirstBodyAnchor: blTireRelativePosition,
 		SecondBody:      blTire.Physics.Body,
+		FrequencyHz:     suspensionFrequencyHz,
+		DampingRatio:    suspensionDampingRatio,
 	})
 
 	brTireRelativePosition := sprec.NewVec3(-suspensionWidth, -0.6-suspensionLength/2.0, -1.45)
@@ -387,10 +391,12 @@ func (s *Stage) setupCarDemo(program *graphics.Program, model *stream.Model, pos
 		SecondBody:     brTire.Physics.Body,
 		SecondBodyAxis: sprec.BasisXVec3(),
 	})
-	s.physicsEngine.AddConstraint(physics.CoiloverConstraint{
+	s.physicsEngine.AddConstraint(&physics.CoiloverConstraint{
 		FirstBody:       chasis.Physics.Body,
 		FirstBodyAnchor: brTireRelativePosition,
 		SecondBody:      brTire.Physics.Body,
+		FrequencyHz:     suspensionFrequencyHz,
+		DampingRatio:    suspensionDampingRatio,
 	})
 
 	car := s.ecsManager.CreateEntity()

@@ -6,47 +6,68 @@ import (
 
 type CoiloverConstraint struct {
 	NilConstraint
+
 	FirstBody       *Body
 	FirstBodyAnchor sprec.Vec3
 	SecondBody      *Body
-	Length          float32
-	Frequency       float32
+	FrequencyHz     float32
 	DampingRatio    float32
+
+	appliedLambda float32
 }
 
-func (c CoiloverConstraint) ApplyImpulse() {
+func (c *CoiloverConstraint) Reset() {
+	c.appliedLambda = 0.0
+}
+
+func (c *CoiloverConstraint) ApplyImpulse() {
 	firstRadiusWS := sprec.QuatVec3Rotation(c.FirstBody.Orientation, c.FirstBodyAnchor)
 	firstAnchorWS := sprec.Vec3Sum(c.FirstBody.Position, firstRadiusWS)
 	secondAnchorWS := c.SecondBody.Position
 	deltaPosition := sprec.Vec3Diff(secondAnchorWS, firstAnchorWS)
+	if deltaPosition.Length() < 0.0001 {
+		return
+	}
 	drift := deltaPosition.Length()
 	normal := sprec.BasisXVec3()
 	if drift > 0.0001 {
 		normal = sprec.UnitVec3(deltaPosition)
 	}
 
-	jacobian := DoubleBodyJacobian{
-		SlopeVelocityFirst: sprec.NewVec3(
-			-normal.X,
-			-normal.Y,
-			-normal.Z,
-		),
-		SlopeAngularVelocityFirst: sprec.NewVec3(
-			-(normal.Z*firstRadiusWS.Y - normal.Y*firstRadiusWS.Z),
-			-(normal.X*firstRadiusWS.Z - normal.Z*firstRadiusWS.X),
-			-(normal.Y*firstRadiusWS.X - normal.X*firstRadiusWS.Y),
-		),
-		SlopeVelocitySecond: sprec.NewVec3(
-			normal.X,
-			normal.Y,
-			normal.Z,
-		),
-		SlopeAngularVelocitySecond: sprec.ZeroVec3(),
+	jacobian := PairJacobian{
+		First: Jacobian{
+			SlopeVelocity: sprec.NewVec3(
+				-normal.X,
+				-normal.Y,
+				-normal.Z,
+			),
+			SlopeAngularVelocity: sprec.NewVec3(
+				-(normal.Z*firstRadiusWS.Y - normal.Y*firstRadiusWS.Z),
+				-(normal.X*firstRadiusWS.Z - normal.Z*firstRadiusWS.X),
+				-(normal.Y*firstRadiusWS.X - normal.X*firstRadiusWS.Y),
+			),
+		},
+		Second: Jacobian{
+			SlopeVelocity: sprec.NewVec3(
+				normal.X,
+				normal.Y,
+				normal.Z,
+			),
+			SlopeAngularVelocity: sprec.ZeroVec3(),
+		},
 	}
 
-	beta := float32(0.65)
-	gamma := float32(0.003)
-	// beta := float32(0.1)
-	// gamma := float32(0.0001)
-	jacobian.ApplyImpulseBetaGamma(c.FirstBody, c.SecondBody, beta, drift, gamma)
+	invertedEffectiveMass := jacobian.InverseEffectiveMass(c.FirstBody, c.SecondBody)
+	w := 2.0 * sprec.Pi * c.FrequencyHz
+	dc := 2.0 * c.DampingRatio * w / invertedEffectiveMass
+	k := w * w / invertedEffectiveMass
+
+	timeStep := float32(0.015) // FIXME
+	gamma := 1.0 / (timeStep * (dc + timeStep*k))
+	beta := timeStep * k * gamma
+
+	velocityLambda := jacobian.EffectiveVelocity(c.FirstBody, c.SecondBody)
+	lambda := -(velocityLambda + beta*drift + gamma*c.appliedLambda) / (invertedEffectiveMass + gamma)
+	c.appliedLambda += lambda
+	jacobian.ApplyImpulse(c.FirstBody, c.SecondBody, lambda)
 }

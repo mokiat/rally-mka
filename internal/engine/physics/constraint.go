@@ -1,6 +1,7 @@
 package physics
 
 type Constraint interface {
+	Reset()
 	ApplyForce()
 	ApplyImpulse()
 	ApplyBaumgarte()
@@ -10,6 +11,8 @@ type Constraint interface {
 var _ Constraint = NilConstraint{}
 
 type NilConstraint struct{}
+
+func (NilConstraint) Reset() {}
 
 func (NilConstraint) ApplyForce() {}
 
