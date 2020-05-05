@@ -401,14 +401,15 @@ func (s *Stage) setupCarDemo(program *graphics.Program, model *stream.Model, pos
 
 	car := s.ecsManager.CreateEntity()
 	car.Car = &ecs.Car{
-		Body:            chasis,
+		Chassis:         chasis.Physics.Body,
 		FLWheelRotation: flRotation,
-		FLWheel:         flTire,
+		FLWheel:         flTire.Physics.Body,
 		FRWheelRotation: frRotation,
-		FRWheel:         frTire,
-		BLWheel:         blTire,
-		BRWheel:         brTire,
+		FRWheel:         frTire.Physics.Body,
+		BLWheel:         blTire.Physics.Body,
+		BRWheel:         brTire.Physics.Body,
 	}
+	car.HumanInput = true
 
 	return chasis
 }

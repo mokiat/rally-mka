@@ -11,10 +11,9 @@ type Entity struct {
 	Physics      *PhysicsComponent
 	Render       *RenderComponent
 	RenderSkybox *RenderSkybox
-
-	Input       *Input
-	CameraStand *CameraStand
-	Car         *Car
+	Car          *Car
+	CameraStand  *CameraStand
+	HumanInput   bool
 }
 
 type PhysicsComponent struct {
@@ -44,19 +43,14 @@ type CarInput struct {
 
 type Car struct {
 	SteeringAngle   sprec.Angle
-	Acceleration    float32
-	HandbrakePulled bool
-
-	Body            *Entity
-	FLWheelRotation physics.Constraint
-	FLWheel         *Entity
-	FRWheelRotation physics.Constraint
-	FRWheel         *Entity
-	BLWheel         *Entity
-	BRWheel         *Entity
+	Chassis         *physics.Body
+	FLWheelRotation *physics.MatchAxisConstraint
+	FRWheelRotation *physics.MatchAxisConstraint
+	FLWheel         *physics.Body
+	FRWheel         *physics.Body
+	BLWheel         *physics.Body
+	BRWheel         *physics.Body
 }
-
-type Input struct{}
 
 type CameraStand struct {
 	Target         *Entity
