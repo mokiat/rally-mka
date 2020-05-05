@@ -83,8 +83,6 @@ func (e *Engine) runSimulation(ctx Context) {
 	e.integrate(ctx)
 	e.applyImpulses(ctx)
 	e.applyMotion(ctx)
-	// XXX: Nudges should probably be moved after collisions
-	// once collision starts using them. For now it is stable
 	e.applyNudges(ctx)
 }
 
