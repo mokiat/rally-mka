@@ -10,14 +10,14 @@ type ChandelierConstraint struct {
 	Length     float32
 }
 
-func (c ChandelierConstraint) ApplyImpulse() {
+func (c ChandelierConstraint) ApplyImpulse(ctx Context) {
 	result := c.Calculate()
 	if sprec.Abs(result.Drift) > 0.0001 {
 		result.Jacobian.CorrectVelocity(c.Body)
 	}
 }
 
-func (c ChandelierConstraint) ApplyNudge() {
+func (c ChandelierConstraint) ApplyNudge(ctx Context) {
 	result := c.Calculate()
 	if sprec.Abs(result.Drift) > 0.0001 {
 		result.Jacobian.CorrectPosition(c.Body, result.Drift)

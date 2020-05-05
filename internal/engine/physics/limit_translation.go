@@ -12,7 +12,7 @@ type LimitTranslationConstraint struct {
 	MaxY       float32
 }
 
-func (c LimitTranslationConstraint) ApplyImpulse() {
+func (c LimitTranslationConstraint) ApplyImpulse(ctx Context) {
 	deltaPosition := sprec.Vec3Diff(c.SecondBody.Position, c.FirstBody.Position)
 	if deltaPosition.SqrLength() < 0.000001 {
 		return

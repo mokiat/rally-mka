@@ -51,7 +51,11 @@ func (e *Engine) Update(elapsedTime time.Duration) {
 	e.accumulatedTime += elapsedTime
 	for e.accumulatedTime > e.step {
 		e.accumulatedTime -= e.step
-		e.runSimulation(float32(e.step.Seconds()))
+		e.runSimulation(Context{
+			ElapsedSeconds:    float32(e.step.Seconds()),
+			ImpulseIterations: impulseIterations,
+			NudgeIterations:   nudgeIterations,
+		})
 	}
 }
 
@@ -72,16 +76,16 @@ func (e *Engine) AddConstraint(constraint Constraint) {
 	e.constraints = append(e.constraints, constraint)
 }
 
-func (e *Engine) runSimulation(elapsedSeconds float32) {
+func (e *Engine) runSimulation(ctx Context) {
 	e.detectCollisions()
 	e.resetConstraints()
 	e.applyForces()
-	e.integrate(elapsedSeconds)
-	e.applyImpulses()
-	e.applyMotion(elapsedSeconds)
+	e.integrate(ctx)
+	e.applyImpulses(ctx)
+	e.applyMotion(ctx)
 	// XXX: Nudges should probably be moved after collisions
 	// once collision starts using them. For now it is stable
-	e.applyNudges()
+	e.applyNudges(ctx)
 }
 
 func (e *Engine) resetConstraints() {
@@ -110,47 +114,47 @@ func (e *Engine) applyForces() {
 	// TODO: Restrict max linear + angular accelerations
 }
 
-func (e *Engine) integrate(elapsedSeconds float32) {
+func (e *Engine) integrate(ctx Context) {
 	for _, body := range e.bodies {
 		if body.IsStatic {
 			continue
 		}
-		deltaVelocity := sprec.Vec3Prod(body.Acceleration, elapsedSeconds)
+		deltaVelocity := sprec.Vec3Prod(body.Acceleration, ctx.ElapsedSeconds)
 		body.AddVelocity(deltaVelocity)
-		deltaAngularVelocity := sprec.Vec3Prod(body.AngularAcceleration, elapsedSeconds)
+		deltaAngularVelocity := sprec.Vec3Prod(body.AngularAcceleration, ctx.ElapsedSeconds)
 		body.AddAngularVelocity(deltaAngularVelocity)
 
 		// TODO: Restrict max linear + angular velocities
 	}
 }
 
-func (e *Engine) applyImpulses() {
-	for i := 0; i < impulseIterations; i++ {
+func (e *Engine) applyImpulses(ctx Context) {
+	for i := 0; i < ctx.ImpulseIterations; i++ {
 		for _, constraint := range e.constraints {
-			constraint.ApplyImpulse()
+			constraint.ApplyImpulse(ctx)
 		}
 		for _, constraint := range e.collisionConstraints {
-			constraint.ApplyImpulse()
+			constraint.ApplyImpulse(ctx)
 		}
 	}
 }
 
-func (e *Engine) applyMotion(elapsedSeconds float32) {
+func (e *Engine) applyMotion(ctx Context) {
 	for _, body := range e.bodies {
-		deltaPosition := sprec.Vec3Prod(body.Velocity, elapsedSeconds)
+		deltaPosition := sprec.Vec3Prod(body.Velocity, ctx.ElapsedSeconds)
 		body.Translate(deltaPosition)
-		deltaRotation := sprec.Vec3Prod(body.AngularVelocity, elapsedSeconds)
+		deltaRotation := sprec.Vec3Prod(body.AngularVelocity, ctx.ElapsedSeconds)
 		body.Rotate(deltaRotation)
 	}
 }
 
-func (e *Engine) applyNudges() {
-	for i := 0; i < nudgeIterations; i++ {
+func (e *Engine) applyNudges(ctx Context) {
+	for i := 0; i < ctx.NudgeIterations; i++ {
 		for _, constraint := range e.constraints {
-			constraint.ApplyNudge()
+			constraint.ApplyNudge(ctx)
 		}
 		for _, constraint := range e.collisionConstraints {
-			constraint.ApplyNudge()
+			constraint.ApplyNudge(ctx)
 		}
 	}
 }

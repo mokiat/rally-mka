@@ -20,7 +20,7 @@ func (c *CoiloverConstraint) Reset() {
 	c.appliedLambda = 0.0
 }
 
-func (c *CoiloverConstraint) ApplyImpulse() {
+func (c *CoiloverConstraint) ApplyImpulse(ctx Context) {
 	firstRadiusWS := sprec.QuatVec3Rotation(c.FirstBody.Orientation, c.FirstBodyAnchor)
 	firstAnchorWS := sprec.Vec3Sum(c.FirstBody.Position, firstRadiusWS)
 	secondAnchorWS := c.SecondBody.Position
@@ -62,9 +62,8 @@ func (c *CoiloverConstraint) ApplyImpulse() {
 	dc := 2.0 * c.DampingRatio * w / invertedEffectiveMass
 	k := w * w / invertedEffectiveMass
 
-	timeStep := float32(0.015) // FIXME
-	gamma := 1.0 / (timeStep * (dc + timeStep*k))
-	beta := timeStep * k * gamma
+	gamma := 1.0 / (ctx.ElapsedSeconds * (dc + ctx.ElapsedSeconds*k))
+	beta := ctx.ElapsedSeconds * k * gamma
 
 	velocityLambda := jacobian.EffectiveVelocity(c.FirstBody, c.SecondBody)
 	lambda := -(velocityLambda + beta*drift + gamma*c.appliedLambda) / (invertedEffectiveMass + gamma)

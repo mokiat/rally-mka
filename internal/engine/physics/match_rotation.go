@@ -8,14 +8,14 @@ type MatchRotationConstraint struct {
 	SecondBody *Body
 }
 
-func (c MatchRotationConstraint) ApplyImpulse() {
-	c.yConstraint().ApplyImpulse()
-	c.zConstraint().ApplyImpulse()
+func (c MatchRotationConstraint) ApplyImpulse(ctx Context) {
+	c.yConstraint().ApplyImpulse(ctx)
+	c.zConstraint().ApplyImpulse(ctx)
 }
 
-func (c MatchRotationConstraint) ApplyNudge() {
-	c.yConstraint().ApplyNudge()
-	c.zConstraint().ApplyNudge()
+func (c MatchRotationConstraint) ApplyNudge(ctx Context) {
+	c.yConstraint().ApplyNudge(ctx)
+	c.zConstraint().ApplyNudge(ctx)
 }
 
 func (c MatchRotationConstraint) yConstraint() MatchAxisConstraint {

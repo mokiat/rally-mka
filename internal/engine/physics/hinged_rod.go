@@ -11,14 +11,14 @@ type HingedRodConstraint struct {
 	Length           float32
 }
 
-func (c HingedRodConstraint) ApplyImpulse() {
+func (c HingedRodConstraint) ApplyImpulse(ctx Context) {
 	result := c.Calculate()
 	if sprec.Abs(result.Drift) > 0.0001 {
 		result.Jacobian.CorrectVelocity(c.FirstBody, c.SecondBody)
 	}
 }
 
-func (c HingedRodConstraint) ApplyNudge() {
+func (c HingedRodConstraint) ApplyNudge(ctx Context) {
 	result := c.Calculate()
 	if sprec.Abs(result.Drift) > 0.0001 {
 		result.Jacobian.CorrectPosition(c.FirstBody, c.SecondBody, result.Drift)

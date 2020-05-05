@@ -8,14 +8,14 @@ type FixedTranslationConstraint struct {
 	Body    *Body
 }
 
-func (c FixedTranslationConstraint) ApplyImpulse() {
+func (c FixedTranslationConstraint) ApplyImpulse(ctx Context) {
 	result := c.Calculate()
 	if sprec.Abs(result.Drift) > 0.0001 {
 		result.Jacobian.CorrectVelocity(c.Body)
 	}
 }
 
-func (c FixedTranslationConstraint) ApplyNudge() {
+func (c FixedTranslationConstraint) ApplyNudge(ctx Context) {
 	result := c.Calculate()
 	if sprec.Abs(result.Drift) > 0.0001 {
 		result.Jacobian.CorrectPosition(c.Body, result.Drift)

@@ -12,14 +12,14 @@ type MatchTranslationConstraint struct {
 	IgnoreZ         bool
 }
 
-func (c MatchTranslationConstraint) ApplyImpulse() {
+func (c MatchTranslationConstraint) ApplyImpulse(ctx Context) {
 	result := c.Calculate()
 	if sprec.Abs(result.Drift) > 0.0001 {
 		result.Jacobian.CorrectVelocity(c.FirstBody, c.SecondBody)
 	}
 }
 
-func (c MatchTranslationConstraint) ApplyNudge() {
+func (c MatchTranslationConstraint) ApplyNudge(ctx Context) {
 	result := c.Calculate()
 	if sprec.Abs(result.Drift) > 0.0001 {
 		result.Jacobian.CorrectPosition(c.FirstBody, c.SecondBody, result.Drift)

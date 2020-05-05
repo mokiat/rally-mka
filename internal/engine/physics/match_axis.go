@@ -10,14 +10,14 @@ type MatchAxisConstraint struct {
 	SecondBodyAxis sprec.Vec3
 }
 
-func (c MatchAxisConstraint) ApplyImpulse() {
+func (c MatchAxisConstraint) ApplyImpulse(ctx Context) {
 	result := c.Calculate()
 	if sprec.Abs(result.Drift) > 0.0001 {
 		result.Jacobian.CorrectVelocity(c.FirstBody, c.SecondBody)
 	}
 }
 
-func (c MatchAxisConstraint) ApplyNudge() {
+func (c MatchAxisConstraint) ApplyNudge(ctx Context) {
 	result := c.Calculate()
 	if sprec.Abs(result.Drift) > 0.0001 {
 		result.Jacobian.CorrectPosition(c.FirstBody, c.SecondBody, result.Drift)

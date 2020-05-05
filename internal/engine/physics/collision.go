@@ -12,7 +12,7 @@ type GroundCollisionConstraint struct {
 	Depth        float32
 }
 
-func (c GroundCollisionConstraint) ApplyImpulse() {
+func (c GroundCollisionConstraint) ApplyImpulse(ctx Context) {
 	contactRadiusWS := sprec.Vec3Diff(c.ContactPoint, c.Body.Position)
 	contactVelocity := sprec.Vec3Sum(c.Body.Velocity, sprec.Vec3Cross(c.Body.AngularVelocity, contactRadiusWS))
 	verticalVelocity := sprec.Vec3Dot(c.Normal, contactVelocity)
@@ -51,7 +51,4 @@ func (c GroundCollisionConstraint) ApplyImpulse() {
 		lateralDir := sprec.UnitVec3(lateralVelocity)
 		c.Body.ApplyOffsetImpulse(contactRadiusWS, sprec.Vec3Prod(lateralDir, -lateralImpulseStrength))
 	}
-}
-
-func (c GroundCollisionConstraint) ApplyNudge() {
 }
