@@ -78,7 +78,6 @@ func (e *Engine) runSimulation(elapsedSeconds float32) {
 	e.applyForces()
 	e.integrate(elapsedSeconds)
 	e.applyImpulses()
-	e.applyBaumgartes()
 	e.applyMotion(elapsedSeconds)
 	// XXX: Nudges should probably be moved after collisions
 	// once collision starts using them. For now it is stable
@@ -108,13 +107,6 @@ func (e *Engine) applyForces() {
 		body.ApplyTorque(sprec.Vec3Prod(body.AngularVelocity, -e.windDensity*body.AngularDragFactor*body.AngularVelocity.Length()))
 	}
 
-	for _, constraint := range e.constraints {
-		constraint.ApplyForce()
-	}
-	for _, constraint := range e.collisionConstraints {
-		constraint.ApplyForce()
-	}
-
 	// TODO: Restrict max linear + angular accelerations
 }
 
@@ -140,15 +132,6 @@ func (e *Engine) applyImpulses() {
 		for _, constraint := range e.collisionConstraints {
 			constraint.ApplyImpulse()
 		}
-	}
-}
-
-func (e *Engine) applyBaumgartes() {
-	for _, constraint := range e.constraints {
-		constraint.ApplyBaumgarte()
-	}
-	for _, constraint := range e.collisionConstraints {
-		constraint.ApplyBaumgarte()
 	}
 }
 
