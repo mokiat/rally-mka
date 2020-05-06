@@ -4,27 +4,27 @@ import (
 	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/stream"
 	"github.com/mokiat/rally-mka/internal/engine/graphics"
+	"github.com/mokiat/rally-mka/internal/engine/physics"
 )
 
 type Entity struct {
-	Transform    *TransformComponent
-	RenderMesh   *RenderMesh
-	RenderModel  *RenderModel
+	Physics      *PhysicsComponent
+	Render       *RenderComponent
 	RenderSkybox *RenderSkybox
-	Vehicle      *Vehicle
-	Wheel        *Wheel
-	Input        *Input
+	Car          *Car
 	CameraStand  *CameraStand
+	HumanInput   bool
 }
 
-type RenderModel struct {
+type PhysicsComponent struct {
+	Body *physics.Body
+}
+
+type RenderComponent struct {
+	GeomProgram *graphics.Program
 	Model       *stream.Model
-	GeomProgram *graphics.Program
-}
-
-type RenderMesh struct {
 	Mesh        *stream.Mesh
-	GeomProgram *graphics.Program
+	Matrix      sprec.Mat4
 }
 
 type RenderSkybox struct {
@@ -33,38 +33,24 @@ type RenderSkybox struct {
 	Mesh    *stream.Mesh
 }
 
-type Vehicle struct {
+type CarInput struct {
+	Forward   bool
+	Backward  bool
+	TurnLeft  bool
+	TurnRight bool
+	Handbrake bool
+}
+
+type Car struct {
 	SteeringAngle   sprec.Angle
-	Acceleration    float32
-	HandbrakePulled bool
-
-	Position        sprec.Vec3
-	Orientation     Orientation
-	Velocity        sprec.Vec3
-	AngularVelocity sprec.Vec3
-
-	FLWheel *Entity
-	FRWheel *Entity
-	BLWheel *Entity
-	BRWheel *Entity
+	Chassis         *physics.Body
+	FLWheelRotation *physics.MatchAxisConstraint
+	FRWheelRotation *physics.MatchAxisConstraint
+	FLWheel         *physics.Body
+	FRWheel         *physics.Body
+	BLWheel         *physics.Body
+	BRWheel         *physics.Body
 }
-
-type Wheel struct {
-	SteeringAngle sprec.Angle
-	RotationAngle sprec.Angle
-
-	AnchorPosition sprec.Vec3
-
-	IsDriven bool
-
-	Length float32
-	Radius float32
-
-	SuspensionLength float32
-	IsGrounded       bool
-}
-
-type Input struct{}
 
 type CameraStand struct {
 	Target         *Entity

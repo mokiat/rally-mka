@@ -22,6 +22,7 @@ func NewData(registry *resource.Registry, gfxWorker *graphics.Worker) *Data {
 		DeferredGeometryProgram: stream.GetProgram(registry, "deferred-geometry"),
 		DeferredLightingProgram: stream.GetProgram(registry, "deferred-lighting"),
 		QuadMesh:                stream.GetMesh(registry, "quad"),
+		DebugProgram:            stream.GetProgram(registry, "debug"),
 		GeometryFramebuffer:     &graphics.Framebuffer{},
 		LightingFramebuffer:     &graphics.Framebuffer{},
 	}
@@ -43,6 +44,8 @@ type Data struct {
 	DeferredLightingProgram stream.ProgramHandle
 	QuadMesh                stream.MeshHandle
 
+	DebugProgram stream.ProgramHandle
+
 	gfxTask             *graphics.Task
 	GeometryFramebuffer *graphics.Framebuffer
 	LightingFramebuffer *graphics.Framebuffer
@@ -59,6 +62,7 @@ func (d *Data) Request() {
 	d.registry.Request(d.DeferredGeometryProgram.Handle)
 	d.registry.Request(d.DeferredLightingProgram.Handle)
 	d.registry.Request(d.QuadMesh.Handle)
+	d.registry.Request(d.DebugProgram.Handle)
 	d.gfxTask = d.gfxWorker.Schedule(func() error {
 		geometryFramebufferData := graphics.FramebufferData{
 			Width:               framebufferWidth,
@@ -94,6 +98,7 @@ func (d *Data) Dismiss() {
 	d.registry.Dismiss(d.DeferredGeometryProgram.Handle)
 	d.registry.Dismiss(d.DeferredLightingProgram.Handle)
 	d.registry.Dismiss(d.QuadMesh.Handle)
+	d.registry.Dismiss(d.DebugProgram.Handle)
 
 	geometryFramebuffer := d.GeometryFramebuffer
 	lightingFramebuffer := d.LightingFramebuffer
@@ -120,5 +125,6 @@ func (d *Data) IsAvailable() bool {
 		d.DeferredGeometryProgram.IsAvailable() &&
 		d.DeferredLightingProgram.IsAvailable() &&
 		d.QuadMesh.IsAvailable() &&
+		d.DebugProgram.IsAvailable() &&
 		(d.gfxTask != nil && d.gfxTask.Done())
 }

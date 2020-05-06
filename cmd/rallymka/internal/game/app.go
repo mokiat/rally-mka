@@ -3,7 +3,6 @@ package game
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/go-gl/gl/v4.1-core/gl"
@@ -42,12 +41,7 @@ func (a Application) Run() error {
 		return fmt.Errorf("failed to initialize opengl: %w", err)
 	}
 
-	assetsDir := filepath.Join(filepath.Dir(os.Args[0]), "..", "Resources", "assets")
-	if !dirExists(assetsDir) {
-		assetsDir = "assets"
-	}
-
-	controller := NewController(assetsDir)
+	controller := NewController()
 	controller.OnGLInit()
 
 	go func() {

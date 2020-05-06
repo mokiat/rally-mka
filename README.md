@@ -80,3 +80,4 @@ The following projects and individuals have contributed significantly to the pro
 
 * **[GLFW for Go](https://github.com/go-gl/glfw)** for making it possible to use GLFW and OpenGL in Go.
 * **[Bo0mer](https://github.com/Bo0mer)** for the panoramic image that was used to generate the individual `city` skybox images.
+* **[Erin Catto](https://github.com/erincatto)** for all the presentations and articles that were used as reference.

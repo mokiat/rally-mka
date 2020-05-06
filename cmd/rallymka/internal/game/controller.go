@@ -1,6 +1,8 @@
 package game
 
 import (
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/game/input"
@@ -30,7 +32,12 @@ type View interface {
 	Render(pipeline *graphics.Pipeline)
 }
 
-func NewController(assetsDir string) *Controller {
+func NewController() *Controller {
+	assetsDir := filepath.Join(filepath.Dir(os.Args[0]), "..", "Resources", "assets")
+	if !dirExists(assetsDir) {
+		assetsDir = "assets"
+	}
+
 	resWorker := resource.NewWorker(maxQueuedResources)
 	resRegistry := resource.NewRegistry(resWorker, maxResources, maxEvents)
 	gfxWorker := graphics.NewWorker()

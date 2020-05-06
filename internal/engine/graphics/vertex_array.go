@@ -18,6 +18,7 @@ type VertexArrayData struct {
 	CoordOffset    int
 	NormalOffset   int
 	TexCoordOffset int
+	ColorOffset    int
 	IndexData      []byte
 }
 
@@ -33,7 +34,7 @@ func (a *VertexArray) Allocate(data VertexArrayData) error {
 		return fmt.Errorf("failed to allocate vertex buffer")
 	}
 	gl.BindBuffer(gl.ARRAY_BUFFER, a.VertexBufferID)
-	gl.BufferData(gl.ARRAY_BUFFER, len(data.VertexData), gl.Ptr(data.VertexData), gl.STATIC_DRAW)
+	gl.BufferData(gl.ARRAY_BUFFER, len(data.VertexData), gl.Ptr(data.VertexData), gl.DYNAMIC_DRAW)
 
 	gl.EnableVertexAttribArray(0)
 	gl.VertexAttribPointer(0, 3, gl.FLOAT, false, data.VertexStride, gl.PtrOffset(data.CoordOffset))
@@ -45,6 +46,10 @@ func (a *VertexArray) Allocate(data VertexArrayData) error {
 		gl.EnableVertexAttribArray(2)
 		gl.VertexAttribPointer(2, 2, gl.FLOAT, false, data.VertexStride, gl.PtrOffset(data.TexCoordOffset))
 	}
+	if data.ColorOffset != 0 {
+		gl.EnableVertexAttribArray(3)
+		gl.VertexAttribPointer(3, 4, gl.FLOAT, false, data.VertexStride, gl.PtrOffset(data.ColorOffset))
+	}
 
 	gl.GenBuffers(1, &a.IndexBufferID)
 	if a.IndexBufferID == 0 {
@@ -52,6 +57,12 @@ func (a *VertexArray) Allocate(data VertexArrayData) error {
 	}
 	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, a.IndexBufferID)
 	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, len(data.IndexData), gl.Ptr(data.IndexData), gl.STATIC_DRAW)
+	return nil
+}
+
+func (a *VertexArray) Update(data VertexArrayData) error {
+	gl.BindBuffer(gl.ARRAY_BUFFER, a.VertexBufferID)
+	gl.BufferSubData(gl.ARRAY_BUFFER, 0, len(data.VertexData), gl.Ptr(data.VertexData))
 	return nil
 }
 
