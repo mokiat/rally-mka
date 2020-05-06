@@ -1,10 +1,9 @@
-package system
+package ecs
 
 import (
 	"time"
 
 	"github.com/mokiat/gomath/sprec"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecs"
 )
 
 const (
@@ -21,17 +20,17 @@ const (
 	carRearBrakeRatio  = 0.1
 )
 
-func NewCarSystem(ecsManager *ecs.Manager) *CarSystem {
+func NewCarSystem(ecsManager *Manager) *CarSystem {
 	return &CarSystem{
 		ecsManager: ecsManager,
 	}
 }
 
 type CarSystem struct {
-	ecsManager *ecs.Manager
+	ecsManager *Manager
 }
 
-func (s *CarSystem) Update(elapsedTime time.Duration, input ecs.CarInput) {
+func (s *CarSystem) Update(elapsedTime time.Duration, input CarInput) {
 	elapsedSeconds := float32(elapsedTime.Seconds())
 
 	for _, entity := range s.ecsManager.Entities() {
@@ -42,7 +41,7 @@ func (s *CarSystem) Update(elapsedTime time.Duration, input ecs.CarInput) {
 	}
 }
 
-func (s *CarSystem) updateCarSteering(car *ecs.Car, elapsedSeconds float32, input ecs.CarInput) {
+func (s *CarSystem) updateCarSteering(car *Car, elapsedSeconds float32, input CarInput) {
 	actualSteeringAngle := carMaxSteeringAngle / (1.0 + 0.03*car.Chassis.Velocity.Length())
 	switch {
 	case input.TurnLeft == input.TurnRight:
@@ -71,7 +70,7 @@ func (s *CarSystem) updateCarSteering(car *ecs.Car, elapsedSeconds float32, inpu
 	car.FRWheelRotation.FirstBodyAxis = sprec.QuatVec3Rotation(rotationQuat, sprec.BasisXVec3())
 }
 
-func (s *CarSystem) updateCarAcceleration(car *ecs.Car, elapsedSeconds float32, input ecs.CarInput) {
+func (s *CarSystem) updateCarAcceleration(car *Car, elapsedSeconds float32, input CarInput) {
 	// TODO: Remove, just for debugging
 	if input.Handbrake {
 		car.Chassis.AngularVelocity = sprec.Vec3Sum(car.Chassis.AngularVelocity, sprec.NewVec3(0.0, 0.0, 0.1))

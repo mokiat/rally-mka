@@ -5,7 +5,6 @@ import (
 
 	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecs"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecs/system"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/scene/car"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/stream"
 	"github.com/mokiat/rally-mka/internal/data"
@@ -63,7 +62,7 @@ func NewStage(gfxWorker *graphics.Worker) *Stage {
 	stage := &Stage{
 		ecsManager:           ecsManager,
 		ecsRenderer:          ecs.NewRenderer(ecsManager),
-		ecsCarSystem:         system.NewCarSystem(ecsManager),
+		ecsCarSystem:         ecs.NewCarSystem(ecsManager),
 		ecsCameraStandSystem: ecs.NewCameraStandSystem(ecsManager),
 		physicsEngine:        physics.NewEngine(15 * time.Millisecond),
 		screenFramebuffer:    &graphics.Framebuffer{},
@@ -76,7 +75,7 @@ func NewStage(gfxWorker *graphics.Worker) *Stage {
 type Stage struct {
 	ecsManager           *ecs.Manager
 	ecsRenderer          *ecs.Renderer
-	ecsCarSystem         *system.CarSystem
+	ecsCarSystem         *ecs.CarSystem
 	ecsCameraStandSystem *ecs.CameraStandSystem
 	physicsEngine        *physics.Engine
 
