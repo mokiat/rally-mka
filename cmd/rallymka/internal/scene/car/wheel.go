@@ -12,53 +12,53 @@ import (
 )
 
 const (
-	tireRadius            = 0.3
-	tireMass              = 20.0                                     // tire: ~12kg; rim: ~8kg
-	tireMomentOfInertia   = tireMass * tireRadius * tireRadius / 2.0 // using cylinder as approximation
-	tireDragFactor        = 0.0                                      // 0.5 * 0.3 * 0.8
-	tireAngularDragFactor = 0.0                                      // 0.5 * 0.3 * 0.8
-	tireRestitutionCoef   = 0.5
+	wheelRadius            = 0.3
+	wheelMass              = 20.0                                        // wheel: ~12kg; rim: ~8kg
+	wheelMomentOfInertia   = wheelMass * wheelRadius * wheelRadius / 2.0 // using cylinder as approximation
+	wheelDragFactor        = 0.0                                         // 0.5 * 0.3 * 0.8
+	wheelAngularDragFactor = 0.0                                         // 0.5 * 0.3 * 0.8
+	wheelRestitutionCoef   = 0.5
 )
 
-type TireLocation string
+type WheelLocation string
 
 const (
-	FrontLeftTireLocation  TireLocation = "front_left"
-	FrontRightTireLocation TireLocation = "front_right"
-	BackLeftTireLocation   TireLocation = "back_left"
-	BackRightTireLocation  TireLocation = "back_right"
+	FrontLeftWheelLocation  WheelLocation = "front_left"
+	FrontRightWheelLocation WheelLocation = "front_right"
+	BackLeftWheelLocation   WheelLocation = "back_left"
+	BackRightWheelLocation  WheelLocation = "back_right"
 )
 
-func Tire(program *graphics.Program, model *stream.Model, location TireLocation) *TireBuilder {
-	return &TireBuilder{
+func Wheel(program *graphics.Program, model *stream.Model, location WheelLocation) *WheelBuilder {
+	return &WheelBuilder{
 		program:  program,
 		model:    model,
 		location: location,
 	}
 }
 
-type TireBuilder struct {
+type WheelBuilder struct {
 	program   *graphics.Program
 	model     *stream.Model
-	location  TireLocation
+	location  WheelLocation
 	modifiers []func(entity *ecs.Entity)
 }
 
-func (b *TireBuilder) WithName(name string) *TireBuilder {
+func (b *WheelBuilder) WithName(name string) *WheelBuilder {
 	b.modifiers = append(b.modifiers, func(entity *ecs.Entity) {
 		entity.Physics.Body.Name = name
 	})
 	return b
 }
 
-func (b *TireBuilder) WithPosition(position sprec.Vec3) *TireBuilder {
+func (b *WheelBuilder) WithPosition(position sprec.Vec3) *WheelBuilder {
 	b.modifiers = append(b.modifiers, func(entity *ecs.Entity) {
 		entity.Physics.Body.Position = position
 	})
 	return b
 }
 
-func (b *TireBuilder) Build(ecsManager *ecs.Manager) *ecs.Entity {
+func (b *WheelBuilder) Build(ecsManager *ecs.Manager) *ecs.Entity {
 	modelNode, _ := b.model.FindNode(fmt.Sprintf("wheel_%s", b.location))
 
 	entity := ecsManager.CreateEntity()
@@ -66,11 +66,11 @@ func (b *TireBuilder) Build(ecsManager *ecs.Manager) *ecs.Entity {
 		Body: &physics.Body{
 			Position:          sprec.ZeroVec3(),
 			Orientation:       sprec.IdentityQuat(),
-			Mass:              tireMass,
-			MomentOfInertia:   physics.SymmetricMomentOfInertia(tireMomentOfInertia),
-			DragFactor:        tireDragFactor,
-			AngularDragFactor: tireAngularDragFactor,
-			RestitutionCoef:   tireRestitutionCoef,
+			Mass:              wheelMass,
+			MomentOfInertia:   physics.SymmetricMomentOfInertia(wheelMomentOfInertia),
+			DragFactor:        wheelDragFactor,
+			AngularDragFactor: wheelAngularDragFactor,
+			RestitutionCoef:   wheelRestitutionCoef,
 			// using sphere shape at is easier to do in physics engine at the moment
 			CollisionShapes: []shape.Placement{
 				{
