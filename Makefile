@@ -163,7 +163,8 @@ twodtextures: \
 	$(TWOD_TEX_ASSETS_DIR)/road.dat \
 	$(TWOD_TEX_ASSETS_DIR)/barrier.dat \
 	$(TWOD_TEX_ASSETS_DIR)/grass.dat \
-	$(TWOD_TEX_ASSETS_DIR)/gravel.dat
+	$(TWOD_TEX_ASSETS_DIR)/gravel.dat \
+	$(TWOD_TEX_ASSETS_DIR)/asphalt.dat
 
 $(TWOD_TEX_ASSETS_DIR):
 	mkdir -p "$(TWOD_TEX_ASSETS_DIR)"
@@ -226,4 +227,8 @@ $(TWOD_TEX_ASSETS_DIR)/grass.dat: \
 
 $(TWOD_TEX_ASSETS_DIR)/gravel.dat: \
 	$(TWOD_TEX_RESOURCES_DIR)/gravel.png
+	rallygen twodtex $+ $@
+
+$(TWOD_TEX_ASSETS_DIR)/asphalt.dat: \
+	$(TWOD_TEX_RESOURCES_DIR)/asphalt.png
 	rallygen twodtex $+ $@

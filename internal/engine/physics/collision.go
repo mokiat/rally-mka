@@ -41,7 +41,7 @@ func (c GroundCollisionConstraint) ApplyImpulse(ctx Context) {
 	impulseStrength := pureImpulseStrength + totalMass*c.Depth // FIXME
 	c.Body.ApplyOffsetImpulse(contactRadiusWS, sprec.InverseVec3(sprec.Vec3Prod(normal, impulseStrength)))
 
-	frictionCoef := float32(0.8)
+	frictionCoef := float32(0.9)
 	lateralVelocity := sprec.Vec3Diff(contactVelocity, sprec.Vec3Prod(c.Normal, verticalVelocity))
 	if lateralVelocity.SqrLength() > 0.000001 {
 		lateralImpulseStrength := totalMass * lateralVelocity.Length()
