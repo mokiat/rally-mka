@@ -13,7 +13,7 @@ const (
 	chassisRadius = 2
 	chassisMass   = 1300.0 / 5.0
 	// chassisMass              = 1300.0 / 10.0
-	chassisMomentOfInertia   = chassisMass * chassisRadius * chassisRadius / 2.0
+	chassisMomentOfInertia   = chassisMass * chassisRadius * chassisRadius / 5.0
 	chassisDragFactor        = 0.0 // 0.5 * 6.8 * 1.0
 	chassisAngularDragFactor = 0.0 // 0.5 * 6.8 * 1.0
 	chassisRestitutionCoef   = 0.3

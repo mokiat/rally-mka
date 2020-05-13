@@ -430,6 +430,7 @@ func (s *Stage) Render(pipeline *graphics.Pipeline, camera *ecs.Camera) {
 	}
 
 	pipeline.SchedulePreRender(func() {
+		// XXX: Race condition, as vertexArrayData is being modified!
 		if err := s.debugVertexArray.Update(s.debugVertexArrayData); err != nil {
 			panic(err)
 		}
