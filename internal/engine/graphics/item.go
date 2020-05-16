@@ -18,6 +18,7 @@ type Item struct {
 	Program        *Program
 	ModelMatrix    sprec.Mat4
 	SkyboxTexture  *CubeTexture
+	DiffuseColor   sprec.Vec4
 	DiffuseTexture *TwoDTexture
 	VertexArray    *VertexArray
 	IndexCount     int32
@@ -27,6 +28,7 @@ func (i *Item) reset() {
 	i.Primitive = RenderPrimitiveTriangles
 	i.Program = nil
 	i.SkyboxTexture = nil
+	i.DiffuseColor = sprec.NewVec4(0.0, 0.0, 0.0, 1.0)
 	i.DiffuseTexture = nil
 	i.VertexArray = nil
 	i.IndexCount = 0

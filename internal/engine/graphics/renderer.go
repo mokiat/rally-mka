@@ -176,6 +176,9 @@ func (r *Renderer) renderItem(sequence Sequence, item Item) {
 		textureIndex++
 	}
 
+	if item.Program.DiffuseColorLocation != -1 {
+		gl.Uniform4f(item.Program.DiffuseColorLocation, item.DiffuseColor.X, item.DiffuseColor.Y, item.DiffuseColor.Z, item.DiffuseColor.W)
+	}
 	if item.Program.ProjectionMatrixLocation != -1 {
 		gl.UniformMatrix4fv(item.Program.ProjectionMatrixLocation, 1, false, r.matrixToArray(sequence.ProjectionMatrix))
 	}

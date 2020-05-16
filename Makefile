@@ -44,6 +44,7 @@ programs: \
 	$(PROGRAM_ASSETS_DIR)/diffuse.dat \
 	$(PROGRAM_ASSETS_DIR)/skybox.dat \
 	$(PROGRAM_ASSETS_DIR)/deferred-geometry.dat \
+	$(PROGRAM_ASSETS_DIR)/geometry-diffuse-color.dat \
 	$(PROGRAM_ASSETS_DIR)/deferred-lighting.dat \
 	$(PROGRAM_ASSETS_DIR)/debug.dat
 
@@ -63,6 +64,11 @@ $(PROGRAM_ASSETS_DIR)/skybox.dat: \
 $(PROGRAM_ASSETS_DIR)/deferred-geometry.dat: \
 	$(SHADER_RESOURCES_DIR)/deferred-geometry.vert \
 	$(SHADER_RESOURCES_DIR)/deferred-geometry.frag
+	rallygen program $+ $@
+
+$(PROGRAM_ASSETS_DIR)/geometry-diffuse-color.dat: \
+	$(SHADER_RESOURCES_DIR)/geometry-diffuse-color.vert \
+	$(SHADER_RESOURCES_DIR)/geometry-diffuse-color.frag
 	rallygen program $+ $@
 
 $(PROGRAM_ASSETS_DIR)/deferred-lighting.dat: \
