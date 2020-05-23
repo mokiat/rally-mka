@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/mokiat/gomath/sprec"
+	"github.com/mokiat/lacking/graphics"
 	"github.com/mokiat/rally-mka/internal/data/asset"
-	"github.com/mokiat/rally-mka/internal/engine/graphics"
 	"github.com/mokiat/rally-mka/internal/engine/resource"
 )
 

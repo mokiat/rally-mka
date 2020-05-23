@@ -2,11 +2,11 @@ package car
 
 import (
 	"github.com/mokiat/gomath/sprec"
+	"github.com/mokiat/lacking/graphics"
+	"github.com/mokiat/lacking/physics"
+	"github.com/mokiat/lacking/shape"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecs"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/stream"
-	"github.com/mokiat/rally-mka/internal/engine/graphics"
-	"github.com/mokiat/rally-mka/internal/engine/physics"
-	"github.com/mokiat/rally-mka/internal/engine/shape"
 )
 
 const (
@@ -16,7 +16,7 @@ const (
 	chassisMomentOfInertia   = chassisMass * chassisRadius * chassisRadius / 5.0
 	chassisDragFactor        = 0.0 // 0.5 * 6.8 * 1.0
 	chassisAngularDragFactor = 0.0 // 0.5 * 6.8 * 1.0
-	chassisRestitutionCoef   = 0.3
+	chassisRestitutionCoef   = 0.0
 )
 
 func Chassis(program *graphics.Program, model *stream.Model) *ChassisBuilder {

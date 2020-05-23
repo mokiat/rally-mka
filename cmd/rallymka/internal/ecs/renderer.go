@@ -2,8 +2,8 @@ package ecs
 
 import (
 	"github.com/mokiat/gomath/sprec"
+	"github.com/mokiat/lacking/graphics"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/stream"
-	"github.com/mokiat/rally-mka/internal/engine/graphics"
 )
 
 func NewRenderer(ecsManager *Manager) *Renderer {

@@ -1,12 +1,10 @@
 package loading
 
 import (
-	"time"
-
 	"github.com/mokiat/gomath/sprec"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/game/input"
+	"github.com/mokiat/lacking/game"
+	"github.com/mokiat/lacking/graphics"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/stream"
-	"github.com/mokiat/rally-mka/internal/engine/graphics"
 	"github.com/mokiat/rally-mka/internal/engine/resource"
 )
 
@@ -19,7 +17,6 @@ func NewView(registry *resource.Registry) *View {
 		texture:           stream.GetTwoDTexture(registry, "loading"),
 		mesh:              stream.GetMesh(registry, "quad"),
 
-		projectionMatrix:     sprec.IdentityMat4(),
 		indicatorModelMatrix: sprec.IdentityMat4(),
 	}
 }
@@ -32,7 +29,6 @@ type View struct {
 	texture           stream.TwoDTextureHandle
 	mesh              stream.MeshHandle
 
-	projectionMatrix     sprec.Mat4
 	indicatorModelMatrix sprec.Mat4
 }
 
@@ -56,31 +52,30 @@ func (v *View) Open() {}
 
 func (v *View) Close() {}
 
-func (v *View) Resize(width, height int) {
-	screenHalfWidth := float32(width) / float32(height)
-	screenHalfHeight := float32(1.0)
-	v.projectionMatrix = sprec.OrthoMat4(
-		-screenHalfWidth, screenHalfWidth, screenHalfHeight, -screenHalfHeight, -1.0, 1.0,
-	)
-	v.screenFramebuffer.Width = int32(width)
-	v.screenFramebuffer.Height = int32(height)
-}
-
-func (v *View) Update(elapsedTime time.Duration, actions input.ActionSet) {
-	elapsedSeconds := float32(elapsedTime.Seconds())
+func (v *View) Update(ctx game.UpdateContext) {
+	elapsedSeconds := float32(ctx.ElapsedTime.Seconds())
 	v.indicatorModelMatrix = sprec.Mat4Prod(v.indicatorModelMatrix,
 		sprec.RotationMat4(sprec.Degrees(elapsedSeconds*360.0), 0.0, 0.0, -1.0),
 	)
 }
 
-func (v *View) Render(pipeline *graphics.Pipeline) {
-	sequence := pipeline.BeginSequence()
+func (v *View) Render(ctx game.RenderContext) {
+	v.screenFramebuffer.Width = int32(ctx.WindowSize.Width)
+	v.screenFramebuffer.Height = int32(ctx.WindowSize.Height)
+
+	screenHalfWidth := float32(ctx.WindowSize.Width) / float32(ctx.WindowSize.Height)
+	screenHalfHeight := float32(1.0)
+	projectionMatrix := sprec.OrthoMat4(
+		-screenHalfWidth, screenHalfWidth, screenHalfHeight, -screenHalfHeight, -1.0, 1.0,
+	)
+
+	sequence := ctx.GFXPipeline.BeginSequence()
 	sequence.TargetFramebuffer = v.screenFramebuffer
 	sequence.BackgroundColor = sprec.NewVec4(0.0, 0.0, 0.0, 1.0)
 	sequence.ClearColor = true
 	sequence.ClearDepth = true
 	sequence.WriteDepth = false
-	sequence.ProjectionMatrix = v.projectionMatrix
+	sequence.ProjectionMatrix = projectionMatrix
 	sequence.ViewMatrix = sprec.ScaleMat4(0.1, 0.1, 1.0)
 
 	indicatorItem := sequence.BeginItem()
@@ -91,5 +86,5 @@ func (v *View) Render(pipeline *graphics.Pipeline) {
 	indicatorItem.IndexCount = v.mesh.Get().SubMeshes[0].IndexCount
 	sequence.EndItem(indicatorItem)
 
-	pipeline.EndSequence(sequence)
+	ctx.GFXPipeline.EndSequence(sequence)
 }

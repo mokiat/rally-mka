@@ -4,13 +4,14 @@ import (
 	"time"
 
 	"github.com/mokiat/gomath/sprec"
+	"github.com/mokiat/lacking/game"
+	"github.com/mokiat/lacking/graphics"
+	"github.com/mokiat/lacking/physics"
+	"github.com/mokiat/lacking/shape"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecs"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/scene/car"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/stream"
 	"github.com/mokiat/rally-mka/internal/data"
-	"github.com/mokiat/rally-mka/internal/engine/graphics"
-	"github.com/mokiat/rally-mka/internal/engine/physics"
-	"github.com/mokiat/rally-mka/internal/engine/shape"
 )
 
 const (
@@ -144,8 +145,11 @@ func (s *Stage) Init(data *Data, camera *ecs.Camera) {
 	// targetEntity =
 	// 	s.setupCoiloverDemo(carProgram, carModel, sprec.NewVec3(0.0, 10.0, -5.0))
 
+	// targetEntity =
+	// 	s.setupCarDemo(carProgram, carModel, sprec.NewVec3(0.0, 141.0, 0.0))
+
 	targetEntity =
-		s.setupCarDemo(carProgram, carModel, sprec.NewVec3(0.0, 141.0, 0.0))
+		s.setupCarDemo(carProgram, carModel, sprec.NewVec3(0.0, 2.0, -10.0))
 
 	standTarget := targetEntity
 	standEntity := s.ecsManager.CreateEntity()
@@ -418,10 +422,10 @@ func (s *Stage) Resize(width, height int) {
 	s.screenFramebuffer.Height = int32(height)
 }
 
-func (s *Stage) Update(elapsedTime time.Duration, camera *ecs.Camera, input ecs.CarInput) {
-	s.physicsEngine.Update(elapsedTime)
-	s.ecsCarSystem.Update(elapsedTime, input)
-	s.ecsCameraStandSystem.Update()
+func (s *Stage) Update(ctx game.UpdateContext, camera *ecs.Camera) {
+	s.physicsEngine.Update(ctx.ElapsedTime)
+	s.ecsCarSystem.Update(ctx)
+	s.ecsCameraStandSystem.Update(ctx)
 }
 
 func (s *Stage) Render(pipeline *graphics.Pipeline, camera *ecs.Camera) {
@@ -430,7 +434,16 @@ func (s *Stage) Render(pipeline *graphics.Pipeline, camera *ecs.Camera) {
 	}
 
 	pipeline.SchedulePreRender(func() {
-		// XXX: Race condition, as vertexArrayData is being modified!
+		// FIXME: Race condition, as vertexArrayData is being modified!
+		// Instead:
+		// -- Outside closure function --
+		// data := pipeline.StagingData(length)
+		// SetVec3(data, ....)
+		// etc.
+		// debugVertexArray := VertexArrayData{VertexData: data}
+		// -- Inside closure function
+		// s.debugVertexArray.Update(debugVertexArrayData) ...
+
 		if err := s.debugVertexArray.Update(s.debugVertexArrayData); err != nil {
 			panic(err)
 		}

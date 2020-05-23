@@ -4,11 +4,11 @@ import (
 	"fmt"
 
 	"github.com/mokiat/gomath/sprec"
+	"github.com/mokiat/lacking/graphics"
+	"github.com/mokiat/lacking/physics"
+	"github.com/mokiat/lacking/shape"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecs"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/stream"
-	"github.com/mokiat/rally-mka/internal/engine/graphics"
-	"github.com/mokiat/rally-mka/internal/engine/physics"
-	"github.com/mokiat/rally-mka/internal/engine/shape"
 )
 
 const (
@@ -17,7 +17,7 @@ const (
 	wheelMomentOfInertia   = wheelMass * wheelRadius * wheelRadius / 2.0 // using cylinder as approximation
 	wheelDragFactor        = 0.0                                         // 0.5 * 0.3 * 0.8
 	wheelAngularDragFactor = 0.0                                         // 0.5 * 0.3 * 0.8
-	wheelRestitutionCoef   = 0.5
+	wheelRestitutionCoef   = 0.0
 )
 
 type WheelLocation string

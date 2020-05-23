@@ -1,13 +1,12 @@
 package simulation
 
 import (
-	"time"
-
 	"github.com/mokiat/gomath/sprec"
+	"github.com/mokiat/lacking/game"
+	"github.com/mokiat/lacking/graphics"
+	"github.com/mokiat/lacking/input"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecs"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/game/input"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/scene"
-	"github.com/mokiat/rally-mka/internal/engine/graphics"
 	"github.com/mokiat/rally-mka/internal/engine/resource"
 )
 
@@ -54,18 +53,22 @@ func (v *View) Resize(width, height int) {
 	v.stage.Resize(width, height)
 }
 
-func (v *View) Update(elapsedTime time.Duration, actions input.ActionSet) {
-	if !actions.FreezeFrame {
-		v.stage.Update(elapsedTime, v.camera, ecs.CarInput{
-			Forward:   actions.Forward,
-			Backward:  actions.Backward,
-			TurnLeft:  actions.Left,
-			TurnRight: actions.Right,
-			Handbrake: actions.Handbrake,
-		})
+func (v *View) Update(ctx game.UpdateContext) {
+	if !ctx.Keyboard.IsPressed(input.KeyF) {
+		v.stage.Update(ctx, v.camera)
 	}
 }
 
-func (v *View) Render(pipeline *graphics.Pipeline) {
-	v.stage.Render(pipeline, v.camera)
+func (v *View) Render(ctx game.RenderContext) {
+	width := ctx.WindowSize.Width
+	height := ctx.WindowSize.Height
+
+	screenHalfWidth := float32(width) / float32(height)
+	screenHalfHeight := float32(1.0)
+	v.camera.SetProjectionMatrix(sprec.PerspectiveMat4(
+		-screenHalfWidth, screenHalfWidth, -screenHalfHeight, screenHalfHeight, 1.5, 300.0,
+	))
+	v.stage.Resize(width, height)
+
+	v.stage.Render(ctx.GFXPipeline, v.camera)
 }

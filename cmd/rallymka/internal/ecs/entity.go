@@ -2,9 +2,9 @@ package ecs
 
 import (
 	"github.com/mokiat/gomath/sprec"
+	"github.com/mokiat/lacking/graphics"
+	"github.com/mokiat/lacking/physics"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/stream"
-	"github.com/mokiat/rally-mka/internal/engine/graphics"
-	"github.com/mokiat/rally-mka/internal/engine/physics"
 )
 
 type Entity struct {
@@ -31,14 +31,6 @@ type RenderSkybox struct {
 	Program *graphics.Program
 	Texture *graphics.CubeTexture
 	Mesh    *stream.Mesh
-}
-
-type CarInput struct {
-	Forward   bool
-	Backward  bool
-	TurnLeft  bool
-	TurnRight bool
-	Handbrake bool
 }
 
 type Car struct {

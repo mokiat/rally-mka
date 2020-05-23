@@ -1,8 +1,8 @@
 package scene
 
 import (
+	"github.com/mokiat/lacking/graphics"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/stream"
-	"github.com/mokiat/rally-mka/internal/engine/graphics"
 	"github.com/mokiat/rally-mka/internal/engine/resource"
 )
 
@@ -17,7 +17,7 @@ func NewData(registry *resource.Registry, gfxWorker *graphics.Worker) *Data {
 		EntityProgram:  stream.GetProgram(registry, "deferred-geometry"),
 		CarProgram:     stream.GetProgram(registry, "deferred-geometry"),
 		CarModel:       stream.GetModel(registry, "suv"),
-		Level:          stream.GetLevel(registry, "tarnovo"),
+		Level:          stream.GetLevel(registry, "forest"),
 
 		DeferredGeometryProgram: stream.GetProgram(registry, "deferred-geometry"),
 		DeferredLightingProgram: stream.GetProgram(registry, "deferred-lighting"),

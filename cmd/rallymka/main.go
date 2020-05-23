@@ -2,22 +2,25 @@ package main
 
 import (
 	"log"
-	"runtime"
+	"time"
 
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/game"
+	"github.com/mokiat/lacking/game"
+	rallygame "github.com/mokiat/rally-mka/cmd/rallymka/internal/game"
 )
 
-func init() {
-	runtime.LockOSThread()
-}
-
 func main() {
-	log.Println("starting application")
-
-	app := game.Application{}
-	if err := app.Run(); err != nil {
-		log.Fatalf("application crashed: %v", err)
+	log.Println("game started")
+	app := game.NewApp(game.AppConfig{
+		WindowTitle:        "RallyMKA",
+		WindowWidth:        1024,
+		WindowHeight:       576,
+		WindowHideCursor:   true,
+		WindowVSync:        true,
+		UpdateLoopInterval: 16 * time.Millisecond,
+	})
+	controller := rallygame.NewController()
+	if err := app.Run(controller); err != nil {
+		log.Fatalf("game crashed: %v", err)
 	}
-
-	log.Println("application closed")
+	log.Println("game closed")
 }
