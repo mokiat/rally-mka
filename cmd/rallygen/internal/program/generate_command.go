@@ -6,7 +6,7 @@ import (
 
 	cli "github.com/urfave/cli/v2"
 
-	"github.com/mokiat/rally-mka/internal/data/asset"
+	"github.com/mokiat/lacking/data/asset"
 	"github.com/mokiat/rally-mka/internal/data/resource"
 )
 
@@ -76,7 +76,7 @@ func (a *generateProgramAction) writeProgram(path string, program *asset.Program
 	}
 	defer file.Close()
 
-	if err := asset.NewProgramEncoder().Encode(file, program); err != nil {
+	if err := asset.EncodeProgram(file, program); err != nil {
 		return fmt.Errorf("failed to encode program: %w", err)
 	}
 	return nil

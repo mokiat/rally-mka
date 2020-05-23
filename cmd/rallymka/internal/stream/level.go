@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	"github.com/mokiat/gomath/sprec"
+	"github.com/mokiat/lacking/data/asset"
 	"github.com/mokiat/lacking/graphics"
 	"github.com/mokiat/lacking/shape"
-	"github.com/mokiat/rally-mka/internal/data/asset"
 	"github.com/mokiat/rally-mka/internal/engine/resource"
 )
 
@@ -31,12 +31,10 @@ func (h LevelHandle) IsAvailable() bool {
 }
 
 type Level struct {
-	Waypoints          []sprec.Vec3
-	SkyboxTexture      CubeTextureHandle
-	CollisionMeshes    []shape.Placement
-	StartCollisionMesh shape.Placement
-	StaticMeshes       []*Mesh
-	StaticEntities     []*Entity
+	SkyboxTexture   CubeTextureHandle
+	CollisionMeshes []shape.Placement
+	StaticMeshes    []*Mesh
+	StaticEntities  []*Entity
 }
 
 func (l Level) isAvailable() bool {
@@ -88,18 +86,12 @@ func (o *LevelOperator) Allocate(registry *resource.Registry, name string) (reso
 	}
 	defer in.Close()
 
-	levelAsset, err := asset.NewLevelDecoder().Decode(in)
-	if err != nil {
+	levelAsset := new(asset.Level)
+	if err := asset.DecodeLevel(in, levelAsset); err != nil {
 		return nil, fmt.Errorf("failed to decode level asset %q: %w", name, err)
 	}
 
 	level := &Level{}
-
-	waypoints := make([]sprec.Vec3, len(levelAsset.Waypoints))
-	for i, waypointAsset := range levelAsset.Waypoints {
-		waypoints[i] = sprec.NewVec3(waypointAsset[0], waypointAsset[1], waypointAsset[2])
-	}
-	level.Waypoints = waypoints
 
 	skyboxTexture := GetCubeTexture(registry, levelAsset.SkyboxTexture)
 	registry.Request(skyboxTexture.Handle)
@@ -146,8 +138,6 @@ func (o *LevelOperator) Allocate(registry *resource.Registry, name string) (reso
 		collisionMeshes[i] = convertCollisionMesh(collisionMeshAsset)
 	}
 	level.CollisionMeshes = collisionMeshes
-
-	level.StartCollisionMesh = convertCollisionMesh(levelAsset.StartCollisionMesh)
 
 	staticMeshes := make([]*Mesh, len(levelAsset.StaticMeshes))
 	for i, staticMeshAsset := range levelAsset.StaticMeshes {

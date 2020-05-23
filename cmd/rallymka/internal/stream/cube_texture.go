@@ -3,8 +3,8 @@ package stream
 import (
 	"fmt"
 
+	"github.com/mokiat/lacking/data/asset"
 	"github.com/mokiat/lacking/graphics"
-	"github.com/mokiat/rally-mka/internal/data/asset"
 	"github.com/mokiat/rally-mka/internal/engine/resource"
 )
 
@@ -47,8 +47,8 @@ func (o *CubeTextureOperator) Allocate(registry *resource.Registry, name string)
 	}
 	defer in.Close()
 
-	texAsset, err := asset.NewCubeTextureDecoder().Decode(in)
-	if err != nil {
+	texAsset := new(asset.CubeTexture)
+	if err := asset.DecodeCubeTexture(in, texAsset); err != nil {
 		return nil, fmt.Errorf("failed to decode cube texture asset %q: %w", name, err)
 	}
 

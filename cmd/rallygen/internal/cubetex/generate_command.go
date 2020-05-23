@@ -6,7 +6,7 @@ import (
 
 	cli "github.com/urfave/cli/v2"
 
-	"github.com/mokiat/rally-mka/internal/data/asset"
+	"github.com/mokiat/lacking/data/asset"
 	"github.com/mokiat/rally-mka/internal/data/resource"
 )
 
@@ -120,7 +120,6 @@ func (a *generateCubeTextureAction) Run() error {
 
 	assetTexture := &asset.CubeTexture{
 		Dimension: uint16(frontImg.Width()),
-		Format:    asset.TextureFormatRGB,
 	}
 	assetTexture.Sides[asset.TextureSideFront] = asset.CubeTextureSide{
 		Data: frontImg.RGBData(),
@@ -168,7 +167,7 @@ func (a *generateCubeTextureAction) writeAssetCubeTexture(path string, texture *
 	}
 	defer file.Close()
 
-	if err := asset.NewCubeTextureEncoder().Encode(file, texture); err != nil {
+	if err := asset.EncodeCubeTexture(file, texture); err != nil {
 		return fmt.Errorf("failed to encode texture: %w", err)
 	}
 	return nil

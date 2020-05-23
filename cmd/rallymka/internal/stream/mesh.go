@@ -3,8 +3,8 @@ package stream
 import (
 	"fmt"
 
+	"github.com/mokiat/lacking/data/asset"
 	"github.com/mokiat/lacking/graphics"
-	"github.com/mokiat/rally-mka/internal/data/asset"
 	"github.com/mokiat/rally-mka/internal/engine/resource"
 )
 
@@ -78,8 +78,8 @@ func (o *MeshOperator) Allocate(registry *resource.Registry, name string) (resou
 	}
 	defer in.Close()
 
-	meshAsset, err := asset.NewMeshDecoder().Decode(in)
-	if err != nil {
+	meshAsset := new(asset.Mesh)
+	if err := asset.DecodeMesh(in, meshAsset); err != nil {
 		return nil, fmt.Errorf("failed to decode mesh asset %q: %w", name, err)
 	}
 

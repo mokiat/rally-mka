@@ -3,8 +3,8 @@ package stream
 import (
 	"fmt"
 
+	"github.com/mokiat/lacking/data/asset"
 	"github.com/mokiat/lacking/graphics"
-	"github.com/mokiat/rally-mka/internal/data/asset"
 	"github.com/mokiat/rally-mka/internal/engine/resource"
 )
 
@@ -47,8 +47,8 @@ func (o *ProgramOperator) Allocate(registry *resource.Registry, name string) (re
 	}
 	defer in.Close()
 
-	programAsset, err := asset.NewProgramDecoder().Decode(in)
-	if err != nil {
+	programAsset := new(asset.Program)
+	if err := asset.DecodeProgram(in, programAsset); err != nil {
 		return nil, fmt.Errorf("failed to decode program asset %q: %w", name, err)
 	}
 

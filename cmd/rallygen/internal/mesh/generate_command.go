@@ -7,8 +7,8 @@ import (
 
 	cli "github.com/urfave/cli/v2"
 
+	"github.com/mokiat/lacking/data/asset"
 	"github.com/mokiat/rally-mka/internal/data"
-	"github.com/mokiat/rally-mka/internal/data/asset"
 	"github.com/mokiat/rally-mka/internal/data/resource"
 )
 
@@ -73,7 +73,7 @@ func (a *generateMeshAction) writeAssetMesh(path string, mesh *asset.Mesh) error
 	}
 	defer file.Close()
 
-	if err := asset.NewMeshEncoder().Encode(file, mesh); err != nil {
+	if err := asset.EncodeMesh(file, mesh); err != nil {
 		return fmt.Errorf("failed to encode mesh: %w", err)
 	}
 	return nil

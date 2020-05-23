@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/mokiat/gomath/sprec"
+	"github.com/mokiat/lacking/data/asset"
 	"github.com/mokiat/lacking/graphics"
-	"github.com/mokiat/rally-mka/internal/data/asset"
 	"github.com/mokiat/rally-mka/internal/engine/resource"
 )
 
@@ -98,8 +98,8 @@ func (o *ModelOperator) Allocate(registry *resource.Registry, name string) (reso
 	}
 	defer in.Close()
 
-	modelAsset, err := asset.NewModelDecoder().Decode(in)
-	if err != nil {
+	modelAsset := new(asset.Model)
+	if err := asset.DecodeModel(in, modelAsset); err != nil {
 		return nil, fmt.Errorf("failed to decode model asset %q: %w", name, err)
 	}
 

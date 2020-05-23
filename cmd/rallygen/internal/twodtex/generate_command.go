@@ -6,7 +6,7 @@ import (
 
 	cli "github.com/urfave/cli/v2"
 
-	"github.com/mokiat/rally-mka/internal/data/asset"
+	"github.com/mokiat/lacking/data/asset"
 	"github.com/mokiat/rally-mka/internal/data/resource"
 )
 
@@ -58,7 +58,6 @@ func (a *generateTwoDTextureAction) Run() error {
 	}
 
 	texture := &asset.TwoDTexture{
-		Format: asset.TextureFormatRGBA,
 		Width:  uint16(resImage.Width()),
 		Height: uint16(resImage.Height()),
 		Data:   resImage.RGBAData(),
@@ -91,7 +90,7 @@ func (a *generateTwoDTextureAction) writeAssetTexture(path string, texture *asse
 	}
 	defer file.Close()
 
-	if err := asset.NewTwoDTextureEncoder().Encode(file, texture); err != nil {
+	if err := asset.EncodeTwoDTexture(file, texture); err != nil {
 		return fmt.Errorf("failed to encode texture: %w", err)
 	}
 	return nil

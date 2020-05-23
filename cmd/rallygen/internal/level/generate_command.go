@@ -6,8 +6,8 @@ import (
 
 	cli "github.com/urfave/cli/v2"
 
+	"github.com/mokiat/lacking/data/asset"
 	"github.com/mokiat/rally-mka/cmd/rallygen/internal/mesh"
-	"github.com/mokiat/rally-mka/internal/data/asset"
 	"github.com/mokiat/rally-mka/internal/data/resource"
 )
 
@@ -72,7 +72,7 @@ func (a *generateLevelAction) writeAssetLevel(path string, level *asset.Level) e
 	}
 	defer file.Close()
 
-	if err := asset.NewLevelEncoder().Encode(file, level); err != nil {
+	if err := asset.EncodeLevel(file, level); err != nil {
 		return fmt.Errorf("failed to encode level: %w", err)
 	}
 	return nil
@@ -81,11 +81,6 @@ func (a *generateLevelAction) writeAssetLevel(path string, level *asset.Level) e
 func ConvertResourceToAsset(resLevel *resource.Level) (*asset.Level, error) {
 	assetLevel := &asset.Level{
 		SkyboxTexture: resLevel.SkyboxTexture,
-	}
-
-	assetLevel.Waypoints = make([]asset.Point, len(resLevel.Waypoints))
-	for i, resWaypoint := range resLevel.Waypoints {
-		assetLevel.Waypoints[i] = asset.Point(resWaypoint)
 	}
 
 	assetLevel.StaticEntities = make([]asset.LevelEntity, len(resLevel.StaticEntities))
@@ -116,20 +111,6 @@ func ConvertResourceToAsset(resLevel *resource.Level) (*asset.Level, error) {
 			}
 		}
 		assetLevel.CollisionMeshes[i] = asset.LevelCollisionMesh{
-			Triangles: triangles,
-		}
-	}
-
-	{
-		triangles := make([]asset.Triangle, len(resLevel.StartCollisionMesh.Triangles))
-		for i, resTriangle := range resLevel.StartCollisionMesh.Triangles {
-			triangles[i] = asset.Triangle{
-				asset.Point(resTriangle[0]),
-				asset.Point(resTriangle[1]),
-				asset.Point(resTriangle[2]),
-			}
-		}
-		assetLevel.StartCollisionMesh = asset.LevelCollisionMesh{
 			Triangles: triangles,
 		}
 	}
