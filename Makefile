@@ -2,19 +2,14 @@ RESOURCES_DIR=resources
 ASSETS_DIR=assets
 LEVEL_RESOURCES_DIR=$(RESOURCES_DIR)/levels
 LEVEL_ASSETS_DIR=$(ASSETS_DIR)/levels
-SHADER_RESOURCES_DIR=$(RESOURCES_DIR)/shaders
-PROGRAM_ASSETS_DIR=$(ASSETS_DIR)/programs
 MODEL_RESOURCES_DIR=$(RESOURCES_DIR)/models
 MODEL_ASSETS_DIR=$(ASSETS_DIR)/models
 MESH_RESOURCES_DIR=$(RESOURCES_DIR)/meshes
 MESH_ASSETS_DIR=$(ASSETS_DIR)/meshes
-CUBE_TEX_RESOURCES_DIR=$(RESOURCES_DIR)/textures/cube
-CUBE_TEX_ASSETS_DIR=$(ASSETS_DIR)/textures/cube
-TWOD_TEX_RESOURCES_DIR=$(RESOURCES_DIR)/textures/twod
-TWOD_TEX_ASSETS_DIR=$(ASSETS_DIR)/textures/twod
 
 .PHONY: assets
-assets: levels programs models meshes cubetextures twodtextures
+assets: levels models meshes
+	go run cmd/rallypack/main.go
 
 .PHONY: levels
 levels: \
@@ -37,49 +32,6 @@ $(LEVEL_ASSETS_DIR)/highway.dat: \
 $(LEVEL_ASSETS_DIR)/playground.dat: \
 	$(LEVEL_RESOURCES_DIR)/playground.json
 	rallygen level $+ $@
-
-.PHONY: programs
-programs: \
-	$(PROGRAM_ASSETS_DIR) \
-	$(PROGRAM_ASSETS_DIR)/diffuse.dat \
-	$(PROGRAM_ASSETS_DIR)/skybox.dat \
-	$(PROGRAM_ASSETS_DIR)/deferred-geometry.dat \
-	$(PROGRAM_ASSETS_DIR)/geometry-diffuse-color.dat \
-	$(PROGRAM_ASSETS_DIR)/deferred-lighting.dat \
-	$(PROGRAM_ASSETS_DIR)/debug.dat
-
-$(PROGRAM_ASSETS_DIR):
-	mkdir -p "$(PROGRAM_ASSETS_DIR)"
-
-$(PROGRAM_ASSETS_DIR)/diffuse.dat: \
-	$(SHADER_RESOURCES_DIR)/diffuse.vert \
-	$(SHADER_RESOURCES_DIR)/diffuse.frag
-	rallygen program $+ $@
-
-$(PROGRAM_ASSETS_DIR)/skybox.dat: \
-	$(SHADER_RESOURCES_DIR)/skybox.vert \
-	$(SHADER_RESOURCES_DIR)/skybox.frag
-	rallygen program $+ $@
-
-$(PROGRAM_ASSETS_DIR)/deferred-geometry.dat: \
-	$(SHADER_RESOURCES_DIR)/deferred-geometry.vert \
-	$(SHADER_RESOURCES_DIR)/deferred-geometry.frag
-	rallygen program $+ $@
-
-$(PROGRAM_ASSETS_DIR)/geometry-diffuse-color.dat: \
-	$(SHADER_RESOURCES_DIR)/geometry-diffuse-color.vert \
-	$(SHADER_RESOURCES_DIR)/geometry-diffuse-color.frag
-	rallygen program $+ $@
-
-$(PROGRAM_ASSETS_DIR)/deferred-lighting.dat: \
-	$(SHADER_RESOURCES_DIR)/deferred-lighting.vert \
-	$(SHADER_RESOURCES_DIR)/deferred-lighting.frag
-	rallygen program $+ $@
-
-$(PROGRAM_ASSETS_DIR)/debug.dat: \
-	$(SHADER_RESOURCES_DIR)/debug.vert \
-	$(SHADER_RESOURCES_DIR)/debug.frag
-	rallygen program $+ $@
 
 .PHONY: models
 models: \
@@ -134,107 +86,3 @@ $(MESH_ASSETS_DIR)/quad.dat: \
 $(MESH_ASSETS_DIR)/skybox.dat: \
 	$(MESH_RESOURCES_DIR)/skybox.json
 	rallygen mesh $+ $@
-
-.PHONY: cubetextures
-cubetextures:	\
-	$(CUBE_TEX_ASSETS_DIR) \
-	$(CUBE_TEX_ASSETS_DIR)/city.dat
-
-$(CUBE_TEX_ASSETS_DIR):
-	mkdir -p "$(CUBE_TEX_ASSETS_DIR)"
-
-$(CUBE_TEX_ASSETS_DIR)/city.dat: \
-	$(CUBE_TEX_RESOURCES_DIR)/city_front.png \
-	$(CUBE_TEX_RESOURCES_DIR)/city_back.png \
-	$(CUBE_TEX_RESOURCES_DIR)/city_left.png \
-	$(CUBE_TEX_RESOURCES_DIR)/city_right.png \
-	$(CUBE_TEX_RESOURCES_DIR)/city_top.png \
-	$(CUBE_TEX_RESOURCES_DIR)/city_bottom.png
-	rallygen cubetex --dimension 512 $+ $@
-
-.PHONY: twodtextures
-twodtextures: \
-	$(TWOD_TEX_ASSETS_DIR) \
-	$(TWOD_TEX_ASSETS_DIR)/loading.dat \
-	$(TWOD_TEX_ASSETS_DIR)/tree.dat \
-	$(TWOD_TEX_ASSETS_DIR)/lamp.dat \
-	$(TWOD_TEX_ASSETS_DIR)/finish.dat \
-	$(TWOD_TEX_ASSETS_DIR)/hatch_body.dat \
-	$(TWOD_TEX_ASSETS_DIR)/hatch_wheel.dat \
-	$(TWOD_TEX_ASSETS_DIR)/suv_body.dat \
-	$(TWOD_TEX_ASSETS_DIR)/suv_wheel.dat \
-	$(TWOD_TEX_ASSETS_DIR)/truck_body.dat \
-	$(TWOD_TEX_ASSETS_DIR)/truck_wheel.dat \
-	$(TWOD_TEX_ASSETS_DIR)/concrete.dat \
-	$(TWOD_TEX_ASSETS_DIR)/road.dat \
-	$(TWOD_TEX_ASSETS_DIR)/barrier.dat \
-	$(TWOD_TEX_ASSETS_DIR)/grass.dat \
-	$(TWOD_TEX_ASSETS_DIR)/gravel.dat \
-	$(TWOD_TEX_ASSETS_DIR)/asphalt.dat
-
-$(TWOD_TEX_ASSETS_DIR):
-	mkdir -p "$(TWOD_TEX_ASSETS_DIR)"
-
-$(TWOD_TEX_ASSETS_DIR)/loading.dat: \
-	$(TWOD_TEX_RESOURCES_DIR)/loading.png
-	rallygen twodtex $+ $@
-
-$(TWOD_TEX_ASSETS_DIR)/tree.dat: \
-	$(TWOD_TEX_RESOURCES_DIR)/tree.png
-	rallygen twodtex $+ $@
-
-$(TWOD_TEX_ASSETS_DIR)/lamp.dat: \
-	$(TWOD_TEX_RESOURCES_DIR)/lamp.png
-	rallygen twodtex $+ $@
-
-$(TWOD_TEX_ASSETS_DIR)/finish.dat: \
-	$(TWOD_TEX_RESOURCES_DIR)/finish.png
-	rallygen twodtex $+ $@
-
-$(TWOD_TEX_ASSETS_DIR)/hatch_body.dat: \
-	$(TWOD_TEX_RESOURCES_DIR)/hatch_body.png
-	rallygen twodtex $+ $@
-
-$(TWOD_TEX_ASSETS_DIR)/hatch_wheel.dat: \
-	$(TWOD_TEX_RESOURCES_DIR)/hatch_wheel.png
-	rallygen twodtex $+ $@
-
-$(TWOD_TEX_ASSETS_DIR)/suv_body.dat: \
-	$(TWOD_TEX_RESOURCES_DIR)/suv_body.png
-	rallygen twodtex $+ $@
-
-$(TWOD_TEX_ASSETS_DIR)/suv_wheel.dat: \
-	$(TWOD_TEX_RESOURCES_DIR)/suv_wheel.png
-	rallygen twodtex $+ $@
-
-$(TWOD_TEX_ASSETS_DIR)/truck_body.dat: \
-	$(TWOD_TEX_RESOURCES_DIR)/truck_body.png
-	rallygen twodtex $+ $@
-
-$(TWOD_TEX_ASSETS_DIR)/truck_wheel.dat: \
-	$(TWOD_TEX_RESOURCES_DIR)/truck_wheel.png
-	rallygen twodtex $+ $@
-
-$(TWOD_TEX_ASSETS_DIR)/concrete.dat: \
-	$(TWOD_TEX_RESOURCES_DIR)/concrete.png
-	rallygen twodtex $+ $@
-
-$(TWOD_TEX_ASSETS_DIR)/road.dat: \
-	$(TWOD_TEX_RESOURCES_DIR)/road.png
-	rallygen twodtex $+ $@
-
-$(TWOD_TEX_ASSETS_DIR)/barrier.dat: \
-	$(TWOD_TEX_RESOURCES_DIR)/barrier.png
-	rallygen twodtex $+ $@
-
-$(TWOD_TEX_ASSETS_DIR)/grass.dat: \
-	$(TWOD_TEX_RESOURCES_DIR)/grass.png
-	rallygen twodtex $+ $@
-
-$(TWOD_TEX_ASSETS_DIR)/gravel.dat: \
-	$(TWOD_TEX_RESOURCES_DIR)/gravel.png
-	rallygen twodtex $+ $@
-
-$(TWOD_TEX_ASSETS_DIR)/asphalt.dat: \
-	$(TWOD_TEX_RESOURCES_DIR)/asphalt.png
-	rallygen twodtex $+ $@

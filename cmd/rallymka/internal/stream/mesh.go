@@ -117,8 +117,8 @@ func AllocateMesh(registry *resource.Registry, gfxWorker *graphics.Worker, meshA
 			IndexOffset: int(subMeshAsset.IndexOffset),
 			IndexCount:  int32(subMeshAsset.IndexCount),
 		}
-		if subMeshAsset.DiffuseTexture != "" {
-			diffuseTexture := GetTwoDTexture(registry, subMeshAsset.DiffuseTexture)
+		if subMeshAsset.ColorTexture != "" {
+			diffuseTexture := GetTwoDTexture(registry, subMeshAsset.ColorTexture)
 			registry.Request(diffuseTexture.Handle)
 			subMesh.DiffuseTexture = &diffuseTexture
 		}

@@ -1,155 +1,160 @@
 package main
 
 import (
+	"fmt"
 	"os"
-	"strings"
 
-	"github.com/mokiat/gomath/sprec"
-	"github.com/mokiat/rally-mka/internal/data"
-	"github.com/mokiat/rally-mka/internal/data/asset"
-	"github.com/qmuntal/gltf"
+	"github.com/mokiat/rally-mka/internal/data/gltf"
 )
 
 func main() {
-	glLevel, err := gltf.Open("../models/export/tarnovo.exp2.gltf")
-	if err != nil {
-		panic(err)
-	}
+	gltfFile, err := os.Open("../models/Reference/reference.glb")
+	panicOnErr(err)
+	defer gltfFile.Close()
 
-	level := &asset.Level{
-		SkyboxTexture: "city",
-	}
+	gltfDoc, err := gltf.NewParser().Parse(gltfFile)
+	panicOnErr(err)
+	fmt.Printf("gltf doc: %+v\n", gltfDoc)
 
-	for _, node := range glLevel.Nodes {
-		getMesh := func() *gltf.Mesh {
-			return glLevel.Meshes[*node.Mesh]
-		}
+	// glLevel, err := gltf.Open("../models/export/tarnovo.exp2.gltf")
+	// if err != nil {
+	// 	panic(err)
+	// }
 
-		getPositionAccessor := func() *gltf.Accessor {
-			return glLevel.Accessors[getMesh().Primitives[0].Attributes["POSITION"]]
-		}
+	// level := &asset.Level{
+	// 	SkyboxTexture: "city",
+	// }
 
-		// getPosition := func(index int) sprec.Vec3 {
-		// 	positionAccessor := *getPositionAccessor()
-		// 	positionView := glLevel.BufferViews[*positionAccessor.BufferView]
-		// 	buffer := data.Buffer(glLevel.Buffers[0].Data)
-		// 	offset := int(positionView.ByteOffset)
-		// 	x := buffer.Float32(offset+0*3*4) + float32(node.Translation[0])
-		// 	y := buffer.Float32(offset+1*3*4) + float32(node.Translation[1])
-		// 	z := buffer.Float32(offset+2*3*4) + float32(node.Translation[2])
-		// 	return sprec.NewVec3(x, y, z)
-		// }
+	// for _, node := range glLevel.Nodes {
+	// 	getMesh := func() *gltf.Mesh {
+	// 		return glLevel.Meshes[*node.Mesh]
+	// 	}
 
-		getNormalAccessor := func() *gltf.Accessor {
-			return glLevel.Accessors[getMesh().Primitives[0].Attributes["NORMAL"]]
-		}
+	// 	getPositionAccessor := func() *gltf.Accessor {
+	// 		return glLevel.Accessors[getMesh().Primitives[0].Attributes["POSITION"]]
+	// 	}
 
-		getTexCoordAccessor := func() *gltf.Accessor {
-			return glLevel.Accessors[getMesh().Primitives[0].Attributes["TEXCOORD_0"]]
-		}
+	// 	// getPosition := func(index int) sprec.Vec3 {
+	// 	// 	positionAccessor := *getPositionAccessor()
+	// 	// 	positionView := glLevel.BufferViews[*positionAccessor.BufferView]
+	// 	// 	buffer := data.Buffer(glLevel.Buffers[0].Data)
+	// 	// 	offset := int(positionView.ByteOffset)
+	// 	// 	x := buffer.Float32(offset+0*3*4) + float32(node.Translation[0])
+	// 	// 	y := buffer.Float32(offset+1*3*4) + float32(node.Translation[1])
+	// 	// 	z := buffer.Float32(offset+2*3*4) + float32(node.Translation[2])
+	// 	// 	return sprec.NewVec3(x, y, z)
+	// 	// }
 
-		getVertexCount := func() uint32 {
-			accessor := glLevel.Accessors[getMesh().Primitives[0].Attributes["POSITION"]]
-			return accessor.Count
-		}
+	// 	getNormalAccessor := func() *gltf.Accessor {
+	// 		return glLevel.Accessors[getMesh().Primitives[0].Attributes["NORMAL"]]
+	// 	}
 
-		getIndexAccessor := func() *gltf.Accessor {
-			return glLevel.Accessors[*getMesh().Primitives[0].Indices]
-		}
+	// 	getTexCoordAccessor := func() *gltf.Accessor {
+	// 		return glLevel.Accessors[getMesh().Primitives[0].Attributes["TEXCOORD_0"]]
+	// 	}
 
-		getIndexCount := func() uint32 {
-			return getIndexAccessor().Count
-		}
+	// 	getVertexCount := func() uint32 {
+	// 		accessor := glLevel.Accessors[getMesh().Primitives[0].Attributes["POSITION"]]
+	// 		return accessor.Count
+	// 	}
 
-		if !strings.HasPrefix(node.Name, "Road") {
-			continue
-		}
+	// 	getIndexAccessor := func() *gltf.Accessor {
+	// 		return glLevel.Accessors[*getMesh().Primitives[0].Indices]
+	// 	}
 
-		vertexStride := uint32(3*4 + 3*4 + 2*4)
-		vertexCount := getVertexCount()
-		vertexData := make([]byte, vertexCount*vertexStride)
-		positionView := glLevel.BufferViews[*getPositionAccessor().BufferView]
-		normalView := glLevel.BufferViews[*getNormalAccessor().BufferView]
-		texCoordView := glLevel.BufferViews[*getTexCoordAccessor().BufferView]
-		offset := 0
-		buffer := data.Buffer(vertexData)
-		for i := 0; i < int(vertexCount); i++ {
-			positionOffset := int(positionView.ByteOffset) + i*3*4
-			copy(vertexData[offset:], glLevel.Buffers[0].Data[positionOffset:positionOffset+3*4])
-			buffer.SetFloat32(offset+0*4, buffer.Float32(offset+0*4)+float32(node.Translation[0]))
-			buffer.SetFloat32(offset+1*4, buffer.Float32(offset+1*4)+float32(node.Translation[1]))
-			buffer.SetFloat32(offset+2*4, buffer.Float32(offset+2*4)+float32(node.Translation[2]))
-			offset += 3 * 4
+	// 	getIndexCount := func() uint32 {
+	// 		return getIndexAccessor().Count
+	// 	}
 
-			normalOffset := int(normalView.ByteOffset) + i*3*4
-			copy(vertexData[offset:], glLevel.Buffers[0].Data[normalOffset:normalOffset+3*4])
-			offset += 3 * 4
+	// 	if !strings.HasPrefix(node.Name, "Road") {
+	// 		continue
+	// 	}
 
-			texCoordOffset := int(texCoordView.ByteOffset) + i*2*4
-			copy(vertexData[offset:], glLevel.Buffers[0].Data[texCoordOffset:texCoordOffset+2*4])
-			offset += 2 * 4
-		}
+	// 	vertexStride := uint32(3*4 + 3*4 + 2*4)
+	// 	vertexCount := getVertexCount()
+	// 	vertexData := make([]byte, vertexCount*vertexStride)
+	// 	positionView := glLevel.BufferViews[*getPositionAccessor().BufferView]
+	// 	normalView := glLevel.BufferViews[*getNormalAccessor().BufferView]
+	// 	texCoordView := glLevel.BufferViews[*getTexCoordAccessor().BufferView]
+	// 	offset := 0
+	// 	buffer := data.Buffer(vertexData)
+	// 	for i := 0; i < int(vertexCount); i++ {
+	// 		positionOffset := int(positionView.ByteOffset) + i*3*4
+	// 		copy(vertexData[offset:], glLevel.Buffers[0].Data[positionOffset:positionOffset+3*4])
+	// 		buffer.SetFloat32(offset+0*4, buffer.Float32(offset+0*4)+float32(node.Translation[0]))
+	// 		buffer.SetFloat32(offset+1*4, buffer.Float32(offset+1*4)+float32(node.Translation[1]))
+	// 		buffer.SetFloat32(offset+2*4, buffer.Float32(offset+2*4)+float32(node.Translation[2]))
+	// 		offset += 3 * 4
 
-		indexData := make([]byte, getIndexCount()*2)
-		indexBuffer := data.Buffer(indexData)
-		indexView := *getIndexAccessor().BufferView
-		indexOffset := glLevel.BufferViews[indexView].ByteOffset
-		indexSize := glLevel.BufferViews[indexView].ByteLength
-		copy(indexData, glLevel.Buffers[0].Data[indexOffset:indexOffset+indexSize])
+	// 		normalOffset := int(normalView.ByteOffset) + i*3*4
+	// 		copy(vertexData[offset:], glLevel.Buffers[0].Data[normalOffset:normalOffset+3*4])
+	// 		offset += 3 * 4
 
-		staticMesh := asset.Mesh{
-			VertexData:     vertexData,
-			VertexStride:   uint8(vertexStride),
-			CoordOffset:    0,
-			NormalOffset:   3 * 4,
-			TexCoordOffset: 3*4 + 3*4,
-			IndexData:      indexData,
-			SubMeshes: []asset.SubMesh{
-				{
-					Name:           "mesh",
-					IndexOffset:    0,
-					IndexCount:     getIndexCount(),
-					DiffuseTexture: "asphalt",
-				},
-			},
-		}
-		level.StaticMeshes = append(level.StaticMeshes, staticMesh)
+	// 		texCoordOffset := int(texCoordView.ByteOffset) + i*2*4
+	// 		copy(vertexData[offset:], glLevel.Buffers[0].Data[texCoordOffset:texCoordOffset+2*4])
+	// 		offset += 2 * 4
+	// 	}
 
-		collisionMesh := asset.LevelCollisionMesh{}
+	// 	indexData := make([]byte, getIndexCount()*2)
+	// 	indexBuffer := data.Buffer(indexData)
+	// 	indexView := *getIndexAccessor().BufferView
+	// 	indexOffset := glLevel.BufferViews[indexView].ByteOffset
+	// 	indexSize := glLevel.BufferViews[indexView].ByteLength
+	// 	copy(indexData, glLevel.Buffers[0].Data[indexOffset:indexOffset+indexSize])
 
-		for i := 0; i < int(getIndexCount()); i += 3 {
-			indexA := indexBuffer.UInt16((i + 0) * 2)
-			indexB := indexBuffer.UInt16((i + 1) * 2)
-			indexC := indexBuffer.UInt16((i + 2) * 2)
+	// 	staticMesh := asset.Mesh{
+	// 		VertexData:     vertexData,
+	// 		VertexStride:   uint8(vertexStride),
+	// 		CoordOffset:    0,
+	// 		NormalOffset:   3 * 4,
+	// 		TexCoordOffset: 3*4 + 3*4,
+	// 		IndexData:      indexData,
+	// 		SubMeshes: []asset.SubMesh{
+	// 			{
+	// 				Name:           "mesh",
+	// 				IndexOffset:    0,
+	// 				IndexCount:     getIndexCount(),
+	// 				DiffuseTexture: "asphalt",
+	// 			},
+	// 		},
+	// 	}
+	// 	level.StaticMeshes = append(level.StaticMeshes, staticMesh)
 
-			vertexA := sprec.Vec3{
-				X: buffer.Float32(int(indexA)*int(vertexStride) + 0),
-				Y: buffer.Float32(int(indexA)*int(vertexStride) + 4),
-				Z: buffer.Float32(int(indexA)*int(vertexStride) + 8),
-			}
-			vertexB := sprec.Vec3{
-				X: buffer.Float32(int(indexB)*int(vertexStride) + 0),
-				Y: buffer.Float32(int(indexB)*int(vertexStride) + 4),
-				Z: buffer.Float32(int(indexB)*int(vertexStride) + 8),
-			}
-			vertexC := sprec.Vec3{
-				X: buffer.Float32(int(indexC)*int(vertexStride) + 0),
-				Y: buffer.Float32(int(indexC)*int(vertexStride) + 4),
-				Z: buffer.Float32(int(indexC)*int(vertexStride) + 8),
-			}
-			collisionMesh.Triangles = append(collisionMesh.Triangles, asset.Triangle{
-				asset.Point{vertexA.X, vertexA.Y, vertexA.Z},
-				asset.Point{vertexB.X, vertexB.Y, vertexB.Z},
-				asset.Point{vertexC.X, vertexC.Y, vertexC.Z},
-			})
-		}
+	// 	collisionMesh := asset.LevelCollisionMesh{}
 
-		level.CollisionMeshes = append(level.CollisionMeshes, collisionMesh)
-	}
+	// 	for i := 0; i < int(getIndexCount()); i += 3 {
+	// 		indexA := indexBuffer.UInt16((i + 0) * 2)
+	// 		indexB := indexBuffer.UInt16((i + 1) * 2)
+	// 		indexC := indexBuffer.UInt16((i + 2) * 2)
 
-	if err := saveLevel(level, "assets/levels/tarnovo.dat"); err != nil {
-		panic(err)
-	}
+	// 		vertexA := sprec.Vec3{
+	// 			X: buffer.Float32(int(indexA)*int(vertexStride) + 0),
+	// 			Y: buffer.Float32(int(indexA)*int(vertexStride) + 4),
+	// 			Z: buffer.Float32(int(indexA)*int(vertexStride) + 8),
+	// 		}
+	// 		vertexB := sprec.Vec3{
+	// 			X: buffer.Float32(int(indexB)*int(vertexStride) + 0),
+	// 			Y: buffer.Float32(int(indexB)*int(vertexStride) + 4),
+	// 			Z: buffer.Float32(int(indexB)*int(vertexStride) + 8),
+	// 		}
+	// 		vertexC := sprec.Vec3{
+	// 			X: buffer.Float32(int(indexC)*int(vertexStride) + 0),
+	// 			Y: buffer.Float32(int(indexC)*int(vertexStride) + 4),
+	// 			Z: buffer.Float32(int(indexC)*int(vertexStride) + 8),
+	// 		}
+	// 		collisionMesh.Triangles = append(collisionMesh.Triangles, asset.Triangle{
+	// 			asset.Point{vertexA.X, vertexA.Y, vertexA.Z},
+	// 			asset.Point{vertexB.X, vertexB.Y, vertexB.Z},
+	// 			asset.Point{vertexC.X, vertexC.Y, vertexC.Z},
+	// 		})
+	// 	}
+
+	// 	level.CollisionMeshes = append(level.CollisionMeshes, collisionMesh)
+	// }
+
+	// if err := saveLevel(level, "assets/levels/tarnovo.dat"); err != nil {
+	// 	panic(err)
+	// }
 }
 
 func saveLevel(level *asset.Level, path string) error {
@@ -163,4 +168,10 @@ func saveLevel(level *asset.Level, path string) error {
 		return err
 	}
 	return nil
+}
+
+func panicOnErr(err error) {
+	if err != nil {
+		panic(err)
+	}
 }

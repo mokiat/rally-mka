@@ -6,12 +6,9 @@ import (
 
 	cli "github.com/urfave/cli/v2"
 
-	"github.com/mokiat/rally-mka/cmd/rallygen/internal/cubetex"
 	"github.com/mokiat/rally-mka/cmd/rallygen/internal/level"
 	"github.com/mokiat/rally-mka/cmd/rallygen/internal/mesh"
 	"github.com/mokiat/rally-mka/cmd/rallygen/internal/model"
-	"github.com/mokiat/rally-mka/cmd/rallygen/internal/program"
-	"github.com/mokiat/rally-mka/cmd/rallygen/internal/twodtex"
 )
 
 func main() {
@@ -20,11 +17,8 @@ func main() {
 	app.Usage = "usage"
 	app.Commands = []*cli.Command{
 		level.GenerateCommand(),
-		program.GenerateCommand(),
 		model.GenerateCommand(),
 		mesh.GenerateCommand(),
-		cubetex.GenerateCommand(),
-		twodtex.GenerateCommand(),
 	}
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal("error: ", err.Error())
