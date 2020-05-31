@@ -149,7 +149,7 @@ func (s *Stage) Init(data *Data, camera *ecs.Camera) {
 	// 	s.setupCarDemo(carProgram, carModel, sprec.NewVec3(0.0, 141.0, 0.0))
 
 	targetEntity =
-		s.setupCarDemo(carProgram, carModel, sprec.NewVec3(0.0, 2.0, -10.0))
+		s.setupCarDemo(carProgram, carModel, sprec.NewVec3(0.0, 2.0, 0.0))
 
 	standTarget := targetEntity
 	standEntity := s.ecsManager.CreateEntity()

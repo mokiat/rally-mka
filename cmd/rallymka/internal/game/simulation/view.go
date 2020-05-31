@@ -44,15 +44,6 @@ func (v *View) Close() {
 	// TODO: Erase stage
 }
 
-func (v *View) Resize(width, height int) {
-	screenHalfWidth := float32(width) / float32(height)
-	screenHalfHeight := float32(1.0)
-	v.camera.SetProjectionMatrix(sprec.PerspectiveMat4(
-		-screenHalfWidth, screenHalfWidth, -screenHalfHeight, screenHalfHeight, 1.5, 300.0,
-	))
-	v.stage.Resize(width, height)
-}
-
 func (v *View) Update(ctx game.UpdateContext) {
 	if !ctx.Keyboard.IsPressed(input.KeyF) {
 		v.stage.Update(ctx, v.camera)
