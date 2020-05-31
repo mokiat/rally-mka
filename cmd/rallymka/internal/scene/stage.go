@@ -464,11 +464,13 @@ func (s *Stage) Render(pipeline *graphics.Pipeline, camera *ecs.Camera) {
 
 	lightingSequence := pipeline.BeginSequence()
 	lightingSequence.SourceFramebuffer = s.geometryFramebuffer
-	lightingSequence.TargetFramebuffer = s.lightingFramebuffer
-	lightingSequence.BlitFramebufferDepth = true
+	lightingSequence.TargetFramebuffer = s.screenFramebuffer
+	// lightingSequence.BlitFramebufferDepth = true
 	lightingSequence.ClearColor = true
 	// FIXME: this is only for directional... Will need sub-sequences
 	lightingSequence.TestDepth = false
+	lightingSequence.ViewMatrix = camera.InverseViewMatrix()
+	lightingSequence.InverseViewMatrix = camera.ViewMatrix()
 	quadItem := lightingSequence.BeginItem()
 	quadItem.Program = s.lightingProgram
 	quadItem.VertexArray = s.quadMesh.VertexArray
@@ -476,12 +478,12 @@ func (s *Stage) Render(pipeline *graphics.Pipeline, camera *ecs.Camera) {
 	lightingSequence.EndItem(quadItem)
 	pipeline.EndSequence(lightingSequence)
 
-	screenSequence := pipeline.BeginSequence()
-	screenSequence.SourceFramebuffer = s.lightingFramebuffer
-	screenSequence.TargetFramebuffer = s.screenFramebuffer
-	screenSequence.BlitFramebufferColor = true
-	screenSequence.BlitFramebufferSmooth = true
-	pipeline.EndSequence(screenSequence)
+	// screenSequence := pipeline.BeginSequence()
+	// screenSequence.SourceFramebuffer = s.lightingFramebuffer
+	// screenSequence.TargetFramebuffer = s.screenFramebuffer
+	// screenSequence.BlitFramebufferColor = true
+	// screenSequence.BlitFramebufferSmooth = true
+	// pipeline.EndSequence(screenSequence)
 }
 
 type DebugLine struct {
