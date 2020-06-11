@@ -3,7 +3,7 @@ package ecs
 import (
 	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/lacking/graphics"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/stream"
+	"github.com/mokiat/lacking/resource"
 )
 
 func NewRenderer(ecsManager *Manager) *Renderer {
@@ -57,7 +57,7 @@ func (r *Renderer) renderRenderSkyboxes(sequence *graphics.Sequence) {
 	}
 }
 
-func (r *Renderer) renderModelNode(sequence *graphics.Sequence, program *graphics.Program, parentMatrix sprec.Mat4, node *stream.Node) {
+func (r *Renderer) renderModelNode(sequence *graphics.Sequence, program *graphics.Program, parentMatrix sprec.Mat4, node *resource.Node) {
 	matrix := sprec.Mat4Prod(parentMatrix, node.Matrix)
 	r.renderMesh(sequence, program, matrix, node.Mesh)
 	for _, child := range node.Children {
@@ -65,15 +65,16 @@ func (r *Renderer) renderModelNode(sequence *graphics.Sequence, program *graphic
 	}
 }
 
-func (r *Renderer) renderMesh(sequence *graphics.Sequence, program *graphics.Program, modelMatrix sprec.Mat4, mesh *stream.Mesh) {
+func (r *Renderer) renderMesh(sequence *graphics.Sequence, program *graphics.Program, modelMatrix sprec.Mat4, mesh *resource.Mesh) {
 	for _, subMesh := range mesh.SubMeshes {
 		meshItem := sequence.BeginItem()
 		meshItem.Program = program
 		meshItem.ModelMatrix = modelMatrix
-		if subMesh.DiffuseTexture != nil {
-			meshItem.DiffuseTexture = subMesh.DiffuseTexture.Get()
+		if subMesh.AlbedoTexture != nil {
+			meshItem.AlbedoTwoDTexture = subMesh.AlbedoTexture.GFXTexture
 		}
-		meshItem.VertexArray = mesh.VertexArray
+		meshItem.VertexArray = mesh.GFXVertexArray
+		meshItem.IndexOffset = subMesh.IndexOffset
 		meshItem.IndexCount = subMesh.IndexCount
 		sequence.EndItem(meshItem)
 	}
@@ -83,8 +84,9 @@ func (r *Renderer) renderSkybox(sequence *graphics.Sequence, renderSkybox *Rende
 	for _, subMesh := range renderSkybox.Mesh.SubMeshes {
 		item := sequence.BeginItem()
 		item.Program = renderSkybox.Program
-		item.SkyboxTexture = renderSkybox.Texture
-		item.VertexArray = renderSkybox.Mesh.VertexArray
+		item.AlbedoCubeTexture = renderSkybox.Texture
+		item.VertexArray = renderSkybox.Mesh.GFXVertexArray
+		item.IndexOffset = subMesh.IndexOffset
 		item.IndexCount = subMesh.IndexCount
 		sequence.EndItem(item)
 	}

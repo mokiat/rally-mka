@@ -59,7 +59,7 @@ func (s *CameraStandSystem) updateCameraStand(cameraStand *CameraStand, ctx game
 	cameraVectorX = sprec.Vec3Cross(sprec.BasisYVec3(), cameraVectorZ)
 	cameraVectorY = sprec.Vec3Cross(cameraVectorZ, cameraVectorX)
 
-	cameraStand.Camera.SetViewMatrix(sprec.Mat4MultiProd(
+	cameraStand.Camera.SetMatrix(sprec.Mat4MultiProd(
 		sprec.TranslationMat4(targetPosition.X, targetPosition.Y, targetPosition.Z),
 		sprec.TransformationMat4(
 			sprec.UnitVec3(cameraVectorX),

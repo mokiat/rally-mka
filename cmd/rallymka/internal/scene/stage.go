@@ -7,10 +7,11 @@ import (
 	"github.com/mokiat/lacking/game"
 	"github.com/mokiat/lacking/graphics"
 	"github.com/mokiat/lacking/physics"
+	"github.com/mokiat/lacking/resource"
 	"github.com/mokiat/lacking/shape"
+	"github.com/mokiat/lacking/world"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecs"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/scene/car"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/stream"
 	"github.com/mokiat/rally-mka/internal/data"
 )
 
@@ -45,11 +46,16 @@ func NewStage(gfxWorker *graphics.Worker) *Stage {
 	}
 	vertexData := make([]byte, maxDebugLines*4*7*2)
 	debugVertexArrayData := graphics.VertexArrayData{
-		VertexData:   vertexData,
-		VertexStride: 4 * 7,
-		CoordOffset:  0,
-		ColorOffset:  4 * 3,
-		IndexData:    indexData,
+		VertexData: vertexData,
+		Layout: graphics.VertexArrayLayout{
+			HasCoord:    true,
+			CoordOffset: 0,
+			CoordStride: 4 * 7,
+			HasColor:    true,
+			ColorOffset: 4 * 3,
+			ColorStride: 4 * 7,
+		},
+		IndexData: indexData,
 	}
 	debugVertexArray := &graphics.VertexArray{}
 	arrayTask = gfxWorker.Schedule(func() error {
@@ -84,7 +90,7 @@ type Stage struct {
 	lightingFramebuffer *graphics.Framebuffer
 	screenFramebuffer   *graphics.Framebuffer
 	lightingProgram     *graphics.Program
-	quadMesh            *stream.Mesh
+	quadMesh            *resource.Mesh
 
 	debugProgram         *graphics.Program
 	debugVertexArray     *graphics.VertexArray
@@ -94,21 +100,21 @@ type Stage struct {
 
 var targetEntity *ecs.Entity
 
-func (s *Stage) Init(data *Data, camera *ecs.Camera) {
-	level := data.Level.Get()
+func (s *Stage) Init(data *Data, camera *world.Camera) {
+	level := data.Level
 
-	s.debugProgram = data.DebugProgram.Get()
+	s.debugProgram = data.DebugProgram.GFXProgram
 
 	s.geometryFramebuffer = data.GeometryFramebuffer
 	s.lightingFramebuffer = data.LightingFramebuffer
 
-	s.lightingProgram = data.DeferredLightingProgram.Get()
-	s.quadMesh = data.QuadMesh.Get()
+	s.lightingProgram = data.DeferredLightingProgram.GFXProgram
+	s.quadMesh = data.QuadMesh
 
 	for _, staticMesh := range level.StaticMeshes {
 		entity := s.ecsManager.CreateEntity()
 		entity.Render = &ecs.RenderComponent{
-			GeomProgram: data.TerrainProgram.Get(),
+			GeomProgram: data.TerrainProgram.GFXProgram,
 			Mesh:        staticMesh,
 			Matrix:      sprec.IdentityMat4(),
 		}
@@ -127,14 +133,14 @@ func (s *Stage) Init(data *Data, camera *ecs.Camera) {
 	for _, staticEntity := range level.StaticEntities {
 		entity := s.ecsManager.CreateEntity()
 		entity.Render = &ecs.RenderComponent{
-			GeomProgram: data.EntityProgram.Get(),
-			Model:       staticEntity.Model.Get(),
+			GeomProgram: data.EntityProgram.GFXProgram,
+			Model:       staticEntity.Model,
 			Matrix:      staticEntity.Matrix,
 		}
 	}
 
-	carProgram := data.CarProgram.Get()
-	carModel := data.CarModel.Get()
+	carProgram := data.CarProgram.GFXProgram
+	carModel := data.CarModel
 
 	// targetEntity =
 	// 	s.setupChandelierDemo(carProgram, carModel, sprec.NewVec3(0.0, 10.0, 0.0))
@@ -164,14 +170,14 @@ func (s *Stage) Init(data *Data, camera *ecs.Camera) {
 	{
 		entity := s.ecsManager.CreateEntity()
 		entity.RenderSkybox = &ecs.RenderSkybox{
-			Program: data.SkyboxProgram.Get(),
-			Texture: level.SkyboxTexture.Get(),
-			Mesh:    data.SkyboxMesh.Get(),
+			Program: data.SkyboxProgram.GFXProgram,
+			Texture: level.SkyboxTexture.GFXTexture,
+			Mesh:    data.SkyboxMesh,
 		}
 	}
 }
 
-func (s *Stage) setupChandelierDemo(program *graphics.Program, model *stream.Model, position sprec.Vec3) *ecs.Entity {
+func (s *Stage) setupChandelierDemo(program *graphics.Program, model *resource.Model, position sprec.Vec3) *ecs.Entity {
 	fakeFixtureWheel := car.Wheel(program, model, car.FrontRightWheelLocation).
 		WithPosition(position).
 		Build(s.ecsManager)
@@ -195,7 +201,7 @@ func (s *Stage) setupChandelierDemo(program *graphics.Program, model *stream.Mod
 	return fakeFixtureWheel
 }
 
-func (s *Stage) setupCoiloverDemo(program *graphics.Program, model *stream.Model, position sprec.Vec3) *ecs.Entity {
+func (s *Stage) setupCoiloverDemo(program *graphics.Program, model *resource.Model, position sprec.Vec3) *ecs.Entity {
 	fixtureWheel := car.Wheel(program, model, car.FrontRightWheelLocation).
 		WithPosition(position).
 		Build(s.ecsManager)
@@ -219,7 +225,7 @@ func (s *Stage) setupCoiloverDemo(program *graphics.Program, model *stream.Model
 	return fixtureWheel
 }
 
-func (s *Stage) setupRodDemo(program *graphics.Program, model *stream.Model, position sprec.Vec3) *ecs.Entity {
+func (s *Stage) setupRodDemo(program *graphics.Program, model *resource.Model, position sprec.Vec3) *ecs.Entity {
 	topWheelPosition := position
 	topWheel := car.Wheel(program, model, car.FrontRightWheelLocation).
 		WithPosition(topWheelPosition).
@@ -259,7 +265,7 @@ func (s *Stage) setupRodDemo(program *graphics.Program, model *stream.Model, pos
 	return topWheel
 }
 
-func (s *Stage) setupCarDemo(program *graphics.Program, model *stream.Model, position sprec.Vec3) *ecs.Entity {
+func (s *Stage) setupCarDemo(program *graphics.Program, model *resource.Model, position sprec.Vec3) *ecs.Entity {
 	chasis := car.Chassis(program, model).
 		WithName("chasis").
 		WithPosition(position).
@@ -422,13 +428,13 @@ func (s *Stage) Resize(width, height int) {
 	s.screenFramebuffer.Height = int32(height)
 }
 
-func (s *Stage) Update(ctx game.UpdateContext, camera *ecs.Camera) {
+func (s *Stage) Update(ctx game.UpdateContext, camera *world.Camera) {
 	s.physicsEngine.Update(ctx.ElapsedTime)
 	s.ecsCarSystem.Update(ctx)
 	s.ecsCameraStandSystem.Update(ctx)
 }
 
-func (s *Stage) Render(pipeline *graphics.Pipeline, camera *ecs.Camera) {
+func (s *Stage) Render(pipeline *graphics.Pipeline, camera *world.Camera) {
 	if !arrayTask.Done() {
 		panic("NOT DONE!")
 	}
@@ -456,7 +462,7 @@ func (s *Stage) Render(pipeline *graphics.Pipeline, camera *ecs.Camera) {
 	geometrySequence.ClearDepth = true
 	geometrySequence.DepthFunc = graphics.DepthFuncLessOrEqual
 	geometrySequence.ProjectionMatrix = camera.ProjectionMatrix()
-	geometrySequence.ViewMatrix = camera.InverseViewMatrix()
+	geometrySequence.ViewMatrix = camera.ViewMatrix()
 	// s.refreshDebugLines()
 	s.renderDebugLines(geometrySequence)
 	s.ecsRenderer.Render(geometrySequence)
@@ -469,11 +475,13 @@ func (s *Stage) Render(pipeline *graphics.Pipeline, camera *ecs.Camera) {
 	lightingSequence.ClearColor = true
 	// FIXME: this is only for directional... Will need sub-sequences
 	lightingSequence.TestDepth = false
-	lightingSequence.ViewMatrix = camera.InverseViewMatrix()
-	lightingSequence.InverseViewMatrix = camera.ViewMatrix()
+	lightingSequence.ProjectionMatrix = camera.ProjectionMatrix()
+	lightingSequence.ViewMatrix = camera.ViewMatrix()
+	lightingSequence.CameraMatrix = camera.Matrix()
 	quadItem := lightingSequence.BeginItem()
 	quadItem.Program = s.lightingProgram
-	quadItem.VertexArray = s.quadMesh.VertexArray
+	quadItem.VertexArray = s.quadMesh.GFXVertexArray
+	quadItem.IndexOffset = s.quadMesh.SubMeshes[0].IndexOffset
 	quadItem.IndexCount = s.quadMesh.SubMeshes[0].IndexCount
 	lightingSequence.EndItem(quadItem)
 	pipeline.EndSequence(lightingSequence)

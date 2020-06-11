@@ -32,6 +32,18 @@ func main() {
 		packer.ProgramAssetFile("debug.dat").
 			WithVertexShader(packer.ShaderResourceFile("debug.vert")).
 			WithFragmentShader(packer.ShaderResourceFile("debug.frag")),
+
+		packer.ProgramAssetFile("geometry-pbr.dat").
+			WithVertexShader(packer.ShaderResourceFile("geometry-pbr.vert")).
+			WithFragmentShader(packer.ShaderResourceFile("geometry-pbr.frag")),
+
+		packer.ProgramAssetFile("geometry-skybox.dat").
+			WithVertexShader(packer.ShaderResourceFile("geometry-skybox.vert")).
+			WithFragmentShader(packer.ShaderResourceFile("geometry-skybox.frag")),
+
+		packer.ProgramAssetFile("lighting-pbr.dat").
+			WithVertexShader(packer.ShaderResourceFile("lighting-pbr.vert")).
+			WithFragmentShader(packer.ShaderResourceFile("lighting-pbr.frag")),
 	)
 
 	// 2D Textures

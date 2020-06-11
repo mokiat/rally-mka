@@ -17,7 +17,7 @@ const (
 	carReverseAccelerationRatio = 0.75
 
 	carFrontDeceleration = 500
-	carRearDeceleration  = 300
+	carRearDeceleration  = 450
 )
 
 func NewCarSystem(ecsManager *Manager) *CarSystem {

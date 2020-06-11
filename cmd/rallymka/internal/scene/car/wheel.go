@@ -6,9 +6,9 @@ import (
 	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/lacking/graphics"
 	"github.com/mokiat/lacking/physics"
+	"github.com/mokiat/lacking/resource"
 	"github.com/mokiat/lacking/shape"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecs"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/stream"
 )
 
 const (
@@ -29,7 +29,7 @@ const (
 	BackRightWheelLocation  WheelLocation = "back_right"
 )
 
-func Wheel(program *graphics.Program, model *stream.Model, location WheelLocation) *WheelBuilder {
+func Wheel(program *graphics.Program, model *resource.Model, location WheelLocation) *WheelBuilder {
 	return &WheelBuilder{
 		program:  program,
 		model:    model,
@@ -39,7 +39,7 @@ func Wheel(program *graphics.Program, model *stream.Model, location WheelLocatio
 
 type WheelBuilder struct {
 	program   *graphics.Program
-	model     *stream.Model
+	model     *resource.Model
 	location  WheelLocation
 	modifiers []func(entity *ecs.Entity)
 }

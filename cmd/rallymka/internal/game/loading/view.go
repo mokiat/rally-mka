@@ -2,21 +2,14 @@ package loading
 
 import (
 	"github.com/mokiat/gomath/sprec"
+	"github.com/mokiat/lacking/async"
 	"github.com/mokiat/lacking/game"
-	"github.com/mokiat/lacking/graphics"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/stream"
-	"github.com/mokiat/rally-mka/internal/engine/resource"
+	"github.com/mokiat/lacking/resource"
 )
 
 func NewView(registry *resource.Registry) *View {
 	return &View{
-		registry: registry,
-
-		screenFramebuffer: &graphics.Framebuffer{},
-		program:           stream.GetProgram(registry, "diffuse"),
-		texture:           stream.GetTwoDTexture(registry, "loading"),
-		mesh:              stream.GetMesh(registry, "quad"),
-
+		registry:             registry,
 		indicatorModelMatrix: sprec.IdentityMat4(),
 	}
 }
@@ -24,28 +17,32 @@ func NewView(registry *resource.Registry) *View {
 type View struct {
 	registry *resource.Registry
 
-	screenFramebuffer *graphics.Framebuffer
-	program           stream.ProgramHandle
-	texture           stream.TwoDTextureHandle
-	mesh              stream.MeshHandle
+	loadOutcome async.Outcome
+	program     *resource.Program
+	texture     *resource.TwoDTexture
+	mesh        *resource.Mesh
 
 	indicatorModelMatrix sprec.Mat4
 }
 
 func (v *View) Load() {
-	v.registry.Request(v.program.Handle)
-	v.registry.Request(v.texture.Handle)
-	v.registry.Request(v.mesh.Handle)
+	v.loadOutcome = async.NewCompositeOutcome(
+		v.registry.LoadProgram("diffuse").OnSuccess(resource.InjectProgram(&v.program)),
+		v.registry.LoadTwoDTexture("loading").OnSuccess(resource.InjectTwoDTexture(&v.texture)),
+		v.registry.LoadMesh("quad").OnSuccess(resource.InjectMesh(&v.mesh)),
+	)
 }
 
 func (v *View) Unload() {
-	v.registry.Dismiss(v.program.Handle)
-	v.registry.Dismiss(v.texture.Handle)
-	v.registry.Dismiss(v.mesh.Handle)
+	async.NewCompositeOutcome(
+		v.registry.UnloadProgram(v.program),
+		v.registry.UnloadTwoDTexture(v.texture),
+		v.registry.UnloadMesh(v.mesh),
+	)
 }
 
 func (v *View) IsAvailable() bool {
-	return v.program.IsAvailable() && v.texture.IsAvailable() && v.mesh.IsAvailable()
+	return v.loadOutcome.IsAvailable()
 }
 
 func (v *View) Open() {}
@@ -60,9 +57,6 @@ func (v *View) Update(ctx game.UpdateContext) {
 }
 
 func (v *View) Render(ctx game.RenderContext) {
-	v.screenFramebuffer.Width = int32(ctx.WindowSize.Width)
-	v.screenFramebuffer.Height = int32(ctx.WindowSize.Height)
-
 	screenHalfWidth := float32(ctx.WindowSize.Width) / float32(ctx.WindowSize.Height)
 	screenHalfHeight := float32(1.0)
 	projectionMatrix := sprec.OrthoMat4(
@@ -70,20 +64,21 @@ func (v *View) Render(ctx game.RenderContext) {
 	)
 
 	sequence := ctx.GFXPipeline.BeginSequence()
-	sequence.TargetFramebuffer = v.screenFramebuffer
 	sequence.BackgroundColor = sprec.NewVec4(0.0, 0.0, 0.0, 1.0)
 	sequence.ClearColor = true
 	sequence.ClearDepth = true
 	sequence.WriteDepth = false
+	sequence.TestDepth = false
 	sequence.ProjectionMatrix = projectionMatrix
 	sequence.ViewMatrix = sprec.ScaleMat4(0.1, 0.1, 1.0)
 
 	indicatorItem := sequence.BeginItem()
-	indicatorItem.Program = v.program.Get()
+	indicatorItem.Program = v.program.GFXProgram
 	indicatorItem.ModelMatrix = v.indicatorModelMatrix
-	indicatorItem.DiffuseTexture = v.texture.Get()
-	indicatorItem.VertexArray = v.mesh.Get().VertexArray
-	indicatorItem.IndexCount = v.mesh.Get().SubMeshes[0].IndexCount
+	indicatorItem.AlbedoTwoDTexture = v.texture.GFXTexture
+	indicatorItem.VertexArray = v.mesh.GFXVertexArray
+	indicatorItem.IndexOffset = v.mesh.SubMeshes[0].IndexOffset
+	indicatorItem.IndexCount = v.mesh.SubMeshes[0].IndexCount
 	sequence.EndItem(indicatorItem)
 
 	ctx.GFXPipeline.EndSequence(sequence)

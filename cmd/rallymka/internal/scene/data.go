@@ -1,9 +1,9 @@
 package scene
 
 import (
+	"github.com/mokiat/lacking/async"
 	"github.com/mokiat/lacking/graphics"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/stream"
-	"github.com/mokiat/rally-mka/internal/engine/resource"
+	"github.com/mokiat/lacking/resource"
 )
 
 func NewData(registry *resource.Registry, gfxWorker *graphics.Worker) *Data {
@@ -11,20 +11,8 @@ func NewData(registry *resource.Registry, gfxWorker *graphics.Worker) *Data {
 		registry:  registry,
 		gfxWorker: gfxWorker,
 
-		SkyboxProgram:  stream.GetProgram(registry, "skybox"),
-		SkyboxMesh:     stream.GetMesh(registry, "skybox"),
-		TerrainProgram: stream.GetProgram(registry, "deferred-geometry"),
-		EntityProgram:  stream.GetProgram(registry, "deferred-geometry"),
-		CarProgram:     stream.GetProgram(registry, "deferred-geometry"),
-		CarModel:       stream.GetModel(registry, "suv"),
-		Level:          stream.GetLevel(registry, "forest"),
-
-		DeferredGeometryProgram: stream.GetProgram(registry, "deferred-geometry"),
-		DeferredLightingProgram: stream.GetProgram(registry, "deferred-lighting"),
-		QuadMesh:                stream.GetMesh(registry, "quad"),
-		DebugProgram:            stream.GetProgram(registry, "debug"),
-		GeometryFramebuffer:     &graphics.Framebuffer{},
-		LightingFramebuffer:     &graphics.Framebuffer{},
+		GeometryFramebuffer: &graphics.Framebuffer{},
+		LightingFramebuffer: &graphics.Framebuffer{},
 	}
 }
 
@@ -32,37 +20,39 @@ type Data struct {
 	registry  *resource.Registry
 	gfxWorker *graphics.Worker
 
-	SkyboxProgram  stream.ProgramHandle
-	SkyboxMesh     stream.MeshHandle
-	TerrainProgram stream.ProgramHandle
-	EntityProgram  stream.ProgramHandle
-	CarProgram     stream.ProgramHandle
-	CarModel       stream.ModelHandle
-	Level          stream.LevelHandle
+	SkyboxProgram           *resource.Program
+	SkyboxMesh              *resource.Mesh
+	TerrainProgram          *resource.Program
+	EntityProgram           *resource.Program
+	CarProgram              *resource.Program
+	CarModel                *resource.Model
+	Level                   *resource.Level
+	DeferredGeometryProgram *resource.Program
+	DeferredLightingProgram *resource.Program
+	QuadMesh                *resource.Mesh
+	DebugProgram            *resource.Program
+	GeometryFramebuffer     *graphics.Framebuffer
+	LightingFramebuffer     *graphics.Framebuffer
 
-	DeferredGeometryProgram stream.ProgramHandle
-	DeferredLightingProgram stream.ProgramHandle
-	QuadMesh                stream.MeshHandle
-
-	DebugProgram stream.ProgramHandle
-
-	gfxTask             *graphics.Task
-	GeometryFramebuffer *graphics.Framebuffer
-	LightingFramebuffer *graphics.Framebuffer
+	loadOutcome async.Outcome
+	gfxTask     *graphics.Task
 }
 
 func (d *Data) Request() {
-	d.registry.Request(d.SkyboxProgram.Handle)
-	d.registry.Request(d.SkyboxMesh.Handle)
-	d.registry.Request(d.TerrainProgram.Handle)
-	d.registry.Request(d.EntityProgram.Handle)
-	d.registry.Request(d.CarProgram.Handle)
-	d.registry.Request(d.CarModel.Handle)
-	d.registry.Request(d.Level.Handle)
-	d.registry.Request(d.DeferredGeometryProgram.Handle)
-	d.registry.Request(d.DeferredLightingProgram.Handle)
-	d.registry.Request(d.QuadMesh.Handle)
-	d.registry.Request(d.DebugProgram.Handle)
+	d.loadOutcome = async.NewCompositeOutcome(
+		d.registry.LoadProgram("geometry-skybox").OnSuccess(resource.InjectProgram(&d.SkyboxProgram)),
+		d.registry.LoadMesh("skybox").OnSuccess(resource.InjectMesh(&d.SkyboxMesh)),
+		d.registry.LoadProgram("geometry-pbr").OnSuccess(resource.InjectProgram(&d.TerrainProgram)),
+		d.registry.LoadProgram("geometry-pbr").OnSuccess(resource.InjectProgram(&d.EntityProgram)),
+		d.registry.LoadProgram("geometry-pbr").OnSuccess(resource.InjectProgram(&d.CarProgram)),
+		d.registry.LoadModel("suv").OnSuccess(resource.InjectModel(&d.CarModel)),
+		d.registry.LoadLevel("forest").OnSuccess(resource.InjectLevel(&d.Level)),
+		d.registry.LoadProgram("geometry-pbr").OnSuccess(resource.InjectProgram(&d.DeferredGeometryProgram)),
+		d.registry.LoadProgram("lighting-pbr").OnSuccess(resource.InjectProgram(&d.DeferredLightingProgram)),
+		d.registry.LoadMesh("quad").OnSuccess(resource.InjectMesh(&d.QuadMesh)),
+		d.registry.LoadProgram("debug").OnSuccess(resource.InjectProgram(&d.DebugProgram)),
+	)
+
 	d.gfxTask = d.gfxWorker.Schedule(func() error {
 		geometryFramebufferData := graphics.FramebufferData{
 			Width:               framebufferWidth,
@@ -88,17 +78,17 @@ func (d *Data) Request() {
 }
 
 func (d *Data) Dismiss() {
-	d.registry.Dismiss(d.SkyboxProgram.Handle)
-	d.registry.Dismiss(d.SkyboxMesh.Handle)
-	d.registry.Dismiss(d.TerrainProgram.Handle)
-	d.registry.Dismiss(d.EntityProgram.Handle)
-	d.registry.Dismiss(d.CarProgram.Handle)
-	d.registry.Dismiss(d.CarModel.Handle)
-	d.registry.Dismiss(d.Level.Handle)
-	d.registry.Dismiss(d.DeferredGeometryProgram.Handle)
-	d.registry.Dismiss(d.DeferredLightingProgram.Handle)
-	d.registry.Dismiss(d.QuadMesh.Handle)
-	d.registry.Dismiss(d.DebugProgram.Handle)
+	d.registry.UnloadProgram(d.SkyboxProgram)
+	d.registry.UnloadMesh(d.SkyboxMesh)
+	d.registry.UnloadProgram(d.TerrainProgram)
+	d.registry.UnloadProgram(d.EntityProgram)
+	d.registry.UnloadProgram(d.CarProgram)
+	d.registry.UnloadModel(d.CarModel)
+	d.registry.UnloadLevel(d.Level)
+	d.registry.UnloadProgram(d.DeferredGeometryProgram)
+	d.registry.UnloadProgram(d.DeferredLightingProgram)
+	d.registry.UnloadMesh(d.QuadMesh)
+	d.registry.UnloadProgram(d.DebugProgram)
 
 	geometryFramebuffer := d.GeometryFramebuffer
 	lightingFramebuffer := d.LightingFramebuffer
@@ -115,16 +105,5 @@ func (d *Data) Dismiss() {
 }
 
 func (d *Data) IsAvailable() bool {
-	return d.SkyboxProgram.IsAvailable() &&
-		d.SkyboxMesh.IsAvailable() &&
-		d.TerrainProgram.IsAvailable() &&
-		d.EntityProgram.IsAvailable() &&
-		d.CarProgram.IsAvailable() &&
-		d.CarModel.IsAvailable() &&
-		d.Level.IsAvailable() &&
-		d.DeferredGeometryProgram.IsAvailable() &&
-		d.DeferredLightingProgram.IsAvailable() &&
-		d.QuadMesh.IsAvailable() &&
-		d.DebugProgram.IsAvailable() &&
-		(d.gfxTask != nil && d.gfxTask.Done())
+	return d.loadOutcome.IsAvailable() && (d.gfxTask != nil && d.gfxTask.Done())
 }

@@ -5,22 +5,22 @@ import (
 	"github.com/mokiat/lacking/game"
 	"github.com/mokiat/lacking/graphics"
 	"github.com/mokiat/lacking/input"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecs"
+	"github.com/mokiat/lacking/resource"
+	"github.com/mokiat/lacking/world"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/scene"
-	"github.com/mokiat/rally-mka/internal/engine/resource"
 )
 
 func NewView(registry *resource.Registry, gfxWorker *graphics.Worker) *View {
 	return &View{
 		gameData: scene.NewData(registry, gfxWorker),
-		camera:   ecs.NewCamera(),
+		camera:   world.NewCamera(),
 		stage:    scene.NewStage(gfxWorker),
 	}
 }
 
 type View struct {
 	gameData *scene.Data
-	camera   *ecs.Camera
+	camera   *world.Camera
 	stage    *scene.Stage
 }
 

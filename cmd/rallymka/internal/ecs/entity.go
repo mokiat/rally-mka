@@ -4,7 +4,8 @@ import (
 	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/lacking/graphics"
 	"github.com/mokiat/lacking/physics"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/stream"
+	"github.com/mokiat/lacking/resource"
+	"github.com/mokiat/lacking/world"
 )
 
 type Entity struct {
@@ -22,15 +23,15 @@ type PhysicsComponent struct {
 
 type RenderComponent struct {
 	GeomProgram *graphics.Program
-	Model       *stream.Model
-	Mesh        *stream.Mesh
+	Model       *resource.Model
+	Mesh        *resource.Mesh
 	Matrix      sprec.Mat4
 }
 
 type RenderSkybox struct {
 	Program *graphics.Program
 	Texture *graphics.CubeTexture
-	Mesh    *stream.Mesh
+	Mesh    *resource.Mesh
 }
 
 type Car struct {
@@ -49,5 +50,5 @@ type CameraStand struct {
 	AnchorPosition sprec.Vec3
 	AnchorDistance float32
 	CameraDistance float32
-	Camera         *Camera
+	Camera         *world.Camera
 }

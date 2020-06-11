@@ -4,9 +4,9 @@ import (
 	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/lacking/graphics"
 	"github.com/mokiat/lacking/physics"
+	"github.com/mokiat/lacking/resource"
 	"github.com/mokiat/lacking/shape"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecs"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/stream"
 )
 
 const (
@@ -19,7 +19,7 @@ const (
 	chassisRestitutionCoef   = 0.0
 )
 
-func Chassis(program *graphics.Program, model *stream.Model) *ChassisBuilder {
+func Chassis(program *graphics.Program, model *resource.Model) *ChassisBuilder {
 	return &ChassisBuilder{
 		program: program,
 		model:   model,
@@ -28,7 +28,7 @@ func Chassis(program *graphics.Program, model *stream.Model) *ChassisBuilder {
 
 type ChassisBuilder struct {
 	program   *graphics.Program
-	model     *stream.Model
+	model     *resource.Model
 	modifiers []func(entity *ecs.Entity)
 }
 

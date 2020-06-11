@@ -126,20 +126,27 @@ func ConvertResourceToAsset(resMesh *resource.Mesh) (*asset.Mesh, error) {
 	subMeshes := make([]asset.SubMesh, len(resMesh.SubMeshes))
 	for i, resSubMesh := range resMesh.SubMeshes {
 		subMeshes[i] = asset.SubMesh{
-			Name:         resSubMesh.Name,
 			IndexOffset:  uint32(resSubMesh.IndexOffset * 2),
 			IndexCount:   uint32(resSubMesh.IndexCount),
 			ColorTexture: resSubMesh.DiffuseTexture,
 		}
 	}
 	return &asset.Mesh{
-		VertexData:     vertexData,
-		VertexStride:   int16(layout.Stride),
-		CoordOffset:    int16(layout.CoordOffset),
-		NormalOffset:   int16(layout.NormalOffset),
-		TexCoordOffset: int16(layout.TexCoordOffset),
-		IndexData:      indexData,
-		SubMeshes:      subMeshes,
+		VertexData: vertexData,
+		VertexLayout: asset.VertexLayout{
+			CoordOffset:    int16(layout.CoordOffset),
+			CoordStride:    int16(layout.Stride),
+			NormalOffset:   int16(layout.NormalOffset),
+			NormalStride:   int16(layout.Stride),
+			TangentOffset:  asset.UnspecifiedOffset,
+			TangentStride:  int16(layout.Stride),
+			TexCoordOffset: int16(layout.TexCoordOffset),
+			TexCoordStride: int16(layout.Stride),
+			ColorOffset:    asset.UnspecifiedOffset,
+			ColorStride:    int16(layout.Stride),
+		},
+		IndexData: indexData,
+		SubMeshes: subMeshes,
 	}, nil
 }
 
@@ -148,14 +155,20 @@ func evaluateMeshVertexLayout(mesh *resource.Mesh) meshVertexLayout {
 	if len(mesh.Coords) > 0 {
 		layout.CoordOffset = layout.Stride
 		layout.Stride += 3 * 4
+	} else {
+		layout.CoordOffset = int(asset.UnspecifiedOffset)
 	}
 	if len(mesh.Normals) > 0 {
 		layout.NormalOffset = layout.Stride
 		layout.Stride += 3 * 4
+	} else {
+		layout.NormalOffset = int(asset.UnspecifiedOffset)
 	}
 	if len(mesh.TexCoords) > 0 {
 		layout.TexCoordOffset += layout.Stride
 		layout.Stride += 2 * 4
+	} else {
+		layout.TexCoordOffset = int(asset.UnspecifiedOffset)
 	}
 	return layout
 }
