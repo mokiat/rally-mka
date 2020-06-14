@@ -128,6 +128,8 @@ func ConvertResourceToAsset(resMesh *resource.Mesh) (*asset.Mesh, error) {
 		subMeshes[i] = asset.SubMesh{
 			IndexOffset:  uint32(resSubMesh.IndexOffset * 2),
 			IndexCount:   uint32(resSubMesh.IndexCount),
+			Metalness:    0.0,
+			Roughness:    0.5,
 			ColorTexture: resSubMesh.DiffuseTexture,
 		}
 	}

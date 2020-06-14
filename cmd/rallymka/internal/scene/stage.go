@@ -461,6 +461,7 @@ func (s *Stage) Render(pipeline *graphics.Pipeline, camera *world.Camera) {
 	geometrySequence.BackgroundColor = sprec.NewVec4(0.0, 0.6, 1.0, 1.0)
 	geometrySequence.ClearColor = true
 	geometrySequence.ClearDepth = true
+	geometrySequence.WriteDepth = true
 	geometrySequence.DepthFunc = graphics.DepthFuncLessOrEqual
 	geometrySequence.ProjectionMatrix = camera.ProjectionMatrix()
 	geometrySequence.ViewMatrix = camera.ViewMatrix()

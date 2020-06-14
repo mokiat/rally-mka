@@ -70,8 +70,20 @@ func (r *Renderer) renderMesh(sequence *graphics.Sequence, program *graphics.Pro
 		meshItem := sequence.BeginItem()
 		meshItem.Program = program
 		meshItem.ModelMatrix = modelMatrix
+		meshItem.Metalness = subMesh.Metalness
+		if subMesh.MetalnessTexture != nil {
+			meshItem.MetalnessTwoDTexture = subMesh.MetalnessTexture.GFXTexture
+		}
+		meshItem.Roughness = subMesh.Roughness
+		if subMesh.RoughnessTexture != nil {
+			meshItem.RoughnessTwoDTexture = subMesh.RoughnessTexture.GFXTexture
+		}
 		if subMesh.AlbedoTexture != nil {
 			meshItem.AlbedoTwoDTexture = subMesh.AlbedoTexture.GFXTexture
+		}
+		meshItem.NormalScale = subMesh.NormalScale
+		if subMesh.NormalTexture != nil {
+			meshItem.NormalTwoDTexture = subMesh.NormalTexture.GFXTexture
 		}
 		meshItem.VertexArray = mesh.GFXVertexArray
 		meshItem.IndexOffset = subMesh.IndexOffset
