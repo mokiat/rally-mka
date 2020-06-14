@@ -422,8 +422,11 @@ func (s *Stage) setupCarDemo(program *graphics.Program, model *resource.Model, p
 }
 
 func (s *Stage) Resize(width, height int) {
-	s.screenFramebuffer.Width = int32(width)
-	s.screenFramebuffer.Height = int32(height)
+	// Initialize new framebuffer instance, to avoid race conditions
+	s.screenFramebuffer = &graphics.Framebuffer{
+		Width:  int32(width),
+		Height: int32(height),
+	}
 }
 
 func (s *Stage) Update(ctx game.UpdateContext, camera *world.Camera) {
