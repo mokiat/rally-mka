@@ -35,7 +35,7 @@ type CarInput struct {
 	Handbrake bool
 }
 
-const maxDebugLines = 1024 * 6
+const maxDebugLines = 1024 * 8
 
 var arrayTask *graphics.Task
 
@@ -87,7 +87,6 @@ type Stage struct {
 	physicsEngine        *physics.Engine
 
 	geometryFramebuffer *graphics.Framebuffer
-	lightingFramebuffer *graphics.Framebuffer
 	screenFramebuffer   *graphics.Framebuffer
 	lightingProgram     *graphics.Program
 	quadMesh            *resource.Mesh
@@ -106,7 +105,6 @@ func (s *Stage) Init(data *Data, camera *world.Camera) {
 	s.debugProgram = data.DebugProgram.GFXProgram
 
 	s.geometryFramebuffer = data.GeometryFramebuffer
-	s.lightingFramebuffer = data.LightingFramebuffer
 
 	s.lightingProgram = data.DeferredLightingProgram.GFXProgram
 	s.quadMesh = data.QuadMesh
@@ -463,18 +461,16 @@ func (s *Stage) Render(pipeline *graphics.Pipeline, camera *world.Camera) {
 	geometrySequence.DepthFunc = graphics.DepthFuncLessOrEqual
 	geometrySequence.ProjectionMatrix = camera.ProjectionMatrix()
 	geometrySequence.ViewMatrix = camera.ViewMatrix()
-	// s.refreshDebugLines()
-	s.renderDebugLines(geometrySequence)
 	s.ecsRenderer.Render(geometrySequence)
 	pipeline.EndSequence(geometrySequence)
 
 	lightingSequence := pipeline.BeginSequence()
 	lightingSequence.SourceFramebuffer = s.geometryFramebuffer
 	lightingSequence.TargetFramebuffer = s.screenFramebuffer
-	// lightingSequence.BlitFramebufferDepth = true
+	lightingSequence.BlitFramebufferDepth = true
 	lightingSequence.ClearColor = true
-	// FIXME: this is only for directional... Will need sub-sequences
 	lightingSequence.TestDepth = false
+	lightingSequence.WriteDepth = false
 	lightingSequence.ProjectionMatrix = camera.ProjectionMatrix()
 	lightingSequence.ViewMatrix = camera.ViewMatrix()
 	lightingSequence.CameraMatrix = camera.Matrix()
@@ -486,12 +482,26 @@ func (s *Stage) Render(pipeline *graphics.Pipeline, camera *world.Camera) {
 	lightingSequence.EndItem(quadItem)
 	pipeline.EndSequence(lightingSequence)
 
-	// screenSequence := pipeline.BeginSequence()
-	// screenSequence.SourceFramebuffer = s.lightingFramebuffer
-	// screenSequence.TargetFramebuffer = s.screenFramebuffer
-	// screenSequence.BlitFramebufferColor = true
-	// screenSequence.BlitFramebufferSmooth = true
-	// pipeline.EndSequence(screenSequence)
+	// TODO: Move skybox rendering as part of forward sequence
+	// for proper lighting
+	// It might make sense to experiment with stencil buffer
+	// to reduce unnecessary draw fragments during lighting
+	// pass
+
+	// TODO: This would be better achieved via subsequences
+	// of the lighting sequence
+	forwardSequence := pipeline.BeginSequence()
+	forwardSequence.SourceFramebuffer = s.geometryFramebuffer
+	forwardSequence.TargetFramebuffer = s.screenFramebuffer
+	forwardSequence.TestDepth = false
+	forwardSequence.WriteDepth = false
+	forwardSequence.DepthFunc = graphics.DepthFuncLessOrEqual
+	forwardSequence.ProjectionMatrix = camera.ProjectionMatrix()
+	forwardSequence.ViewMatrix = camera.ViewMatrix()
+	forwardSequence.CameraMatrix = camera.Matrix()
+	s.refreshDebugLines()
+	// s.renderDebugLines(forwardSequence)
+	pipeline.EndSequence(forwardSequence)
 }
 
 type DebugLine struct {

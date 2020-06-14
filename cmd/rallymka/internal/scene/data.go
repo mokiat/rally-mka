@@ -50,7 +50,7 @@ func (d *Data) Request() {
 		d.registry.LoadProgram("geometry-pbr").OnSuccess(resource.InjectProgram(&d.DeferredGeometryProgram)),
 		d.registry.LoadProgram("lighting-pbr").OnSuccess(resource.InjectProgram(&d.DeferredLightingProgram)),
 		d.registry.LoadMesh("quad").OnSuccess(resource.InjectMesh(&d.QuadMesh)),
-		d.registry.LoadProgram("debug").OnSuccess(resource.InjectProgram(&d.DebugProgram)),
+		d.registry.LoadProgram("forward-debug").OnSuccess(resource.InjectProgram(&d.DebugProgram)),
 	)
 
 	d.gfxTask = d.gfxWorker.Schedule(func() error {

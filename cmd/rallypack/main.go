@@ -13,21 +13,9 @@ func main() {
 			WithVertexShader(packer.ShaderResourceFile("forward-albedo.vert")).
 			WithFragmentShader(packer.ShaderResourceFile("forward-albedo.frag")),
 
-		packer.ProgramAssetFile("deferred-geometry.dat").
-			WithVertexShader(packer.ShaderResourceFile("deferred-geometry.vert")).
-			WithFragmentShader(packer.ShaderResourceFile("deferred-geometry.frag")),
-
-		packer.ProgramAssetFile("geometry-diffuse-color.dat").
-			WithVertexShader(packer.ShaderResourceFile("geometry-diffuse-color.vert")).
-			WithFragmentShader(packer.ShaderResourceFile("geometry-diffuse-color.frag")),
-
-		packer.ProgramAssetFile("deferred-lighting.dat").
-			WithVertexShader(packer.ShaderResourceFile("deferred-lighting.vert")).
-			WithFragmentShader(packer.ShaderResourceFile("deferred-lighting.frag")),
-
-		packer.ProgramAssetFile("debug.dat").
-			WithVertexShader(packer.ShaderResourceFile("debug.vert")).
-			WithFragmentShader(packer.ShaderResourceFile("debug.frag")),
+		packer.ProgramAssetFile("forward-debug.dat").
+			WithVertexShader(packer.ShaderResourceFile("forward-debug.vert")).
+			WithFragmentShader(packer.ShaderResourceFile("forward-debug.frag")),
 
 		packer.ProgramAssetFile("geometry-pbr.dat").
 			WithVertexShader(packer.ShaderResourceFile("geometry-pbr.vert")).
