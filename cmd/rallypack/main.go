@@ -9,13 +9,9 @@ func main() {
 
 	// Programs
 	packer.Store(
-		packer.ProgramAssetFile("diffuse.dat").
-			WithVertexShader(packer.ShaderResourceFile("diffuse.vert")).
-			WithFragmentShader(packer.ShaderResourceFile("diffuse.frag")),
-
-		packer.ProgramAssetFile("skybox.dat").
-			WithVertexShader(packer.ShaderResourceFile("skybox.vert")).
-			WithFragmentShader(packer.ShaderResourceFile("skybox.frag")),
+		packer.ProgramAssetFile("forward-albedo.dat").
+			WithVertexShader(packer.ShaderResourceFile("forward-albedo.vert")).
+			WithFragmentShader(packer.ShaderResourceFile("forward-albedo.frag")),
 
 		packer.ProgramAssetFile("deferred-geometry.dat").
 			WithVertexShader(packer.ShaderResourceFile("deferred-geometry.vert")).

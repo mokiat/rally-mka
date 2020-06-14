@@ -27,7 +27,7 @@ type View struct {
 
 func (v *View) Load() {
 	v.loadOutcome = async.NewCompositeOutcome(
-		v.registry.LoadProgram("diffuse").OnSuccess(resource.InjectProgram(&v.program)),
+		v.registry.LoadProgram("forward-albedo").OnSuccess(resource.InjectProgram(&v.program)),
 		v.registry.LoadTwoDTexture("loading").OnSuccess(resource.InjectTwoDTexture(&v.texture)),
 		v.registry.LoadMesh("quad").OnSuccess(resource.InjectMesh(&v.mesh)),
 	)
@@ -42,7 +42,13 @@ func (v *View) Unload() {
 }
 
 func (v *View) IsAvailable() bool {
-	return v.loadOutcome.IsAvailable()
+	if v.loadOutcome.IsAvailable() {
+		if err := v.loadOutcome.Wait().Err; err != nil {
+			panic(err)
+		}
+		return true
+	}
+	return false
 }
 
 func (v *View) Open() {}
