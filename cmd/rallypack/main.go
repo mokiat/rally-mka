@@ -75,6 +75,9 @@ func main() {
 
 		packer.TwoDTextureAssetFile("asphalt.dat").
 			WithImage(packer.ImageResourceFile("asphalt.png")),
+
+		packer.TwoDTextureAssetFile("rusty_metal_02_diff_512.dat").
+			WithImage(packer.ImageResourceFile("rusty_metal_02_diff_512.png")),
 	)
 
 	// Cube Textures
@@ -87,5 +90,11 @@ func main() {
 			WithTopImage(packer.ImageResourceFile("city_top.png")).
 			WithBottomImage(packer.ImageResourceFile("city_bottom.png")).
 			WithDimension(512),
+	)
+
+	// Models
+	packer.Store(
+		packer.ModelAssetFile("street_lamp.dat").
+			FromGLTF(packer.GLTFResourceFile("street_lamp.gltf")),
 	)
 }

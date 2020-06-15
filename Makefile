@@ -37,7 +37,6 @@ $(LEVEL_ASSETS_DIR)/playground.dat: \
 models: \
 	$(MODEL_ASSETS_DIR) \
 	$(MODEL_ASSETS_DIR)/tree.dat \
-	$(MODEL_ASSETS_DIR)/lamp.dat \
 	$(MODEL_ASSETS_DIR)/finish.dat \
 	$(MODEL_ASSETS_DIR)/suv.dat \
 	$(MODEL_ASSETS_DIR)/hatch.dat \
@@ -48,10 +47,6 @@ $(MODEL_ASSETS_DIR):
 
 $(MODEL_ASSETS_DIR)/tree.dat: \
 	$(MODEL_RESOURCES_DIR)/tree.json
-	rallygen model $+ $@
-
-$(MODEL_ASSETS_DIR)/lamp.dat: \
-	$(MODEL_RESOURCES_DIR)/lamp.json
 	rallygen model $+ $@
 
 $(MODEL_ASSETS_DIR)/finish.dat: \
