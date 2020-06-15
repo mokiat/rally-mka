@@ -2,7 +2,6 @@ package car
 
 import (
 	"github.com/mokiat/gomath/sprec"
-	"github.com/mokiat/lacking/graphics"
 	"github.com/mokiat/lacking/physics"
 	"github.com/mokiat/lacking/resource"
 	"github.com/mokiat/lacking/shape"
@@ -19,15 +18,13 @@ const (
 	chassisRestitutionCoef   = 0.0
 )
 
-func Chassis(program *graphics.Program, model *resource.Model) *ChassisBuilder {
+func Chassis(model *resource.Model) *ChassisBuilder {
 	return &ChassisBuilder{
-		program: program,
-		model:   model,
+		model: model,
 	}
 }
 
 type ChassisBuilder struct {
-	program   *graphics.Program
 	model     *resource.Model
 	modifiers []func(entity *ecs.Entity)
 }
@@ -69,9 +66,8 @@ func (b *ChassisBuilder) Build(ecsManager *ecs.Manager) *ecs.Entity {
 		},
 	}
 	entity.Render = &ecs.RenderComponent{
-		GeomProgram: b.program,
-		Mesh:        bodyNode.Mesh,
-		Matrix:      sprec.IdentityMat4(),
+		Mesh:   bodyNode.Mesh,
+		Matrix: sprec.IdentityMat4(),
 	}
 	for _, modifier := range b.modifiers {
 		modifier(entity)

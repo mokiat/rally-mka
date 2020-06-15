@@ -22,12 +22,8 @@ type Data struct {
 
 	SkyboxProgram           *resource.Program
 	SkyboxMesh              *resource.Mesh
-	TerrainProgram          *resource.Program
-	EntityProgram           *resource.Program
-	CarProgram              *resource.Program
 	CarModel                *resource.Model
 	Level                   *resource.Level
-	DeferredGeometryProgram *resource.Program
 	DeferredLightingProgram *resource.Program
 	QuadMesh                *resource.Mesh
 	DebugProgram            *resource.Program
@@ -42,12 +38,8 @@ func (d *Data) Request() {
 	d.loadOutcome = async.NewCompositeOutcome(
 		d.registry.LoadProgram("geometry-skybox").OnSuccess(resource.InjectProgram(&d.SkyboxProgram)),
 		d.registry.LoadMesh("skybox").OnSuccess(resource.InjectMesh(&d.SkyboxMesh)),
-		d.registry.LoadProgram("geometry-pbr").OnSuccess(resource.InjectProgram(&d.TerrainProgram)),
-		d.registry.LoadProgram("geometry-pbr").OnSuccess(resource.InjectProgram(&d.EntityProgram)),
-		d.registry.LoadProgram("geometry-pbr").OnSuccess(resource.InjectProgram(&d.CarProgram)),
 		d.registry.LoadModel("suv").OnSuccess(resource.InjectModel(&d.CarModel)),
 		d.registry.LoadLevel("forest").OnSuccess(resource.InjectLevel(&d.Level)),
-		d.registry.LoadProgram("geometry-pbr").OnSuccess(resource.InjectProgram(&d.DeferredGeometryProgram)),
 		d.registry.LoadProgram("lighting-pbr").OnSuccess(resource.InjectProgram(&d.DeferredLightingProgram)),
 		d.registry.LoadMesh("quad").OnSuccess(resource.InjectMesh(&d.QuadMesh)),
 		d.registry.LoadProgram("forward-debug").OnSuccess(resource.InjectProgram(&d.DebugProgram)),
@@ -80,12 +72,8 @@ func (d *Data) Request() {
 func (d *Data) Dismiss() {
 	d.registry.UnloadProgram(d.SkyboxProgram)
 	d.registry.UnloadMesh(d.SkyboxMesh)
-	d.registry.UnloadProgram(d.TerrainProgram)
-	d.registry.UnloadProgram(d.EntityProgram)
-	d.registry.UnloadProgram(d.CarProgram)
 	d.registry.UnloadModel(d.CarModel)
 	d.registry.UnloadLevel(d.Level)
-	d.registry.UnloadProgram(d.DeferredGeometryProgram)
 	d.registry.UnloadProgram(d.DeferredLightingProgram)
 	d.registry.UnloadMesh(d.QuadMesh)
 	d.registry.UnloadProgram(d.DebugProgram)

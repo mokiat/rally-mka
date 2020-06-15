@@ -38,11 +38,11 @@ func (r *Renderer) renderRender(sequence *graphics.Sequence) {
 		}
 		if render.Model != nil {
 			for _, node := range render.Model.Nodes {
-				r.renderModelNode(sequence, render.GeomProgram, render.Matrix, node)
+				r.renderModelNode(sequence, render.Matrix, node)
 			}
 		}
 		if render.Mesh != nil {
-			r.renderMesh(sequence, render.GeomProgram, render.Matrix, render.Mesh)
+			r.renderMesh(sequence, render.Matrix, render.Mesh)
 		}
 	}
 }
@@ -57,33 +57,36 @@ func (r *Renderer) renderRenderSkyboxes(sequence *graphics.Sequence) {
 	}
 }
 
-func (r *Renderer) renderModelNode(sequence *graphics.Sequence, program *graphics.Program, parentMatrix sprec.Mat4, node *resource.Node) {
+func (r *Renderer) renderModelNode(sequence *graphics.Sequence, parentMatrix sprec.Mat4, node *resource.Node) {
 	matrix := sprec.Mat4Prod(parentMatrix, node.Matrix)
-	r.renderMesh(sequence, program, matrix, node.Mesh)
+	r.renderMesh(sequence, matrix, node.Mesh)
 	for _, child := range node.Children {
-		r.renderModelNode(sequence, program, matrix, child)
+		r.renderModelNode(sequence, matrix, child)
 	}
 }
 
-func (r *Renderer) renderMesh(sequence *graphics.Sequence, program *graphics.Program, modelMatrix sprec.Mat4, mesh *resource.Mesh) {
+func (r *Renderer) renderMesh(sequence *graphics.Sequence, modelMatrix sprec.Mat4, mesh *resource.Mesh) {
 	for _, subMesh := range mesh.SubMeshes {
 		meshItem := sequence.BeginItem()
-		meshItem.Program = program
+		meshItem.Program = subMesh.Material.Shader.GeometryProgram
+		meshItem.Primitive = subMesh.Primitive
 		meshItem.ModelMatrix = modelMatrix
-		meshItem.Metalness = subMesh.Metalness
-		if subMesh.MetalnessTexture != nil {
-			meshItem.MetalnessTwoDTexture = subMesh.MetalnessTexture.GFXTexture
+		meshItem.BackfaceCulling = subMesh.Material.BackfaceCulling
+		meshItem.Metalness = subMesh.Material.Metalness
+		if subMesh.Material.MetalnessTexture != nil {
+			meshItem.MetalnessTwoDTexture = subMesh.Material.MetalnessTexture.GFXTexture
 		}
-		meshItem.Roughness = subMesh.Roughness
-		if subMesh.RoughnessTexture != nil {
-			meshItem.RoughnessTwoDTexture = subMesh.RoughnessTexture.GFXTexture
+		meshItem.Roughness = subMesh.Material.Roughness
+		if subMesh.Material.RoughnessTexture != nil {
+			meshItem.RoughnessTwoDTexture = subMesh.Material.RoughnessTexture.GFXTexture
 		}
-		if subMesh.AlbedoTexture != nil {
-			meshItem.AlbedoTwoDTexture = subMesh.AlbedoTexture.GFXTexture
+		meshItem.AlbedoColor = subMesh.Material.AlbedoColor
+		if subMesh.Material.AlbedoTexture != nil {
+			meshItem.AlbedoTwoDTexture = subMesh.Material.AlbedoTexture.GFXTexture
 		}
-		meshItem.NormalScale = subMesh.NormalScale
-		if subMesh.NormalTexture != nil {
-			meshItem.NormalTwoDTexture = subMesh.NormalTexture.GFXTexture
+		meshItem.NormalScale = subMesh.Material.NormalScale
+		if subMesh.Material.NormalTexture != nil {
+			meshItem.NormalTwoDTexture = subMesh.Material.NormalTexture.GFXTexture
 		}
 		meshItem.VertexArray = mesh.GFXVertexArray
 		meshItem.IndexOffset = subMesh.IndexOffset

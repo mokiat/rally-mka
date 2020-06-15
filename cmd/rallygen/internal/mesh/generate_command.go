@@ -126,11 +126,15 @@ func ConvertResourceToAsset(resMesh *resource.Mesh) (*asset.Mesh, error) {
 	subMeshes := make([]asset.SubMesh, len(resMesh.SubMeshes))
 	for i, resSubMesh := range resMesh.SubMeshes {
 		subMeshes[i] = asset.SubMesh{
-			IndexOffset:  uint32(resSubMesh.IndexOffset * 2),
-			IndexCount:   uint32(resSubMesh.IndexCount),
-			Metalness:    0.0,
-			Roughness:    0.5,
-			ColorTexture: resSubMesh.DiffuseTexture,
+			Primitive:   asset.PrimitiveTriangles,
+			IndexOffset: uint32(resSubMesh.IndexOffset * 2),
+			IndexCount:  uint32(resSubMesh.IndexCount),
+			Material: asset.Material{
+				Type:         "pbr",
+				Metalness:    0.0,
+				Roughness:    0.5,
+				ColorTexture: resSubMesh.DiffuseTexture,
+			},
 		}
 	}
 	return &asset.Mesh{

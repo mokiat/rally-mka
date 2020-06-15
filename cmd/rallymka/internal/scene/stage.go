@@ -112,9 +112,8 @@ func (s *Stage) Init(data *Data, camera *world.Camera) {
 	for _, staticMesh := range level.StaticMeshes {
 		entity := s.ecsManager.CreateEntity()
 		entity.Render = &ecs.RenderComponent{
-			GeomProgram: data.TerrainProgram.GFXProgram,
-			Mesh:        staticMesh,
-			Matrix:      sprec.IdentityMat4(),
+			Mesh:   staticMesh,
+			Matrix: sprec.IdentityMat4(),
 		}
 	}
 
@@ -131,29 +130,27 @@ func (s *Stage) Init(data *Data, camera *world.Camera) {
 	for _, staticEntity := range level.StaticEntities {
 		entity := s.ecsManager.CreateEntity()
 		entity.Render = &ecs.RenderComponent{
-			GeomProgram: data.EntityProgram.GFXProgram,
-			Model:       staticEntity.Model,
-			Matrix:      staticEntity.Matrix,
+			Model:  staticEntity.Model,
+			Matrix: staticEntity.Matrix,
 		}
 	}
 
-	carProgram := data.CarProgram.GFXProgram
 	carModel := data.CarModel
 
 	// targetEntity =
-	// 	s.setupChandelierDemo(carProgram, carModel, sprec.NewVec3(0.0, 10.0, 0.0))
+	// 	s.setupChandelierDemo(carModel, sprec.NewVec3(0.0, 10.0, 0.0))
 
 	// targetEntity =
-	// 	s.setupRodDemo(carProgram, carModel, sprec.NewVec3(0.0, 10.0, 5.0))
+	// 	s.setupRodDemo(carModel, sprec.NewVec3(0.0, 10.0, 5.0))
 
 	// targetEntity =
-	// 	s.setupCoiloverDemo(carProgram, carModel, sprec.NewVec3(0.0, 10.0, -5.0))
+	// 	s.setupCoiloverDemo(carModel, sprec.NewVec3(0.0, 10.0, -5.0))
 
 	// targetEntity =
-	// 	s.setupCarDemo(carProgram, carModel, sprec.NewVec3(0.0, 141.0, 0.0))
+	// 	s.setupCarDemo(carModel, sprec.NewVec3(0.0, 141.0, 0.0))
 
 	targetEntity =
-		s.setupCarDemo(carProgram, carModel, sprec.NewVec3(0.0, 2.0, 0.0))
+		s.setupCarDemo(carModel, sprec.NewVec3(0.0, 2.0, 0.0))
 
 	standTarget := targetEntity
 	standEntity := s.ecsManager.CreateEntity()
@@ -176,7 +173,7 @@ func (s *Stage) Init(data *Data, camera *world.Camera) {
 }
 
 func (s *Stage) setupChandelierDemo(program *graphics.Program, model *resource.Model, position sprec.Vec3) *ecs.Entity {
-	fakeFixtureWheel := car.Wheel(program, model, car.FrontRightWheelLocation).
+	fakeFixtureWheel := car.Wheel(model, car.FrontRightWheelLocation).
 		WithPosition(position).
 		Build(s.ecsManager)
 	s.physicsEngine.AddBody(fakeFixtureWheel.Physics.Body)
@@ -185,7 +182,7 @@ func (s *Stage) setupChandelierDemo(program *graphics.Program, model *resource.M
 		Body:    fakeFixtureWheel.Physics.Body,
 	})
 
-	playWheel := car.Wheel(program, model, car.FrontRightWheelLocation).
+	playWheel := car.Wheel(model, car.FrontRightWheelLocation).
 		WithPosition(sprec.Vec3Sum(position, sprec.NewVec3(-2.3, 0.0, 0.0))).
 		Build(s.ecsManager)
 	s.physicsEngine.AddBody(playWheel.Physics.Body)
@@ -199,8 +196,8 @@ func (s *Stage) setupChandelierDemo(program *graphics.Program, model *resource.M
 	return fakeFixtureWheel
 }
 
-func (s *Stage) setupCoiloverDemo(program *graphics.Program, model *resource.Model, position sprec.Vec3) *ecs.Entity {
-	fixtureWheel := car.Wheel(program, model, car.FrontRightWheelLocation).
+func (s *Stage) setupCoiloverDemo(model *resource.Model, position sprec.Vec3) *ecs.Entity {
+	fixtureWheel := car.Wheel(model, car.FrontRightWheelLocation).
 		WithPosition(position).
 		Build(s.ecsManager)
 	s.physicsEngine.AddBody(fixtureWheel.Physics.Body)
@@ -209,7 +206,7 @@ func (s *Stage) setupCoiloverDemo(program *graphics.Program, model *resource.Mod
 		Body:    fixtureWheel.Physics.Body,
 	})
 
-	fallingWheel := car.Wheel(program, model, car.FrontRightWheelLocation).
+	fallingWheel := car.Wheel(model, car.FrontRightWheelLocation).
 		WithPosition(sprec.Vec3Sum(position, sprec.NewVec3(0.0, 2.0, 0.0))).
 		Build(s.ecsManager)
 	s.physicsEngine.AddBody(fallingWheel.Physics.Body)
@@ -223,9 +220,9 @@ func (s *Stage) setupCoiloverDemo(program *graphics.Program, model *resource.Mod
 	return fixtureWheel
 }
 
-func (s *Stage) setupRodDemo(program *graphics.Program, model *resource.Model, position sprec.Vec3) *ecs.Entity {
+func (s *Stage) setupRodDemo(model *resource.Model, position sprec.Vec3) *ecs.Entity {
 	topWheelPosition := position
-	topWheel := car.Wheel(program, model, car.FrontRightWheelLocation).
+	topWheel := car.Wheel(model, car.FrontRightWheelLocation).
 		WithPosition(topWheelPosition).
 		Build(s.ecsManager)
 	s.physicsEngine.AddBody(topWheel.Physics.Body)
@@ -235,7 +232,7 @@ func (s *Stage) setupRodDemo(program *graphics.Program, model *resource.Model, p
 	})
 
 	middleWheelPosition := sprec.Vec3Sum(topWheelPosition, sprec.NewVec3(1.4, 0.0, 0.0))
-	middleWheel := car.Wheel(program, model, car.FrontRightWheelLocation).
+	middleWheel := car.Wheel(model, car.FrontRightWheelLocation).
 		WithPosition(middleWheelPosition).
 		Build(s.ecsManager)
 	s.physicsEngine.AddBody(middleWheel.Physics.Body)
@@ -248,7 +245,7 @@ func (s *Stage) setupRodDemo(program *graphics.Program, model *resource.Model, p
 	})
 
 	bottomWheelPosition := sprec.Vec3Sum(middleWheelPosition, sprec.NewVec3(1.4, 0.0, 0.0))
-	bottomWheel := car.Wheel(program, model, car.FrontRightWheelLocation).
+	bottomWheel := car.Wheel(model, car.FrontRightWheelLocation).
 		WithPosition(bottomWheelPosition).
 		Build(s.ecsManager)
 	s.physicsEngine.AddBody(bottomWheel.Physics.Body)
@@ -263,8 +260,8 @@ func (s *Stage) setupRodDemo(program *graphics.Program, model *resource.Model, p
 	return topWheel
 }
 
-func (s *Stage) setupCarDemo(program *graphics.Program, model *resource.Model, position sprec.Vec3) *ecs.Entity {
-	chasis := car.Chassis(program, model).
+func (s *Stage) setupCarDemo(model *resource.Model, position sprec.Vec3) *ecs.Entity {
+	chasis := car.Chassis(model).
 		WithName("chasis").
 		WithPosition(position).
 		Build(s.ecsManager)
@@ -277,7 +274,7 @@ func (s *Stage) setupCarDemo(program *graphics.Program, model *resource.Model, p
 	suspensionDampingRatio := float32(1.0)
 
 	flWheelRelativePosition := sprec.NewVec3(suspensionWidth, -0.6-suspensionLength/2.0, 1.25)
-	flWheel := car.Wheel(program, model, car.FrontLeftWheelLocation).
+	flWheel := car.Wheel(model, car.FrontLeftWheelLocation).
 		WithName("front-left-wheel").
 		WithPosition(sprec.Vec3Sum(position, flWheelRelativePosition)).
 		Build(s.ecsManager)
@@ -310,7 +307,7 @@ func (s *Stage) setupCarDemo(program *graphics.Program, model *resource.Model, p
 	})
 
 	frWheelRelativePosition := sprec.NewVec3(-suspensionWidth, -0.6-suspensionLength/2.0, 1.25)
-	frWheel := car.Wheel(program, model, car.FrontRightWheelLocation).
+	frWheel := car.Wheel(model, car.FrontRightWheelLocation).
 		WithName("front-right-wheel").
 		WithPosition(sprec.Vec3Sum(position, frWheelRelativePosition)).
 		Build(s.ecsManager)
@@ -343,7 +340,7 @@ func (s *Stage) setupCarDemo(program *graphics.Program, model *resource.Model, p
 	})
 
 	blWheelRelativePosition := sprec.NewVec3(suspensionWidth, -0.6-suspensionLength/2.0, -1.45)
-	blWheel := car.Wheel(program, model, car.BackLeftWheelLocation).
+	blWheel := car.Wheel(model, car.BackLeftWheelLocation).
 		WithName("back-left-wheel").
 		WithPosition(sprec.Vec3Sum(position, blWheelRelativePosition)).
 		Build(s.ecsManager)
@@ -375,7 +372,7 @@ func (s *Stage) setupCarDemo(program *graphics.Program, model *resource.Model, p
 	})
 
 	brWheelRelativePosition := sprec.NewVec3(-suspensionWidth, -0.6-suspensionLength/2.0, -1.45)
-	brWheel := car.Wheel(program, model, car.BackRightWheelLocation).
+	brWheel := car.Wheel(model, car.BackRightWheelLocation).
 		WithName("back-right-wheel").
 		WithPosition(sprec.Vec3Sum(position, brWheelRelativePosition)).
 		Build(s.ecsManager)

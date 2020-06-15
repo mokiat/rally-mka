@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/mokiat/gomath/sprec"
-	"github.com/mokiat/lacking/graphics"
 	"github.com/mokiat/lacking/physics"
 	"github.com/mokiat/lacking/resource"
 	"github.com/mokiat/lacking/shape"
@@ -29,16 +28,14 @@ const (
 	BackRightWheelLocation  WheelLocation = "back_right"
 )
 
-func Wheel(program *graphics.Program, model *resource.Model, location WheelLocation) *WheelBuilder {
+func Wheel(model *resource.Model, location WheelLocation) *WheelBuilder {
 	return &WheelBuilder{
-		program:  program,
 		model:    model,
 		location: location,
 	}
 }
 
 type WheelBuilder struct {
-	program   *graphics.Program
 	model     *resource.Model
 	location  WheelLocation
 	modifiers []func(entity *ecs.Entity)
@@ -82,9 +79,8 @@ func (b *WheelBuilder) Build(ecsManager *ecs.Manager) *ecs.Entity {
 		},
 	}
 	entity.Render = &ecs.RenderComponent{
-		GeomProgram: b.program,
-		Mesh:        modelNode.Mesh,
-		Matrix:      sprec.IdentityMat4(),
+		Mesh:   modelNode.Mesh,
+		Matrix: sprec.IdentityMat4(),
 	}
 	for _, modifier := range b.modifiers {
 		modifier(entity)

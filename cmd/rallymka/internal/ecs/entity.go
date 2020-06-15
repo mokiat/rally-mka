@@ -22,10 +22,9 @@ type PhysicsComponent struct {
 }
 
 type RenderComponent struct {
-	GeomProgram *graphics.Program
-	Model       *resource.Model
-	Mesh        *resource.Mesh
-	Matrix      sprec.Mat4
+	Model  *resource.Model
+	Mesh   *resource.Mesh
+	Matrix sprec.Mat4
 }
 
 type RenderSkybox struct {
