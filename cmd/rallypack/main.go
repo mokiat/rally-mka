@@ -17,10 +17,6 @@ func main() {
 			WithVertexShader(packer.ShaderResourceFile("forward-debug.vert")).
 			WithFragmentShader(packer.ShaderResourceFile("forward-debug.frag")),
 
-		packer.ProgramAssetFile("geometry-pbr.dat").
-			WithVertexShader(packer.ShaderResourceFile("geometry-pbr.vert")).
-			WithFragmentShader(packer.ShaderResourceFile("geometry-pbr.frag")),
-
 		packer.ProgramAssetFile("geometry-skybox.dat").
 			WithVertexShader(packer.ShaderResourceFile("geometry-skybox.vert")).
 			WithFragmentShader(packer.ShaderResourceFile("geometry-skybox.frag")),
