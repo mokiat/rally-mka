@@ -34,9 +34,6 @@ func main() {
 		packer.TwoDTextureAssetFile("tree.dat").
 			WithImage(packer.ImageResourceFile("tree.png")),
 
-		packer.TwoDTextureAssetFile("lamp.dat").
-			WithImage(packer.ImageResourceFile("lamp.png")),
-
 		packer.TwoDTextureAssetFile("finish.dat").
 			WithImage(packer.ImageResourceFile("finish.png")),
 
