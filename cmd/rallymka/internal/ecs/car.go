@@ -12,8 +12,8 @@ const (
 	carSteeringSpeed        = 80
 	carSteeringRestoreSpeed = 160
 
-	carFrontAcceleration        = 100
-	carRearAcceleration         = 200
+	carFrontAcceleration        = 200
+	carRearAcceleration         = 300
 	carReverseAccelerationRatio = 0.75
 
 	carFrontDeceleration = 500
@@ -48,7 +48,7 @@ func (s *CarSystem) updateCarSteering(car *Car, ctx game.UpdateContext) {
 		keyboard := ctx.Keyboard
 		turnLeft := keyboard.IsPressed(input.KeyLeft)
 		turnRight := keyboard.IsPressed(input.KeyRight)
-		actualSteeringAngle := carMaxSteeringAngle / (1.0 + 0.2*car.Chassis.Velocity.Length())
+		actualSteeringAngle := carMaxSteeringAngle / (1.0 + 0.05*car.Chassis.Velocity.Length())
 		switch {
 		case turnLeft == turnRight:
 			if car.SteeringAngle > 0.001 {
@@ -98,10 +98,10 @@ func (s *CarSystem) updateCarAcceleration(car *Car, ctx game.UpdateContext) {
 		}
 	} else {
 		if ctx.Keyboard.IsPressed(input.KeyUp) {
-			acceleration = 1.0
+			acceleration = 0.5
 		}
 		if ctx.Keyboard.IsPressed(input.KeyDown) {
-			deceleration = 1.0
+			deceleration = 0.5
 		}
 	}
 
