@@ -37,10 +37,7 @@ $(LEVEL_ASSETS_DIR)/playground.dat: \
 models: \
 	$(MODEL_ASSETS_DIR) \
 	$(MODEL_ASSETS_DIR)/tree.dat \
-	$(MODEL_ASSETS_DIR)/finish.dat \
-	$(MODEL_ASSETS_DIR)/suv.dat \
-	$(MODEL_ASSETS_DIR)/hatch.dat \
-	$(MODEL_ASSETS_DIR)/truck.dat
+	$(MODEL_ASSETS_DIR)/finish.dat
 
 $(MODEL_ASSETS_DIR):
 	mkdir -p "$(MODEL_ASSETS_DIR)"
@@ -51,18 +48,6 @@ $(MODEL_ASSETS_DIR)/tree.dat: \
 
 $(MODEL_ASSETS_DIR)/finish.dat: \
 	$(MODEL_RESOURCES_DIR)/finish.json
-	rallygen model $+ $@
-
-$(MODEL_ASSETS_DIR)/hatch.dat: \
-	$(MODEL_RESOURCES_DIR)/hatch.json
-	rallygen model $+ $@
-
-$(MODEL_ASSETS_DIR)/suv.dat: \
-	$(MODEL_RESOURCES_DIR)/suv.json
-	rallygen model $+ $@
-
-$(MODEL_ASSETS_DIR)/truck.dat: \
-	$(MODEL_RESOURCES_DIR)/truck.json
 	rallygen model $+ $@
 
 .PHONY: meshes

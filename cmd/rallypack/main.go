@@ -37,24 +37,6 @@ func main() {
 		packer.TwoDTextureAssetFile("finish.dat").
 			WithImage(packer.ImageResourceFile("finish.png")),
 
-		packer.TwoDTextureAssetFile("hatch_body.dat").
-			WithImage(packer.ImageResourceFile("hatch_body.png")),
-
-		packer.TwoDTextureAssetFile("hatch_wheel.dat").
-			WithImage(packer.ImageResourceFile("hatch_wheel.png")),
-
-		packer.TwoDTextureAssetFile("suv_body.dat").
-			WithImage(packer.ImageResourceFile("suv_body.png")),
-
-		packer.TwoDTextureAssetFile("suv_wheel.dat").
-			WithImage(packer.ImageResourceFile("suv_wheel.png")),
-
-		packer.TwoDTextureAssetFile("truck_body.dat").
-			WithImage(packer.ImageResourceFile("truck_body.png")),
-
-		packer.TwoDTextureAssetFile("truck_wheel.dat").
-			WithImage(packer.ImageResourceFile("truck_wheel.png")),
-
 		packer.TwoDTextureAssetFile("concrete.dat").
 			WithImage(packer.ImageResourceFile("concrete.png")),
 
