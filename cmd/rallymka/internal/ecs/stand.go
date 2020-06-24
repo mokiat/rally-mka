@@ -41,12 +41,14 @@ func (s *CameraStandSystem) updateCameraStand(cameraStand *CameraStand, ctx game
 	cameraVectorY := sprec.Vec3Cross(cameraVectorZ, cameraVectorX)
 
 	if ctx.Gamepad.Available {
-		if sprec.Abs(ctx.Gamepad.RightStickY) > 0.1 {
-			rotation := sprec.RotationQuat(sprec.Degrees(ctx.Gamepad.RightStickY*2), cameraVectorX)
+		elapsedSeconds := float32(ctx.ElapsedTime.Seconds())
+		rotationAmount := 200 * elapsedSeconds
+		if sprec.Abs(ctx.Gamepad.RightStickY) > 0.2 {
+			rotation := sprec.RotationQuat(sprec.Degrees(ctx.Gamepad.RightStickY*rotationAmount), cameraVectorX)
 			anchorVector = sprec.QuatVec3Rotation(rotation, anchorVector)
 		}
-		if sprec.Abs(ctx.Gamepad.RightStickX) > 0.1 {
-			rotation := sprec.RotationQuat(sprec.Degrees(-ctx.Gamepad.RightStickX*2), cameraVectorY)
+		if sprec.Abs(ctx.Gamepad.RightStickX) > 0.2 {
+			rotation := sprec.RotationQuat(sprec.Degrees(-ctx.Gamepad.RightStickX*rotationAmount), cameraVectorY)
 			anchorVector = sprec.QuatVec3Rotation(rotation, anchorVector)
 		}
 	}
