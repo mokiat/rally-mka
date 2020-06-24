@@ -268,12 +268,14 @@ func (s *Stage) setupCarDemo(model *resource.Model, position sprec.Vec3) *ecs.En
 	s.physicsEngine.AddBody(chasis.Physics.Body)
 
 	suspensionEnabled := true
+	suspensionStart := float32(-0.25)
+	suspensionEnd := float32(-0.6)
 	suspensionWidth := float32(1.0)
-	suspensionLength := float32(0.3)
-	suspensionFrequencyHz := float32(4.5)
+	suspensionLength := float32(0.25)
+	suspensionFrequencyHz := float32(3.0)
 	suspensionDampingRatio := float32(1.0)
 
-	flWheelRelativePosition := sprec.NewVec3(suspensionWidth, -0.6-suspensionLength/2.0, 1.25)
+	flWheelRelativePosition := sprec.NewVec3(suspensionWidth, suspensionStart-suspensionLength, 1.07)
 	flWheel := car.Wheel(model, car.FrontLeftWheelLocation).
 		WithName("front-left-wheel").
 		WithPosition(sprec.Vec3Sum(position, flWheelRelativePosition)).
@@ -288,8 +290,8 @@ func (s *Stage) setupCarDemo(model *resource.Model, position sprec.Vec3) *ecs.En
 	s.physicsEngine.AddConstraint(physics.LimitTranslationConstraint{
 		FirstBody:  chasis.Physics.Body,
 		SecondBody: flWheel.Physics.Body,
-		MaxY:       -0.5,
-		MinY:       -1.0,
+		MaxY:       suspensionStart,
+		MinY:       suspensionEnd,
 	})
 	flRotation := &physics.MatchAxisConstraint{
 		FirstBody:      chasis.Physics.Body,
@@ -306,7 +308,7 @@ func (s *Stage) setupCarDemo(model *resource.Model, position sprec.Vec3) *ecs.En
 		DampingRatio:    suspensionDampingRatio,
 	})
 
-	frWheelRelativePosition := sprec.NewVec3(-suspensionWidth, -0.6-suspensionLength/2.0, 1.25)
+	frWheelRelativePosition := sprec.NewVec3(-suspensionWidth, suspensionStart-suspensionLength, 1.07)
 	frWheel := car.Wheel(model, car.FrontRightWheelLocation).
 		WithName("front-right-wheel").
 		WithPosition(sprec.Vec3Sum(position, frWheelRelativePosition)).
@@ -321,8 +323,8 @@ func (s *Stage) setupCarDemo(model *resource.Model, position sprec.Vec3) *ecs.En
 	s.physicsEngine.AddConstraint(physics.LimitTranslationConstraint{
 		FirstBody:  chasis.Physics.Body,
 		SecondBody: frWheel.Physics.Body,
-		MaxY:       -0.5,
-		MinY:       -1.0,
+		MaxY:       suspensionStart,
+		MinY:       suspensionEnd,
 	})
 	frRotation := &physics.MatchAxisConstraint{
 		FirstBody:      chasis.Physics.Body,
@@ -339,7 +341,7 @@ func (s *Stage) setupCarDemo(model *resource.Model, position sprec.Vec3) *ecs.En
 		DampingRatio:    suspensionDampingRatio,
 	})
 
-	blWheelRelativePosition := sprec.NewVec3(suspensionWidth, -0.6-suspensionLength/2.0, -1.45)
+	blWheelRelativePosition := sprec.NewVec3(suspensionWidth, suspensionStart-suspensionLength, -1.56)
 	blWheel := car.Wheel(model, car.BackLeftWheelLocation).
 		WithName("back-left-wheel").
 		WithPosition(sprec.Vec3Sum(position, blWheelRelativePosition)).
@@ -354,8 +356,8 @@ func (s *Stage) setupCarDemo(model *resource.Model, position sprec.Vec3) *ecs.En
 	s.physicsEngine.AddConstraint(physics.LimitTranslationConstraint{
 		FirstBody:  chasis.Physics.Body,
 		SecondBody: blWheel.Physics.Body,
-		MaxY:       -0.5,
-		MinY:       -1.0,
+		MaxY:       suspensionStart,
+		MinY:       suspensionEnd,
 	})
 	s.physicsEngine.AddConstraint(physics.MatchAxisConstraint{
 		FirstBody:      chasis.Physics.Body,
@@ -371,7 +373,7 @@ func (s *Stage) setupCarDemo(model *resource.Model, position sprec.Vec3) *ecs.En
 		DampingRatio:    suspensionDampingRatio,
 	})
 
-	brWheelRelativePosition := sprec.NewVec3(-suspensionWidth, -0.6-suspensionLength/2.0, -1.45)
+	brWheelRelativePosition := sprec.NewVec3(-suspensionWidth, suspensionStart-suspensionLength, -1.56)
 	brWheel := car.Wheel(model, car.BackRightWheelLocation).
 		WithName("back-right-wheel").
 		WithPosition(sprec.Vec3Sum(position, brWheelRelativePosition)).
@@ -386,8 +388,8 @@ func (s *Stage) setupCarDemo(model *resource.Model, position sprec.Vec3) *ecs.En
 	s.physicsEngine.AddConstraint(physics.LimitTranslationConstraint{
 		FirstBody:  chasis.Physics.Body,
 		SecondBody: brWheel.Physics.Body,
-		MaxY:       -0.5,
-		MinY:       -1.0,
+		MaxY:       suspensionStart,
+		MinY:       suspensionEnd,
 	})
 	s.physicsEngine.AddConstraint(physics.MatchAxisConstraint{
 		FirstBody:      chasis.Physics.Body,

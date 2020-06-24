@@ -22,10 +22,10 @@ const (
 type WheelLocation string
 
 const (
-	FrontLeftWheelLocation  WheelLocation = "front_left"
-	FrontRightWheelLocation WheelLocation = "front_right"
-	BackLeftWheelLocation   WheelLocation = "back_left"
-	BackRightWheelLocation  WheelLocation = "back_right"
+	FrontLeftWheelLocation  WheelLocation = "FL"
+	FrontRightWheelLocation WheelLocation = "FR"
+	BackLeftWheelLocation   WheelLocation = "BL"
+	BackRightWheelLocation  WheelLocation = "BR"
 )
 
 func Wheel(model *resource.Model, location WheelLocation) *WheelBuilder {
@@ -56,7 +56,7 @@ func (b *WheelBuilder) WithPosition(position sprec.Vec3) *WheelBuilder {
 }
 
 func (b *WheelBuilder) Build(ecsManager *ecs.Manager) *ecs.Entity {
-	modelNode, _ := b.model.FindNode(fmt.Sprintf("wheel_%s", b.location))
+	modelNode, _ := b.model.FindNode(fmt.Sprintf("%sWheel", b.location))
 
 	entity := ecsManager.CreateEntity()
 	entity.Physics = &ecs.PhysicsComponent{

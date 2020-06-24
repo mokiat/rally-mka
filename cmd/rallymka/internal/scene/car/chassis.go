@@ -44,7 +44,7 @@ func (b *ChassisBuilder) WithPosition(position sprec.Vec3) *ChassisBuilder {
 }
 
 func (b *ChassisBuilder) Build(ecsManager *ecs.Manager) *ecs.Entity {
-	bodyNode, _ := b.model.FindNode("body")
+	bodyNode, _ := b.model.FindNode("Chassis")
 
 	entity := ecsManager.CreateEntity()
 	entity.Physics = &ecs.PhysicsComponent{
@@ -58,9 +58,9 @@ func (b *ChassisBuilder) Build(ecsManager *ecs.Manager) *ecs.Entity {
 			RestitutionCoef:   chassisRestitutionCoef,
 			CollisionShapes: []shape.Placement{
 				{
-					Position:    sprec.NewVec3(0.0, 0.2, -0.3),
+					Position:    sprec.NewVec3(0.0, 0.3, -0.4),
 					Orientation: sprec.IdentityQuat(),
-					Shape:       shape.NewStaticBox(1.6, 1.2, 3.8),
+					Shape:       shape.NewStaticBox(1.6, 1.4, 4.0),
 				},
 			},
 		},
