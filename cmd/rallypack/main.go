@@ -75,6 +75,12 @@ func main() {
 
 		packer.TwoDTextureAssetFile("rusty_metal_02_diff_512.dat").
 			WithImage(packer.ImageResourceFile("rusty_metal_02_diff_512.png")),
+
+		packer.TwoDTextureAssetFile("body.dat").
+			WithImage(packer.ImageResourceFile("body.png")),
+
+		packer.TwoDTextureAssetFile("wheel.dat").
+			WithImage(packer.ImageResourceFile("wheel.png")),
 	)
 
 	// Cube Textures
@@ -93,5 +99,8 @@ func main() {
 	packer.Store(
 		packer.ModelAssetFile("street_lamp.dat").
 			FromGLTF(packer.GLTFResourceFile("street_lamp.gltf")),
+
+		packer.ModelAssetFile("suv.dat").
+			FromGLTF(packer.GLTFResourceFile("suv.gltf")),
 	)
 }
