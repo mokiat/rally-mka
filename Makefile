@@ -2,13 +2,11 @@ RESOURCES_DIR=resources
 ASSETS_DIR=assets
 LEVEL_RESOURCES_DIR=$(RESOURCES_DIR)/levels
 LEVEL_ASSETS_DIR=$(ASSETS_DIR)/levels
-MODEL_RESOURCES_DIR=$(RESOURCES_DIR)/models
-MODEL_ASSETS_DIR=$(ASSETS_DIR)/models
 MESH_RESOURCES_DIR=$(RESOURCES_DIR)/meshes
 MESH_ASSETS_DIR=$(ASSETS_DIR)/meshes
 
 .PHONY: assets
-assets: levels models meshes
+assets: levels meshes
 	go run cmd/rallypack/main.go
 
 .PHONY: levels
@@ -32,18 +30,6 @@ $(LEVEL_ASSETS_DIR)/highway.dat: \
 $(LEVEL_ASSETS_DIR)/playground.dat: \
 	$(LEVEL_RESOURCES_DIR)/playground.json
 	rallygen level $+ $@
-
-.PHONY: models
-models: \
-	$(MODEL_ASSETS_DIR) \
-	$(MODEL_ASSETS_DIR)/tree.dat
-
-$(MODEL_ASSETS_DIR):
-	mkdir -p "$(MODEL_ASSETS_DIR)"
-
-$(MODEL_ASSETS_DIR)/tree.dat: \
-	$(MODEL_RESOURCES_DIR)/tree.json
-	rallygen model $+ $@
 
 .PHONY: meshes
 meshes: \
