@@ -2,15 +2,15 @@ package simulation
 
 import (
 	"github.com/mokiat/gomath/sprec"
+	"github.com/mokiat/lacking/async"
 	"github.com/mokiat/lacking/game"
-	"github.com/mokiat/lacking/graphics"
 	"github.com/mokiat/lacking/input"
 	"github.com/mokiat/lacking/resource"
 	"github.com/mokiat/lacking/world"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/scene"
 )
 
-func NewView(registry *resource.Registry, gfxWorker *graphics.Worker) *View {
+func NewView(registry *resource.Registry, gfxWorker *async.Worker) *View {
 	return &View{
 		gameData: scene.NewData(registry, gfxWorker),
 		camera:   world.NewCamera(),

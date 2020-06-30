@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/mokiat/gomath/sprec"
+	"github.com/mokiat/lacking/async"
 	"github.com/mokiat/lacking/game"
 	"github.com/mokiat/lacking/graphics"
 	"github.com/mokiat/lacking/physics"
@@ -37,9 +38,9 @@ type CarInput struct {
 
 const maxDebugLines = 1024 * 8
 
-var arrayTask *graphics.Task
+var arrayTask async.Outcome
 
-func NewStage(gfxWorker *graphics.Worker) *Stage {
+func NewStage(gfxWorker *async.Worker) *Stage {
 	indexData := make([]byte, maxDebugLines*2)
 	for i := 0; i < maxDebugLines; i++ {
 		data.Buffer(indexData).SetUInt16(i*2, uint16(i))
@@ -58,12 +59,12 @@ func NewStage(gfxWorker *graphics.Worker) *Stage {
 		IndexData: indexData,
 	}
 	debugVertexArray := &graphics.VertexArray{}
-	arrayTask = gfxWorker.Schedule(func() error {
+	arrayTask = gfxWorker.Schedule(async.VoidTask(func() error {
 		if err := debugVertexArray.Allocate(debugVertexArrayData); err != nil {
 			panic(err)
 		}
 		return nil
-	}) // FIXME: Race condition
+	})) // FIXME: Race condition
 
 	ecsManager := ecs.NewManager()
 	stage := &Stage{
@@ -435,7 +436,7 @@ func (s *Stage) Update(ctx game.UpdateContext, camera *world.Camera) {
 }
 
 func (s *Stage) Render(pipeline *graphics.Pipeline, camera *world.Camera) {
-	if !arrayTask.Done() {
+	if !arrayTask.IsAvailable() {
 		panic("NOT DONE!")
 	}
 

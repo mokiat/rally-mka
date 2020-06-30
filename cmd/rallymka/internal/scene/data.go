@@ -6,7 +6,7 @@ import (
 	"github.com/mokiat/lacking/resource"
 )
 
-func NewData(registry *resource.Registry, gfxWorker *graphics.Worker) *Data {
+func NewData(registry *resource.Registry, gfxWorker *async.Worker) *Data {
 	return &Data{
 		registry:  registry,
 		gfxWorker: gfxWorker,
@@ -18,7 +18,7 @@ func NewData(registry *resource.Registry, gfxWorker *graphics.Worker) *Data {
 
 type Data struct {
 	registry  *resource.Registry
-	gfxWorker *graphics.Worker
+	gfxWorker *async.Worker
 
 	SkyboxProgram           *resource.Program
 	SkyboxMesh              *resource.Mesh
@@ -31,7 +31,6 @@ type Data struct {
 	LightingFramebuffer     *graphics.Framebuffer
 
 	loadOutcome async.Outcome
-	gfxTask     *graphics.Task
 }
 
 func (d *Data) Request() {
@@ -43,30 +42,29 @@ func (d *Data) Request() {
 		d.registry.LoadProgram("lighting-pbr").OnSuccess(resource.InjectProgram(&d.DeferredLightingProgram)),
 		d.registry.LoadMesh("quad").OnSuccess(resource.InjectMesh(&d.QuadMesh)),
 		d.registry.LoadProgram("forward-debug").OnSuccess(resource.InjectProgram(&d.DebugProgram)),
+		d.gfxWorker.Schedule(async.VoidTask(func() error {
+			geometryFramebufferData := graphics.FramebufferData{
+				Width:               framebufferWidth,
+				Height:              framebufferHeight,
+				HasAlbedoAttachment: true,
+				HasNormalAttachment: true,
+				HasDepthAttachment:  true,
+			}
+			if err := d.GeometryFramebuffer.Allocate(geometryFramebufferData); err != nil {
+				return err
+			}
+			lightingFramebufferData := graphics.FramebufferData{
+				Width:               framebufferWidth,
+				Height:              framebufferHeight,
+				HasAlbedoAttachment: true,
+				HasDepthAttachment:  true,
+			}
+			if err := d.LightingFramebuffer.Allocate(lightingFramebufferData); err != nil {
+				return err
+			}
+			return nil
+		})),
 	)
-
-	d.gfxTask = d.gfxWorker.Schedule(func() error {
-		geometryFramebufferData := graphics.FramebufferData{
-			Width:               framebufferWidth,
-			Height:              framebufferHeight,
-			HasAlbedoAttachment: true,
-			HasNormalAttachment: true,
-			HasDepthAttachment:  true,
-		}
-		if err := d.GeometryFramebuffer.Allocate(geometryFramebufferData); err != nil {
-			return err
-		}
-		lightingFramebufferData := graphics.FramebufferData{
-			Width:               framebufferWidth,
-			Height:              framebufferHeight,
-			HasAlbedoAttachment: true,
-			HasDepthAttachment:  true,
-		}
-		if err := d.LightingFramebuffer.Allocate(lightingFramebufferData); err != nil {
-			return err
-		}
-		return nil
-	})
 }
 
 func (d *Data) Dismiss() {
@@ -80,7 +78,7 @@ func (d *Data) Dismiss() {
 
 	geometryFramebuffer := d.GeometryFramebuffer
 	lightingFramebuffer := d.LightingFramebuffer
-	d.gfxWorker.Schedule(func() error {
+	d.gfxWorker.Schedule(async.VoidTask(func() error {
 		if err := geometryFramebuffer.Release(); err != nil {
 			return err
 		}
@@ -88,10 +86,9 @@ func (d *Data) Dismiss() {
 			return err
 		}
 		return nil
-	})
-	d.gfxTask = nil
+	}))
 }
 
 func (d *Data) IsAvailable() bool {
-	return d.loadOutcome.IsAvailable() && (d.gfxTask != nil && d.gfxTask.Done())
+	return d.loadOutcome.IsAvailable()
 }
