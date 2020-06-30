@@ -8,7 +8,6 @@ import (
 
 	"github.com/mokiat/rally-mka/cmd/rallygen/internal/level"
 	"github.com/mokiat/rally-mka/cmd/rallygen/internal/mesh"
-	"github.com/mokiat/rally-mka/cmd/rallygen/internal/model"
 )
 
 func main() {
@@ -17,7 +16,6 @@ func main() {
 	app.Usage = "usage"
 	app.Commands = []*cli.Command{
 		level.GenerateCommand(),
-		model.GenerateCommand(),
 		mesh.GenerateCommand(),
 	}
 	if err := app.Run(os.Args); err != nil {
