@@ -91,10 +91,10 @@ func (s *CarSystem) updateCarAcceleration(car *Car, ctx game.UpdateContext) {
 	if ctx.Gamepad.Available {
 		gamepad := ctx.Gamepad
 		if gamepad.RightTrigger > 0.05 {
-			acceleration = gamepad.RightTrigger * gamepad.RightTrigger
+			acceleration = gamepad.RightTrigger * gamepad.RightTrigger * gamepad.RightTrigger
 		}
 		if gamepad.LeftTrigger > 0.05 {
-			deceleration = gamepad.LeftTrigger * gamepad.LeftTrigger
+			deceleration = gamepad.LeftTrigger * gamepad.LeftTrigger * gamepad.LeftTrigger
 		}
 	} else {
 		if ctx.Keyboard.IsPressed(input.KeyUp) {
