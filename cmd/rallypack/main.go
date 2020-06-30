@@ -52,9 +52,6 @@ func main() {
 		packer.TwoDTextureAssetFile("gravel.dat").
 			WithImage(packer.ImageResourceFile("gravel.png")),
 
-		packer.TwoDTextureAssetFile("asphalt.dat").
-			WithImage(packer.ImageResourceFile("asphalt.png")),
-
 		packer.TwoDTextureAssetFile("rusty_metal_02_diff_512.dat").
 			WithImage(packer.ImageResourceFile("rusty_metal_02_diff_512.png")),
 
