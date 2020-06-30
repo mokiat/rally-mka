@@ -5,6 +5,7 @@ import (
 
 	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/lacking/async"
+	"github.com/mokiat/lacking/data"
 	"github.com/mokiat/lacking/game"
 	"github.com/mokiat/lacking/graphics"
 	"github.com/mokiat/lacking/physics"
@@ -13,7 +14,6 @@ import (
 	"github.com/mokiat/lacking/world"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecs"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/scene/car"
-	"github.com/mokiat/rally-mka/internal/data"
 )
 
 const (

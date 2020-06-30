@@ -7,8 +7,8 @@ import (
 
 	cli "github.com/urfave/cli/v2"
 
+	"github.com/mokiat/lacking/data"
 	"github.com/mokiat/lacking/data/asset"
-	"github.com/mokiat/rally-mka/internal/data"
 	"github.com/mokiat/rally-mka/internal/data/resource"
 )
 
