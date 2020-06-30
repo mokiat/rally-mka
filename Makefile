@@ -36,18 +36,13 @@ $(LEVEL_ASSETS_DIR)/playground.dat: \
 .PHONY: models
 models: \
 	$(MODEL_ASSETS_DIR) \
-	$(MODEL_ASSETS_DIR)/tree.dat \
-	$(MODEL_ASSETS_DIR)/finish.dat
+	$(MODEL_ASSETS_DIR)/tree.dat
 
 $(MODEL_ASSETS_DIR):
 	mkdir -p "$(MODEL_ASSETS_DIR)"
 
 $(MODEL_ASSETS_DIR)/tree.dat: \
 	$(MODEL_RESOURCES_DIR)/tree.json
-	rallygen model $+ $@
-
-$(MODEL_ASSETS_DIR)/finish.dat: \
-	$(MODEL_RESOURCES_DIR)/finish.json
 	rallygen model $+ $@
 
 .PHONY: meshes
