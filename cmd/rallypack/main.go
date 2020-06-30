@@ -63,6 +63,9 @@ func main() {
 
 		packer.TwoDTextureAssetFile("wheel.dat").
 			WithImage(packer.ImageResourceFile("wheel.png")),
+
+		packer.TwoDTextureAssetFile("leafy_tree.dat").
+			WithImage(packer.ImageResourceFile("leafy_tree.png")),
 	)
 
 	// Cube Textures
@@ -84,5 +87,8 @@ func main() {
 
 		packer.ModelAssetFile("suv.dat").
 			FromGLTF(packer.GLTFResourceFile("suv.gltf")),
+
+		packer.ModelAssetFile("leafy_tree.dat").
+			FromGLTF(packer.GLTFResourceFile("leafy_tree.gltf")),
 	)
 }
