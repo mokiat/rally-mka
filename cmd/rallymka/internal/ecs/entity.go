@@ -9,12 +9,12 @@ import (
 )
 
 type Entity struct {
-	Physics      *PhysicsComponent
-	Render       *RenderComponent
-	RenderSkybox *RenderSkybox
-	Car          *Car
-	CameraStand  *CameraStand
-	HumanInput   bool
+	Physics       *PhysicsComponent
+	Render        *RenderComponent
+	RenderSkybox  *RenderSkybox
+	Vehicle       *Vehicle
+	CameraStand   *CameraStand
+	PlayerControl *PlayerControl
 }
 
 type PhysicsComponent struct {
@@ -33,15 +33,29 @@ type RenderSkybox struct {
 	Mesh    *resource.Mesh
 }
 
-type Car struct {
-	SteeringAngle   sprec.Angle
-	Chassis         *physics.Body
-	FLWheelRotation *physics.MatchAxisConstraint
-	FRWheelRotation *physics.MatchAxisConstraint
-	FLWheel         *physics.Body
-	FRWheel         *physics.Body
-	BLWheel         *physics.Body
-	BRWheel         *physics.Body
+type PlayerControl struct {
+}
+
+type Vehicle struct {
+	MaxSteeringAngle sprec.Angle
+	SteeringAngle    sprec.Angle
+	Acceleration     float32
+	Deceleration     float32
+	Recover          bool
+
+	Chassis *Chassis
+	Wheels  []*Wheel
+}
+
+type Chassis struct {
+	Body *physics.Body
+}
+
+type Wheel struct {
+	Body                 *physics.Body
+	RotationConstraint   *physics.MatchAxisConstraint
+	AccelerationVelocity float32
+	DecelerationVelocity float32
 }
 
 type CameraStand struct {

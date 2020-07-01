@@ -28,6 +28,16 @@ const (
 	cameraDistance     = 8.0
 )
 
+const (
+	carMaxSteeringAngle = 30
+
+	carFrontAcceleration = 200
+	carRearAcceleration  = 300
+
+	carFrontDeceleration = 300
+	carRearDeceleration  = 150
+)
+
 type CarInput struct {
 	Forward   bool
 	Backward  bool
@@ -70,7 +80,7 @@ func NewStage(gfxWorker *async.Worker) *Stage {
 	stage := &Stage{
 		ecsManager:           ecsManager,
 		ecsRenderer:          ecs.NewRenderer(ecsManager),
-		ecsCarSystem:         ecs.NewCarSystem(ecsManager),
+		ecsVehicleSystem:     ecs.NewVehicleSystem(ecsManager),
 		ecsCameraStandSystem: ecs.NewCameraStandSystem(ecsManager),
 		physicsEngine:        physics.NewEngine(15 * time.Millisecond),
 		screenFramebuffer:    &graphics.Framebuffer{},
@@ -83,7 +93,7 @@ func NewStage(gfxWorker *async.Worker) *Stage {
 type Stage struct {
 	ecsManager           *ecs.Manager
 	ecsRenderer          *ecs.Renderer
-	ecsCarSystem         *ecs.CarSystem
+	ecsVehicleSystem     *ecs.VehicleSystem
 	ecsCameraStandSystem *ecs.CameraStandSystem
 	physicsEngine        *physics.Engine
 
@@ -407,16 +417,40 @@ func (s *Stage) setupCarDemo(model *resource.Model, position sprec.Vec3) *ecs.En
 	})
 
 	car := s.ecsManager.CreateEntity()
-	car.Car = &ecs.Car{
-		Chassis:         chasis.Physics.Body,
-		FLWheelRotation: flRotation,
-		FLWheel:         flWheel.Physics.Body,
-		FRWheelRotation: frRotation,
-		FRWheel:         frWheel.Physics.Body,
-		BLWheel:         blWheel.Physics.Body,
-		BRWheel:         brWheel.Physics.Body,
+	car.Vehicle = &ecs.Vehicle{
+		MaxSteeringAngle: sprec.Degrees(carMaxSteeringAngle),
+		SteeringAngle:    sprec.Degrees(0.0),
+		Acceleration:     0.0,
+		Deceleration:     0.0,
+		Chassis: &ecs.Chassis{
+			Body: chasis.Physics.Body,
+		},
+		Wheels: []*ecs.Wheel{
+			&ecs.Wheel{
+				Body:                 flWheel.Physics.Body,
+				RotationConstraint:   flRotation,
+				AccelerationVelocity: carFrontAcceleration,
+				DecelerationVelocity: carFrontDeceleration,
+			},
+			&ecs.Wheel{
+				Body:                 frWheel.Physics.Body,
+				RotationConstraint:   frRotation,
+				AccelerationVelocity: carFrontAcceleration,
+				DecelerationVelocity: carFrontDeceleration,
+			},
+			&ecs.Wheel{
+				Body:                 blWheel.Physics.Body,
+				AccelerationVelocity: carRearAcceleration,
+				DecelerationVelocity: carRearDeceleration,
+			},
+			&ecs.Wheel{
+				Body:                 brWheel.Physics.Body,
+				AccelerationVelocity: carRearAcceleration,
+				DecelerationVelocity: carRearDeceleration,
+			},
+		},
 	}
-	car.HumanInput = true
+	car.PlayerControl = &ecs.PlayerControl{}
 
 	return chasis
 }
@@ -431,7 +465,7 @@ func (s *Stage) Resize(width, height int) {
 
 func (s *Stage) Update(ctx game.UpdateContext, camera *world.Camera) {
 	s.physicsEngine.Update(ctx.ElapsedTime)
-	s.ecsCarSystem.Update(ctx)
+	s.ecsVehicleSystem.Update(ctx)
 	s.ecsCameraStandSystem.Update(ctx)
 }
 
