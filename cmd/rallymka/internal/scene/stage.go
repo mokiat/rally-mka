@@ -5,9 +5,7 @@ import (
 
 	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/lacking/async"
-	"github.com/mokiat/lacking/data"
 	"github.com/mokiat/lacking/game"
-	"github.com/mokiat/lacking/graphics"
 	"github.com/mokiat/lacking/physics"
 	"github.com/mokiat/lacking/resource"
 	"github.com/mokiat/lacking/shape"
@@ -31,10 +29,19 @@ const (
 const (
 	carMaxSteeringAngle = 30
 
-	carFrontAcceleration = 200
-	carRearAcceleration  = 300
+	// carFrontAcceleration = 125
+	// carRearAcceleration  = 190
 
-	carFrontDeceleration = 300
+	carFrontAcceleration = 155
+	carRearAcceleration  = 160
+
+	// carFrontAcceleration = 125 + 190
+	// carRearAcceleration  = 0
+
+	// carFrontAcceleration = 0
+	// carRearAcceleration  = 190
+
+	carFrontDeceleration = 350
 	carRearDeceleration  = 150
 )
 
@@ -46,86 +53,52 @@ type CarInput struct {
 	Handbrake bool
 }
 
-const maxDebugLines = 1024 * 8
-
-var arrayTask async.Outcome
-
 func NewStage(gfxWorker *async.Worker) *Stage {
-	indexData := make([]byte, maxDebugLines*2)
-	for i := 0; i < maxDebugLines; i++ {
-		data.Buffer(indexData).SetUInt16(i*2, uint16(i))
-	}
-	vertexData := make([]byte, maxDebugLines*4*7*2)
-	debugVertexArrayData := graphics.VertexArrayData{
-		VertexData: vertexData,
-		Layout: graphics.VertexArrayLayout{
-			HasCoord:    true,
-			CoordOffset: 0,
-			CoordStride: 4 * 7,
-			HasColor:    true,
-			ColorOffset: 4 * 3,
-			ColorStride: 4 * 7,
-		},
-		IndexData: indexData,
-	}
-	debugVertexArray := &graphics.VertexArray{}
-	arrayTask = gfxWorker.Schedule(async.VoidTask(func() error {
-		if err := debugVertexArray.Allocate(debugVertexArrayData); err != nil {
-			panic(err)
-		}
-		return nil
-	})) // FIXME: Race condition
-
+	scene := world.NewScene(nil, gfxWorker)
 	ecsManager := ecs.NewManager()
 	stage := &Stage{
+		scene:                scene,
+		camera:               world.NewCamera(),
 		ecsManager:           ecsManager,
-		ecsRenderer:          ecs.NewRenderer(ecsManager),
+		ecsRenderer:          ecs.NewRenderer(ecsManager, scene),
 		ecsVehicleSystem:     ecs.NewVehicleSystem(ecsManager),
 		ecsCameraStandSystem: ecs.NewCameraStandSystem(ecsManager),
 		physicsEngine:        physics.NewEngine(15 * time.Millisecond),
-		screenFramebuffer:    &graphics.Framebuffer{},
-		debugVertexArray:     debugVertexArray,
-		debugVertexArrayData: debugVertexArrayData,
 	}
+	scene.SetActiveCamera(stage.camera)
 	return stage
 }
 
 type Stage struct {
+	scene                *world.Scene
+	camera               *world.Camera
 	ecsManager           *ecs.Manager
 	ecsRenderer          *ecs.Renderer
 	ecsVehicleSystem     *ecs.VehicleSystem
 	ecsCameraStandSystem *ecs.CameraStandSystem
 	physicsEngine        *physics.Engine
-
-	geometryFramebuffer *graphics.Framebuffer
-	screenFramebuffer   *graphics.Framebuffer
-	lightingProgram     *graphics.Program
-	quadMesh            *resource.Mesh
-
-	debugProgram         *graphics.Program
-	debugVertexArray     *graphics.VertexArray
-	debugVertexArrayData graphics.VertexArrayData
-	debugLines           []DebugLine
+	quadMesh             *resource.Mesh
 }
 
-var targetEntity *ecs.Entity
-
-func (s *Stage) Init(data *Data, camera *world.Camera) {
+func (s *Stage) Init(data *Data) {
 	level := data.Level
-
-	s.debugProgram = data.DebugProgram.GFXProgram
-
-	s.geometryFramebuffer = data.GeometryFramebuffer
-
-	s.lightingProgram = data.DeferredLightingProgram.GFXProgram
 	s.quadMesh = data.QuadMesh
 
+	s.scene.Layout().SetEnvironment(&world.Environment{
+		SkyboxTexture: data.Level.SkyboxTexture.GFXTexture,
+	})
+
 	for _, staticMesh := range level.StaticMeshes {
-		entity := s.ecsManager.CreateEntity()
-		entity.Render = &ecs.RenderComponent{
-			Mesh:   staticMesh,
-			Matrix: sprec.IdentityMat4(),
-		}
+		s.scene.Layout().CreateRenderable(sprec.IdentityMat4(), 100.0, &resource.Model{
+			Name: "static",
+			Nodes: []*resource.Node{
+				{
+					Name:   "root",
+					Matrix: sprec.IdentityMat4(),
+					Mesh:   staticMesh,
+				},
+			},
+		})
 	}
 
 	for _, collisionMesh := range level.CollisionMeshes {
@@ -139,143 +112,27 @@ func (s *Stage) Init(data *Data, camera *world.Camera) {
 	}
 
 	for _, staticEntity := range level.StaticEntities {
-		entity := s.ecsManager.CreateEntity()
-		entity.Render = &ecs.RenderComponent{
-			Model:  staticEntity.Model,
-			Matrix: staticEntity.Matrix,
-		}
+		s.scene.Layout().CreateRenderable(staticEntity.Matrix, 100.0, staticEntity.Model)
 	}
 
 	carModel := data.CarModel
-
-	// targetEntity =
-	// 	s.setupChandelierDemo(carModel, sprec.NewVec3(0.0, 10.0, 0.0))
-
-	// targetEntity =
-	// 	s.setupRodDemo(carModel, sprec.NewVec3(0.0, 10.0, 5.0))
-
-	// targetEntity =
-	// 	s.setupCoiloverDemo(carModel, sprec.NewVec3(0.0, 10.0, -5.0))
-
-	// targetEntity =
-	// 	s.setupCarDemo(carModel, sprec.NewVec3(0.0, 141.0, 0.0))
-
-	targetEntity =
-		s.setupCarDemo(carModel, sprec.NewVec3(0.0, 2.0, 0.0))
-
+	targetEntity := s.setupCarDemo(carModel, sprec.NewVec3(0.0, 2.0, 0.0))
 	standTarget := targetEntity
 	standEntity := s.ecsManager.CreateEntity()
 	standEntity.CameraStand = &ecs.CameraStand{
 		Target:         standTarget,
-		Camera:         camera,
+		Camera:         s.camera,
 		AnchorPosition: sprec.Vec3Sum(standTarget.Physics.Body.Position, sprec.NewVec3(0.0, 0.0, -cameraDistance)),
 		AnchorDistance: anchorDistance,
 		CameraDistance: cameraDistance,
 	}
-
-	{
-		entity := s.ecsManager.CreateEntity()
-		entity.RenderSkybox = &ecs.RenderSkybox{
-			Program: data.SkyboxProgram.GFXProgram,
-			Texture: level.SkyboxTexture.GFXTexture,
-			Mesh:    data.SkyboxMesh,
-		}
-	}
-}
-
-func (s *Stage) setupChandelierDemo(program *graphics.Program, model *resource.Model, position sprec.Vec3) *ecs.Entity {
-	fakeFixtureWheel := car.Wheel(model, car.FrontRightWheelLocation).
-		WithPosition(position).
-		Build(s.ecsManager)
-	s.physicsEngine.AddBody(fakeFixtureWheel.Physics.Body)
-	s.physicsEngine.AddConstraint(physics.FixedTranslationConstraint{
-		Fixture: position,
-		Body:    fakeFixtureWheel.Physics.Body,
-	})
-
-	playWheel := car.Wheel(model, car.FrontRightWheelLocation).
-		WithPosition(sprec.Vec3Sum(position, sprec.NewVec3(-2.3, 0.0, 0.0))).
-		Build(s.ecsManager)
-	s.physicsEngine.AddBody(playWheel.Physics.Body)
-	s.physicsEngine.AddConstraint(physics.ChandelierConstraint{
-		Fixture:    position,
-		Body:       playWheel.Physics.Body,
-		BodyAnchor: sprec.NewVec3(0.3, 0.0, 0.0),
-		Length:     2.0,
-	})
-
-	return fakeFixtureWheel
-}
-
-func (s *Stage) setupCoiloverDemo(model *resource.Model, position sprec.Vec3) *ecs.Entity {
-	fixtureWheel := car.Wheel(model, car.FrontRightWheelLocation).
-		WithPosition(position).
-		Build(s.ecsManager)
-	s.physicsEngine.AddBody(fixtureWheel.Physics.Body)
-	s.physicsEngine.AddConstraint(physics.FixedTranslationConstraint{
-		Fixture: position,
-		Body:    fixtureWheel.Physics.Body,
-	})
-
-	fallingWheel := car.Wheel(model, car.FrontRightWheelLocation).
-		WithPosition(sprec.Vec3Sum(position, sprec.NewVec3(0.0, 2.0, 0.0))).
-		Build(s.ecsManager)
-	s.physicsEngine.AddBody(fallingWheel.Physics.Body)
-	s.physicsEngine.AddConstraint(&physics.CoiloverConstraint{
-		FirstBody:    fixtureWheel.Physics.Body,
-		SecondBody:   fallingWheel.Physics.Body,
-		FrequencyHz:  4.5,
-		DampingRatio: 0.1,
-	})
-
-	return fixtureWheel
-}
-
-func (s *Stage) setupRodDemo(model *resource.Model, position sprec.Vec3) *ecs.Entity {
-	topWheelPosition := position
-	topWheel := car.Wheel(model, car.FrontRightWheelLocation).
-		WithPosition(topWheelPosition).
-		Build(s.ecsManager)
-	s.physicsEngine.AddBody(topWheel.Physics.Body)
-	s.physicsEngine.AddConstraint(physics.FixedTranslationConstraint{
-		Fixture: topWheelPosition,
-		Body:    topWheel.Physics.Body,
-	})
-
-	middleWheelPosition := sprec.Vec3Sum(topWheelPosition, sprec.NewVec3(1.4, 0.0, 0.0))
-	middleWheel := car.Wheel(model, car.FrontRightWheelLocation).
-		WithPosition(middleWheelPosition).
-		Build(s.ecsManager)
-	s.physicsEngine.AddBody(middleWheel.Physics.Body)
-	s.physicsEngine.AddConstraint(physics.HingedRodConstraint{
-		FirstBody:        topWheel.Physics.Body,
-		FirstBodyAnchor:  sprec.NewVec3(0.2, 0.0, 0.0),
-		SecondBody:       middleWheel.Physics.Body,
-		SecondBodyAnchor: sprec.NewVec3(-0.2, 0.0, 0.0),
-		Length:           1.0,
-	})
-
-	bottomWheelPosition := sprec.Vec3Sum(middleWheelPosition, sprec.NewVec3(1.4, 0.0, 0.0))
-	bottomWheel := car.Wheel(model, car.FrontRightWheelLocation).
-		WithPosition(bottomWheelPosition).
-		Build(s.ecsManager)
-	s.physicsEngine.AddBody(bottomWheel.Physics.Body)
-	s.physicsEngine.AddConstraint(physics.HingedRodConstraint{
-		FirstBody:        middleWheel.Physics.Body,
-		FirstBodyAnchor:  sprec.NewVec3(0.2, 0.0, 0.0),
-		SecondBody:       bottomWheel.Physics.Body,
-		SecondBodyAnchor: sprec.NewVec3(-0.2, 0.0, 0.0),
-		Length:           1.0,
-	})
-
-	return topWheel
 }
 
 func (s *Stage) setupCarDemo(model *resource.Model, position sprec.Vec3) *ecs.Entity {
 	chasis := car.Chassis(model).
 		WithName("chasis").
 		WithPosition(position).
-		Build(s.ecsManager)
+		Build(s.ecsManager, s.scene)
 	s.physicsEngine.AddBody(chasis.Physics.Body)
 
 	suspensionEnabled := true
@@ -290,7 +147,7 @@ func (s *Stage) setupCarDemo(model *resource.Model, position sprec.Vec3) *ecs.En
 	flWheel := car.Wheel(model, car.FrontLeftWheelLocation).
 		WithName("front-left-wheel").
 		WithPosition(sprec.Vec3Sum(position, flWheelRelativePosition)).
-		Build(s.ecsManager)
+		Build(s.ecsManager, s.scene)
 	s.physicsEngine.AddBody(flWheel.Physics.Body)
 	s.physicsEngine.AddConstraint(physics.MatchTranslationConstraint{
 		FirstBody:       chasis.Physics.Body,
@@ -323,7 +180,7 @@ func (s *Stage) setupCarDemo(model *resource.Model, position sprec.Vec3) *ecs.En
 	frWheel := car.Wheel(model, car.FrontRightWheelLocation).
 		WithName("front-right-wheel").
 		WithPosition(sprec.Vec3Sum(position, frWheelRelativePosition)).
-		Build(s.ecsManager)
+		Build(s.ecsManager, s.scene)
 	s.physicsEngine.AddBody(frWheel.Physics.Body)
 	s.physicsEngine.AddConstraint(physics.MatchTranslationConstraint{
 		FirstBody:       chasis.Physics.Body,
@@ -356,7 +213,7 @@ func (s *Stage) setupCarDemo(model *resource.Model, position sprec.Vec3) *ecs.En
 	blWheel := car.Wheel(model, car.BackLeftWheelLocation).
 		WithName("back-left-wheel").
 		WithPosition(sprec.Vec3Sum(position, blWheelRelativePosition)).
-		Build(s.ecsManager)
+		Build(s.ecsManager, s.scene)
 	s.physicsEngine.AddBody(blWheel.Physics.Body)
 	s.physicsEngine.AddConstraint(physics.MatchTranslationConstraint{
 		FirstBody:       chasis.Physics.Body,
@@ -388,7 +245,7 @@ func (s *Stage) setupCarDemo(model *resource.Model, position sprec.Vec3) *ecs.En
 	brWheel := car.Wheel(model, car.BackRightWheelLocation).
 		WithName("back-right-wheel").
 		WithPosition(sprec.Vec3Sum(position, brWheelRelativePosition)).
-		Build(s.ecsManager)
+		Build(s.ecsManager, s.scene)
 	s.physicsEngine.AddBody(brWheel.Physics.Body)
 	s.physicsEngine.AddConstraint(physics.MatchTranslationConstraint{
 		FirstBody:       chasis.Physics.Body,
@@ -426,24 +283,24 @@ func (s *Stage) setupCarDemo(model *resource.Model, position sprec.Vec3) *ecs.En
 			Body: chasis.Physics.Body,
 		},
 		Wheels: []*ecs.Wheel{
-			&ecs.Wheel{
+			{
 				Body:                 flWheel.Physics.Body,
 				RotationConstraint:   flRotation,
 				AccelerationVelocity: carFrontAcceleration,
 				DecelerationVelocity: carFrontDeceleration,
 			},
-			&ecs.Wheel{
+			{
 				Body:                 frWheel.Physics.Body,
 				RotationConstraint:   frRotation,
 				AccelerationVelocity: carFrontAcceleration,
 				DecelerationVelocity: carFrontDeceleration,
 			},
-			&ecs.Wheel{
+			{
 				Body:                 blWheel.Physics.Body,
 				AccelerationVelocity: carRearAcceleration,
 				DecelerationVelocity: carRearDeceleration,
 			},
-			&ecs.Wheel{
+			{
 				Body:                 brWheel.Physics.Body,
 				AccelerationVelocity: carRearAcceleration,
 				DecelerationVelocity: carRearDeceleration,
@@ -455,204 +312,18 @@ func (s *Stage) setupCarDemo(model *resource.Model, position sprec.Vec3) *ecs.En
 	return chasis
 }
 
-func (s *Stage) Resize(width, height int) {
-	// Initialize new framebuffer instance, to avoid race conditions
-	s.screenFramebuffer = &graphics.Framebuffer{
-		Width:  int32(width),
-		Height: int32(height),
-	}
-}
-
-func (s *Stage) Update(ctx game.UpdateContext, camera *world.Camera) {
+func (s *Stage) Update(ctx game.UpdateContext) {
 	s.physicsEngine.Update(ctx.ElapsedTime)
 	s.ecsVehicleSystem.Update(ctx)
+	s.ecsRenderer.Update(ctx)
 	s.ecsCameraStandSystem.Update(ctx)
 }
 
-func (s *Stage) Render(pipeline *graphics.Pipeline, camera *world.Camera) {
-	if !arrayTask.IsAvailable() {
-		panic("NOT DONE!")
-	}
-
-	pipeline.SchedulePreRender(func() {
-		// FIXME: Race condition, as vertexArrayData is being modified!
-		// Instead:
-		// -- Outside closure function --
-		// data := pipeline.StagingData(length)
-		// SetVec3(data, ....)
-		// etc.
-		// debugVertexArray := VertexArrayData{VertexData: data}
-		// -- Inside closure function
-		// s.debugVertexArray.Update(debugVertexArrayData) ...
-
-		if err := s.debugVertexArray.Update(s.debugVertexArrayData); err != nil {
-			panic(err)
-		}
-	})
-
-	geometrySequence := pipeline.BeginSequence()
-	geometrySequence.TargetFramebuffer = s.geometryFramebuffer
-	geometrySequence.BackgroundColor = sprec.NewVec4(0.0, 0.6, 1.0, 1.0)
-	geometrySequence.ClearColor = true
-	geometrySequence.ClearDepth = true
-	geometrySequence.WriteDepth = true
-	geometrySequence.DepthFunc = graphics.DepthFuncLessOrEqual
-	geometrySequence.ProjectionMatrix = camera.ProjectionMatrix()
-	geometrySequence.ViewMatrix = camera.ViewMatrix()
-	s.ecsRenderer.Render(geometrySequence)
-	pipeline.EndSequence(geometrySequence)
-
-	lightingSequence := pipeline.BeginSequence()
-	lightingSequence.SourceFramebuffer = s.geometryFramebuffer
-	lightingSequence.TargetFramebuffer = s.screenFramebuffer
-	lightingSequence.BlitFramebufferDepth = true
-	lightingSequence.ClearColor = true
-	lightingSequence.TestDepth = false
-	lightingSequence.WriteDepth = false
-	lightingSequence.ProjectionMatrix = camera.ProjectionMatrix()
-	lightingSequence.ViewMatrix = camera.ViewMatrix()
-	lightingSequence.CameraMatrix = camera.Matrix()
-	quadItem := lightingSequence.BeginItem()
-	quadItem.Program = s.lightingProgram
-	quadItem.VertexArray = s.quadMesh.GFXVertexArray
-	quadItem.IndexOffset = s.quadMesh.SubMeshes[0].IndexOffset
-	quadItem.IndexCount = s.quadMesh.SubMeshes[0].IndexCount
-	lightingSequence.EndItem(quadItem)
-	pipeline.EndSequence(lightingSequence)
-
-	// TODO: Move skybox rendering as part of forward sequence
-	// for proper lighting
-	// It might make sense to experiment with stencil buffer
-	// to reduce unnecessary draw fragments during lighting
-	// pass
-
-	// TODO: This would be better achieved via subsequences
-	// of the lighting sequence
-	forwardSequence := pipeline.BeginSequence()
-	forwardSequence.SourceFramebuffer = s.geometryFramebuffer
-	forwardSequence.TargetFramebuffer = s.screenFramebuffer
-	forwardSequence.TestDepth = false
-	forwardSequence.WriteDepth = false
-	forwardSequence.DepthFunc = graphics.DepthFuncLessOrEqual
-	forwardSequence.ProjectionMatrix = camera.ProjectionMatrix()
-	forwardSequence.ViewMatrix = camera.ViewMatrix()
-	forwardSequence.CameraMatrix = camera.Matrix()
-	s.refreshDebugLines()
-	// s.renderDebugLines(forwardSequence)
-	pipeline.EndSequence(forwardSequence)
-}
-
-type DebugLine struct {
-	A     sprec.Vec3
-	B     sprec.Vec3
-	Color sprec.Vec4
-}
-
-func (s *Stage) refreshDebugLines() {
-	s.debugLines = s.debugLines[:0]
-	for _, body := range s.physicsEngine.Bodies() {
-		color := sprec.NewVec4(1.0, 1.0, 1.0, 1.0)
-		if body.InCollision {
-			color = sprec.NewVec4(1.0, 0.0, 0.0, 1.0)
-		}
-		for _, placement := range body.CollisionShapes {
-			placementWS := placement.Transformed(body.Position, body.Orientation)
-			s.renderDebugPlacement(placementWS, color)
-		}
-	}
-}
-
-func (s *Stage) renderDebugPlacement(placement shape.Placement, color sprec.Vec4) {
-	switch shape := placement.Shape.(type) {
-	case shape.StaticSphere:
-		s.renderDebugSphere(placement, shape, color)
-	case shape.StaticBox:
-		s.renderDebugBox(placement, shape, color)
-	case shape.StaticMesh:
-		s.renderDebugMesh(placement, shape, color)
-	}
-}
-
-func (s *Stage) renderDebugSphere(placement shape.Placement, sphere shape.StaticSphere, color sprec.Vec4) {
-	// FIXME: Draw sphere, not box!
-	box := shape.NewStaticBox(sphere.Radius()*2.0, sphere.Radius()*2.0, sphere.Radius()*2.0)
-	s.renderDebugBox(placement, box, color)
-}
-
-func (s *Stage) renderDebugBox(placement shape.Placement, box shape.StaticBox, color sprec.Vec4) {
-	minX := sprec.Vec3Prod(placement.Orientation.OrientationX(), -box.Width()/2.0)
-	maxX := sprec.Vec3Prod(placement.Orientation.OrientationX(), box.Width()/2.0)
-	minY := sprec.Vec3Prod(placement.Orientation.OrientationY(), -box.Height()/2.0)
-	maxY := sprec.Vec3Prod(placement.Orientation.OrientationY(), box.Height()/2.0)
-	minZ := sprec.Vec3Prod(placement.Orientation.OrientationZ(), -box.Length()/2.0)
-	maxZ := sprec.Vec3Prod(placement.Orientation.OrientationZ(), box.Length()/2.0)
-
-	p1 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(placement.Position, minX), minZ), maxY)
-	p2 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(placement.Position, minX), maxZ), maxY)
-	p3 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(placement.Position, maxX), maxZ), maxY)
-	p4 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(placement.Position, maxX), minZ), maxY)
-	p5 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(placement.Position, minX), minZ), minY)
-	p6 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(placement.Position, minX), maxZ), minY)
-	p7 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(placement.Position, maxX), maxZ), minY)
-	p8 := sprec.Vec3Sum(sprec.Vec3Sum(sprec.Vec3Sum(placement.Position, maxX), minZ), minY)
-
-	s.addDebugLine(p1, p2, color)
-	s.addDebugLine(p2, p3, color)
-	s.addDebugLine(p3, p4, color)
-	s.addDebugLine(p4, p1, color)
-
-	s.addDebugLine(p5, p6, color)
-	s.addDebugLine(p6, p7, color)
-	s.addDebugLine(p7, p8, color)
-	s.addDebugLine(p8, p5, color)
-
-	s.addDebugLine(p1, p5, color)
-	s.addDebugLine(p2, p6, color)
-	s.addDebugLine(p3, p7, color)
-	s.addDebugLine(p4, p8, color)
-}
-
-func (s *Stage) renderDebugMesh(placement shape.Placement, mesh shape.StaticMesh, color sprec.Vec4) {
-	for _, triangle := range mesh.Triangles() {
-		triangleWS := triangle.Transformed(placement.Position, placement.Orientation)
-		s.addDebugLine(triangleWS.A(), triangleWS.B(), color)
-		s.addDebugLine(triangleWS.B(), triangleWS.C(), color)
-		s.addDebugLine(triangleWS.C(), triangleWS.A(), color)
-	}
-}
-
-func (s *Stage) addDebugLine(a, b sprec.Vec3, color sprec.Vec4) {
-	s.debugLines = append(s.debugLines, DebugLine{
-		A:     a,
-		B:     b,
-		Color: color,
-	})
-}
-
-func (s *Stage) renderDebugLines(sequence *graphics.Sequence) {
-	for i, line := range s.debugLines {
-		vertexStride := 4 * 7 * 2
-		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+0, line.A.X)
-		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+4, line.A.Y)
-		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+8, line.A.Z)
-		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+12, line.Color.X)
-		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+16, line.Color.Y)
-		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+20, line.Color.Z)
-		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+24, line.Color.W)
-		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+28, line.B.X)
-		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+32, line.B.Y)
-		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+36, line.B.Z)
-		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+40, line.Color.X)
-		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+44, line.Color.Y)
-		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+48, line.Color.Z)
-		data.Buffer(s.debugVertexArrayData.VertexData).SetFloat32(vertexStride*i+52, line.Color.W)
-	}
-
-	item := sequence.BeginItem()
-	item.Primitive = graphics.RenderPrimitiveLines
-	item.Program = s.debugProgram
-	item.ModelMatrix = sprec.IdentityMat4()
-	item.VertexArray = s.debugVertexArray
-	item.IndexCount = int32(len(s.debugLines) * 2)
-	sequence.EndItem(item)
+func (s *Stage) Render(ctx game.RenderContext) {
+	screenHalfWidth := float32(ctx.WindowSize.Width) / float32(ctx.WindowSize.Height)
+	screenHalfHeight := float32(1.0)
+	s.camera.SetProjectionMatrix(sprec.PerspectiveMat4(
+		-screenHalfWidth, screenHalfWidth, -screenHalfHeight, screenHalfHeight, 1.5, 300.0,
+	))
+	s.scene.Render(ctx)
 }

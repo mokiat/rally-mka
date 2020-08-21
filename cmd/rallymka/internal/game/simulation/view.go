@@ -1,26 +1,22 @@
 package simulation
 
 import (
-	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/lacking/async"
 	"github.com/mokiat/lacking/game"
 	"github.com/mokiat/lacking/input"
 	"github.com/mokiat/lacking/resource"
-	"github.com/mokiat/lacking/world"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/scene"
 )
 
 func NewView(registry *resource.Registry, gfxWorker *async.Worker) *View {
 	return &View{
 		gameData: scene.NewData(registry, gfxWorker),
-		camera:   world.NewCamera(),
 		stage:    scene.NewStage(gfxWorker),
 	}
 }
 
 type View struct {
 	gameData *scene.Data
-	camera   *world.Camera
 	stage    *scene.Stage
 }
 
@@ -37,7 +33,7 @@ func (v *View) IsAvailable() bool {
 }
 
 func (v *View) Open() {
-	v.stage.Init(v.gameData, v.camera)
+	v.stage.Init(v.gameData)
 }
 
 func (v *View) Close() {
@@ -46,20 +42,10 @@ func (v *View) Close() {
 
 func (v *View) Update(ctx game.UpdateContext) {
 	if !ctx.Keyboard.IsPressed(input.KeyF) {
-		v.stage.Update(ctx, v.camera)
+		v.stage.Update(ctx)
 	}
 }
 
 func (v *View) Render(ctx game.RenderContext) {
-	width := ctx.WindowSize.Width
-	height := ctx.WindowSize.Height
-
-	screenHalfWidth := float32(width) / float32(height)
-	screenHalfHeight := float32(1.0)
-	v.camera.SetProjectionMatrix(sprec.PerspectiveMat4(
-		-screenHalfWidth, screenHalfWidth, -screenHalfHeight, screenHalfHeight, 1.5, 300.0,
-	))
-	v.stage.Resize(width, height)
-
-	v.stage.Render(ctx.GFXPipeline, v.camera)
+	v.stage.Render(ctx)
 }

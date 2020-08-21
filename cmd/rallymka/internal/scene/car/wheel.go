@@ -7,6 +7,7 @@ import (
 	"github.com/mokiat/lacking/physics"
 	"github.com/mokiat/lacking/resource"
 	"github.com/mokiat/lacking/shape"
+	"github.com/mokiat/lacking/world"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecs"
 )
 
@@ -55,7 +56,7 @@ func (b *WheelBuilder) WithPosition(position sprec.Vec3) *WheelBuilder {
 	return b
 }
 
-func (b *WheelBuilder) Build(ecsManager *ecs.Manager) *ecs.Entity {
+func (b *WheelBuilder) Build(ecsManager *ecs.Manager, scene *world.Scene) *ecs.Entity {
 	modelNode, _ := b.model.FindNode(fmt.Sprintf("%sWheel", b.location))
 
 	entity := ecsManager.CreateEntity()
@@ -79,8 +80,11 @@ func (b *WheelBuilder) Build(ecsManager *ecs.Manager) *ecs.Entity {
 		},
 	}
 	entity.Render = &ecs.RenderComponent{
-		Mesh:   modelNode.Mesh,
-		Matrix: sprec.IdentityMat4(),
+		Renderable: scene.Layout().CreateRenderable(sprec.IdentityMat4(), 100.0, &resource.Model{
+			Nodes: []*resource.Node{
+				modelNode,
+			},
+		}),
 	}
 	for _, modifier := range b.modifiers {
 		modifier(entity)

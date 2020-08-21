@@ -42,8 +42,8 @@ func (s *VehicleSystem) updateVehicleControlGamepad(vehicle *Vehicle, ctx game.U
 
 	steeringAmount := gamepad.LeftStickX * sprec.Abs(gamepad.LeftStickX)
 	vehicle.SteeringAngle = -sprec.Degrees(steeringAmount * vehicle.MaxSteeringAngle.Degrees())
-	vehicle.Acceleration = gamepad.RightTrigger * gamepad.RightTrigger * gamepad.RightTrigger
-	vehicle.Deceleration = gamepad.LeftTrigger * gamepad.LeftTrigger * gamepad.LeftTrigger
+	vehicle.Acceleration = gamepad.RightTrigger
+	vehicle.Deceleration = gamepad.LeftTrigger
 	vehicle.Recover = gamepad.LeftBumper
 }
 
@@ -84,12 +84,12 @@ func (s *VehicleSystem) updateVehicleControlKeyboard(vehicle *Vehicle, ctx game.
 	}
 
 	if isAccelerate {
-		vehicle.Acceleration = 0.5
+		vehicle.Acceleration = 0.8
 	} else {
 		vehicle.Acceleration = 0.0
 	}
 	if isDecelerate {
-		vehicle.Deceleration = 0.5
+		vehicle.Deceleration = 0.8
 	} else {
 		vehicle.Deceleration = 0.0
 	}

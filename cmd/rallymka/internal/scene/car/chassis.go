@@ -5,13 +5,13 @@ import (
 	"github.com/mokiat/lacking/physics"
 	"github.com/mokiat/lacking/resource"
 	"github.com/mokiat/lacking/shape"
+	"github.com/mokiat/lacking/world"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecs"
 )
 
 const (
-	chassisRadius = 2
-	chassisMass   = 1300.0 / 5.0
-	// chassisMass              = 1300.0 / 10.0
+	chassisRadius            = 2
+	chassisMass              = 1300.0 / 5.0
 	chassisMomentOfInertia   = chassisMass * chassisRadius * chassisRadius / 5.0
 	chassisDragFactor        = 0.0 // 0.5 * 6.8 * 1.0
 	chassisAngularDragFactor = 0.0 // 0.5 * 6.8 * 1.0
@@ -43,7 +43,7 @@ func (b *ChassisBuilder) WithPosition(position sprec.Vec3) *ChassisBuilder {
 	return b
 }
 
-func (b *ChassisBuilder) Build(ecsManager *ecs.Manager) *ecs.Entity {
+func (b *ChassisBuilder) Build(ecsManager *ecs.Manager, scene *world.Scene) *ecs.Entity {
 	bodyNode, _ := b.model.FindNode("Chassis")
 
 	entity := ecsManager.CreateEntity()
@@ -66,9 +66,13 @@ func (b *ChassisBuilder) Build(ecsManager *ecs.Manager) *ecs.Entity {
 		},
 	}
 	entity.Render = &ecs.RenderComponent{
-		Mesh:   bodyNode.Mesh,
-		Matrix: sprec.IdentityMat4(),
+		Renderable: scene.Layout().CreateRenderable(sprec.IdentityMat4(), 100.0, &resource.Model{
+			Nodes: []*resource.Node{
+				bodyNode,
+			},
+		}),
 	}
+
 	for _, modifier := range b.modifiers {
 		modifier(entity)
 	}

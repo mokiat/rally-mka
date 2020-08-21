@@ -2,16 +2,13 @@ package ecs
 
 import (
 	"github.com/mokiat/gomath/sprec"
-	"github.com/mokiat/lacking/graphics"
 	"github.com/mokiat/lacking/physics"
-	"github.com/mokiat/lacking/resource"
 	"github.com/mokiat/lacking/world"
 )
 
 type Entity struct {
 	Physics       *PhysicsComponent
 	Render        *RenderComponent
-	RenderSkybox  *RenderSkybox
 	Vehicle       *Vehicle
 	CameraStand   *CameraStand
 	PlayerControl *PlayerControl
@@ -22,15 +19,7 @@ type PhysicsComponent struct {
 }
 
 type RenderComponent struct {
-	Model  *resource.Model
-	Mesh   *resource.Mesh
-	Matrix sprec.Mat4
-}
-
-type RenderSkybox struct {
-	Program *graphics.Program
-	Texture *graphics.CubeTexture
-	Mesh    *resource.Mesh
+	Renderable *world.Renderable
 }
 
 type PlayerControl struct {

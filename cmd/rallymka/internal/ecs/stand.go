@@ -29,7 +29,7 @@ func (s *CameraStandSystem) updateCameraStand(cameraStand *CameraStand, ctx game
 	case cameraStand.Target.Physics != nil:
 		targetPosition = cameraStand.Target.Physics.Body.Position
 	case cameraStand.Target.Render != nil:
-		targetPosition = cameraStand.Target.Render.Matrix.Translation()
+		targetPosition = cameraStand.Target.Render.Renderable.Matrix.Translation()
 	}
 	// we use a camera anchor to achieve the smooth effect of a
 	// camera following the target
