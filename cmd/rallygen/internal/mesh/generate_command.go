@@ -3,81 +3,11 @@ package mesh
 import (
 	"errors"
 	"fmt"
-	"os"
-
-	cli "github.com/urfave/cli/v2"
 
 	"github.com/mokiat/lacking/data"
 	"github.com/mokiat/lacking/data/asset"
 	"github.com/mokiat/rally-mka/internal/data/resource"
 )
-
-func GenerateCommand() *cli.Command {
-	return &cli.Command{
-		Name:      "mesh",
-		Usage:     "generates a mesh",
-		UsageText: "mesh <input-file> <output-file>",
-		Action: func(c *cli.Context) error {
-			if c.Args().Len() < 2 {
-				return fmt.Errorf("insufficient number of arguments: expected 2 got %d", c.Args().Len())
-			}
-			action := &generateMeshAction{
-				InputFile:  c.Args().Get(0),
-				OutputFile: c.Args().Get(1),
-			}
-			return action.Run()
-		},
-	}
-}
-
-type generateMeshAction struct {
-	InputFile  string
-	OutputFile string
-}
-
-func (a *generateMeshAction) Run() error {
-	resMesh, err := a.readResourceMesh(a.InputFile)
-	if err != nil {
-		return fmt.Errorf("failed to read mesh: %w", err)
-	}
-
-	assetMesh, err := ConvertResourceToAsset(resMesh)
-	if err != nil {
-		return fmt.Errorf("failed to convert resource mesh to asset: %w", err)
-	}
-
-	if err := a.writeAssetMesh(a.OutputFile, assetMesh); err != nil {
-		return fmt.Errorf("failed to write mesh: %w", err)
-	}
-	return nil
-}
-
-func (a *generateMeshAction) readResourceMesh(path string) (*resource.Mesh, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open file %q: %w", path, err)
-	}
-	defer file.Close()
-
-	mesh, err := resource.NewMeshDecoder().Decode(file)
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode mesh: %w", err)
-	}
-	return mesh, nil
-}
-
-func (a *generateMeshAction) writeAssetMesh(path string, mesh *asset.Mesh) error {
-	file, err := os.Create(a.OutputFile)
-	if err != nil {
-		return fmt.Errorf("failed to create file %q: %w", path, err)
-	}
-	defer file.Close()
-
-	if err := asset.EncodeMesh(file, mesh); err != nil {
-		return fmt.Errorf("failed to encode mesh: %w", err)
-	}
-	return nil
-}
 
 func ConvertResourceToAsset(resMesh *resource.Mesh) (*asset.Mesh, error) {
 	if len(resMesh.Coords) == 0 {

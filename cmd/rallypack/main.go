@@ -4,82 +4,113 @@ import "github.com/mokiat/lacking/data/pack"
 
 func main() {
 	packer := pack.NewPacker()
-	packer.SetAssetsDir("assets")
-	packer.SetResourcesDir("resources")
 
 	// Programs
-	packer.Store(
-		packer.ProgramAssetFile("forward-albedo.dat").
-			WithVertexShader(packer.ShaderResourceFile("forward-albedo.vert")).
-			WithFragmentShader(packer.ShaderResourceFile("forward-albedo.frag")),
+	packer.Pipeline(func(p *pack.Pipeline) {
+		p.SaveProgramAsset("assets/programs/forward-albedo.dat",
+			p.BuildProgram(
+				pack.WithVertexShader(p.OpenShaderResource("resources/shaders/forward-albedo.vert")),
+				pack.WithFragmentShader(p.OpenShaderResource("resources/shaders/forward-albedo.frag")),
+			),
+		)
 
-		packer.ProgramAssetFile("forward-debug.dat").
-			WithVertexShader(packer.ShaderResourceFile("forward-debug.vert")).
-			WithFragmentShader(packer.ShaderResourceFile("forward-debug.frag")),
+		p.SaveProgramAsset("assets/programs/forward-debug.dat",
+			p.BuildProgram(
+				pack.WithVertexShader(p.OpenShaderResource("resources/shaders/forward-debug.vert")),
+				pack.WithFragmentShader(p.OpenShaderResource("resources/shaders/forward-debug.frag")),
+			),
+		)
 
-		packer.ProgramAssetFile("geometry-skybox.dat").
-			WithVertexShader(packer.ShaderResourceFile("geometry-skybox.vert")).
-			WithFragmentShader(packer.ShaderResourceFile("geometry-skybox.frag")),
+		p.SaveProgramAsset("assets/programs/geometry-skybox.dat",
+			p.BuildProgram(
+				pack.WithVertexShader(p.OpenShaderResource("resources/shaders/geometry-skybox.vert")),
+				pack.WithFragmentShader(p.OpenShaderResource("resources/shaders/geometry-skybox.frag")),
+			),
+		)
 
-		packer.ProgramAssetFile("lighting-pbr.dat").
-			WithVertexShader(packer.ShaderResourceFile("lighting-pbr.vert")).
-			WithFragmentShader(packer.ShaderResourceFile("lighting-pbr.frag")),
-	)
+		p.SaveProgramAsset("assets/programs/lighting-pbr.dat",
+			p.BuildProgram(
+				pack.WithVertexShader(p.OpenShaderResource("resources/shaders/lighting-pbr.vert")),
+				pack.WithFragmentShader(p.OpenShaderResource("resources/shaders/lighting-pbr.frag")),
+			),
+		)
+	})
 
-	// 2D Textures
-	packer.Store(
-		packer.TwoDTextureAssetFile("loading.dat").
-			WithImage(packer.ImageResourceFile("loading.png")),
+	// TwoD Textures
+	packer.Pipeline(func(p *pack.Pipeline) {
+		p.SaveTwoDTextureAsset("assets/textures/twod/loading.dat",
+			p.OpenImageResource("resources/images/loading.png"),
+		)
 
-		packer.TwoDTextureAssetFile("concrete.dat").
-			WithImage(packer.ImageResourceFile("concrete.png")),
+		p.SaveTwoDTextureAsset("assets/textures/twod/concrete.dat",
+			p.OpenImageResource("resources/images/concrete.png"),
+		)
 
-		packer.TwoDTextureAssetFile("road.dat").
-			WithImage(packer.ImageResourceFile("road.png")),
+		p.SaveTwoDTextureAsset("assets/textures/twod/road.dat",
+			p.OpenImageResource("resources/images/road.png"),
+		)
 
-		packer.TwoDTextureAssetFile("barrier.dat").
-			WithImage(packer.ImageResourceFile("barrier.png")),
+		p.SaveTwoDTextureAsset("assets/textures/twod/barrier.dat",
+			p.OpenImageResource("resources/images/barrier.png"),
+		)
 
-		packer.TwoDTextureAssetFile("grass.dat").
-			WithImage(packer.ImageResourceFile("grass.png")),
+		p.SaveTwoDTextureAsset("assets/textures/twod/grass.dat",
+			p.OpenImageResource("resources/images/grass.png"),
+		)
 
-		packer.TwoDTextureAssetFile("gravel.dat").
-			WithImage(packer.ImageResourceFile("gravel.png")),
+		p.SaveTwoDTextureAsset("assets/textures/twod/gravel.dat",
+			p.OpenImageResource("resources/images/gravel.png"),
+		)
 
-		packer.TwoDTextureAssetFile("rusty_metal_02_diff_512.dat").
-			WithImage(packer.ImageResourceFile("rusty_metal_02_diff_512.png")),
+		p.SaveTwoDTextureAsset("assets/textures/twod/rusty_metal_02_diff_512.dat",
+			p.OpenImageResource("resources/images/rusty_metal_02_diff_512.png"),
+		)
 
-		packer.TwoDTextureAssetFile("body.dat").
-			WithImage(packer.ImageResourceFile("body.png")),
+		p.SaveTwoDTextureAsset("assets/textures/twod/body.dat",
+			p.OpenImageResource("resources/images/body.png"),
+		)
 
-		packer.TwoDTextureAssetFile("wheel.dat").
-			WithImage(packer.ImageResourceFile("wheel.png")),
+		p.SaveTwoDTextureAsset("assets/textures/twod/wheel.dat",
+			p.OpenImageResource("resources/images/wheel.png"),
+		)
 
-		packer.TwoDTextureAssetFile("leafy_tree.dat").
-			WithImage(packer.ImageResourceFile("leafy_tree.png")),
-	)
+		p.SaveTwoDTextureAsset("assets/textures/twod/leafy_tree.dat",
+			p.OpenImageResource("resources/images/leafy_tree.png"),
+		)
+	})
 
 	// Cube Textures
-	packer.Store(
-		packer.CubeTextureAssetFile("city.dat").
-			WithFrontImage(packer.ImageResourceFile("city_front.png")).
-			WithBackImage(packer.ImageResourceFile("city_back.png")).
-			WithLeftImage(packer.ImageResourceFile("city_left.png")).
-			WithRightImage(packer.ImageResourceFile("city_right.png")).
-			WithTopImage(packer.ImageResourceFile("city_top.png")).
-			WithBottomImage(packer.ImageResourceFile("city_bottom.png")).
-			WithDimension(512),
-	)
+	packer.Pipeline(func(p *pack.Pipeline) {
+		p.SaveCubeTextureAsset("assets/textures/cube/city.dat",
+			p.BuildCubeImage(
+				pack.WithFrontImage(p.OpenImageResource("resources/images/city_front.png")),
+				pack.WithRearImage(p.OpenImageResource("resources/images/city_back.png")),
+				pack.WithLeftImage(p.OpenImageResource("resources/images/city_left.png")),
+				pack.WithRightImage(p.OpenImageResource("resources/images/city_right.png")),
+				pack.WithTopImage(p.OpenImageResource("resources/images/city_top.png")),
+				pack.WithBottomImage(p.OpenImageResource("resources/images/city_bottom.png")),
+			),
+		)
+	})
 
 	// Models
-	packer.Store(
-		packer.ModelAssetFile("street_lamp.dat").
-			FromGLTF(packer.GLTFResourceFile("street_lamp.gltf")),
+	packer.Pipeline(func(p *pack.Pipeline) {
+		p.SaveModelAsset("assets/models/quad.dat",
+			p.OpenGLTFResource("resources/models/quad.gltf"),
+		)
 
-		packer.ModelAssetFile("suv.dat").
-			FromGLTF(packer.GLTFResourceFile("suv.gltf")),
+		p.SaveModelAsset("assets/models/street_lamp.dat",
+			p.OpenGLTFResource("resources/models/street_lamp.gltf"),
+		)
 
-		packer.ModelAssetFile("leafy_tree.dat").
-			FromGLTF(packer.GLTFResourceFile("leafy_tree.gltf")),
-	)
+		p.SaveModelAsset("assets/models/suv.dat",
+			p.OpenGLTFResource("resources/models/suv.gltf"),
+		)
+
+		p.SaveModelAsset("assets/models/leafy_tree.dat",
+			p.OpenGLTFResource("resources/models/leafy_tree.gltf"),
+		)
+	})
+
+	packer.RunParallel()
 }

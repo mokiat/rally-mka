@@ -3,7 +3,7 @@ package ecs
 import (
 	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/lacking/physics"
-	"github.com/mokiat/lacking/world"
+	"github.com/mokiat/lacking/render"
 )
 
 type Entity struct {
@@ -19,7 +19,7 @@ type PhysicsComponent struct {
 }
 
 type RenderComponent struct {
-	Renderable *world.Renderable
+	Renderable *render.Renderable
 }
 
 type PlayerControl struct {
@@ -52,5 +52,5 @@ type CameraStand struct {
 	AnchorPosition sprec.Vec3
 	AnchorDistance float32
 	CameraDistance float32
-	Camera         *world.Camera
+	Camera         *render.Camera
 }

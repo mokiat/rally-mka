@@ -20,7 +20,7 @@ type View struct {
 	loadOutcome async.Outcome
 	program     *resource.Program
 	texture     *resource.TwoDTexture
-	mesh        *resource.Mesh
+	quadModel   *resource.Model
 
 	indicatorModelMatrix sprec.Mat4
 }
@@ -29,7 +29,7 @@ func (v *View) Load() {
 	v.loadOutcome = async.NewCompositeOutcome(
 		v.registry.LoadProgram("forward-albedo").OnSuccess(resource.InjectProgram(&v.program)),
 		v.registry.LoadTwoDTexture("loading").OnSuccess(resource.InjectTwoDTexture(&v.texture)),
-		v.registry.LoadMesh("quad").OnSuccess(resource.InjectMesh(&v.mesh)),
+		v.registry.LoadModel("quad").OnSuccess(resource.InjectModel(&v.quadModel)),
 	)
 }
 
@@ -37,7 +37,7 @@ func (v *View) Unload() {
 	async.NewCompositeOutcome(
 		v.registry.UnloadProgram(v.program),
 		v.registry.UnloadTwoDTexture(v.texture),
-		v.registry.UnloadMesh(v.mesh),
+		v.registry.UnloadModel(v.quadModel),
 	)
 }
 
@@ -82,9 +82,12 @@ func (v *View) Render(ctx game.RenderContext) {
 	indicatorItem.Program = v.program.GFXProgram
 	indicatorItem.ModelMatrix = v.indicatorModelMatrix
 	indicatorItem.AlbedoTwoDTexture = v.texture.GFXTexture
-	indicatorItem.VertexArray = v.mesh.GFXVertexArray
-	indicatorItem.IndexOffset = v.mesh.SubMeshes[0].IndexOffset
-	indicatorItem.IndexCount = v.mesh.SubMeshes[0].IndexCount
+
+	quadMesh := v.quadModel.Nodes[0].Mesh
+	quadSubMesh := quadMesh.SubMeshes[0]
+	indicatorItem.VertexArray = quadMesh.GFXVertexArray
+	indicatorItem.IndexOffset = quadSubMesh.IndexOffset
+	indicatorItem.IndexCount = quadSubMesh.IndexCount
 	sequence.EndItem(indicatorItem)
 
 	ctx.GFXPipeline.EndSequence(sequence)

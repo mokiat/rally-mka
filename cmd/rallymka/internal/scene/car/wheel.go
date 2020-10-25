@@ -5,9 +5,9 @@ import (
 
 	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/lacking/physics"
+	"github.com/mokiat/lacking/render"
 	"github.com/mokiat/lacking/resource"
 	"github.com/mokiat/lacking/shape"
-	"github.com/mokiat/lacking/world"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecs"
 )
 
@@ -56,7 +56,7 @@ func (b *WheelBuilder) WithPosition(position sprec.Vec3) *WheelBuilder {
 	return b
 }
 
-func (b *WheelBuilder) Build(ecsManager *ecs.Manager, scene *world.Scene) *ecs.Entity {
+func (b *WheelBuilder) Build(ecsManager *ecs.Manager, scene *render.Scene) *ecs.Entity {
 	modelNode, _ := b.model.FindNode(fmt.Sprintf("%sWheel", b.location))
 
 	entity := ecsManager.CreateEntity()

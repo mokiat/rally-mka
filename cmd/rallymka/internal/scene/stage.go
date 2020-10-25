@@ -7,42 +7,27 @@ import (
 	"github.com/mokiat/lacking/async"
 	"github.com/mokiat/lacking/game"
 	"github.com/mokiat/lacking/physics"
+	"github.com/mokiat/lacking/render"
 	"github.com/mokiat/lacking/resource"
 	"github.com/mokiat/lacking/shape"
-	"github.com/mokiat/lacking/world"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecs"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/scene/car"
 )
 
 const (
-	framebufferWidth  = int32(1024)
-	framebufferHeight = int32(576)
-)
+	anchorDistance = 6.0
+	cameraDistance = 12.0
 
-const (
-	carDropHeight      = 1.6
-	entityVisualHeight = 5.0
-	anchorDistance     = 4.0
-	cameraDistance     = 8.0
-)
-
-const (
-	carMaxSteeringAngle = 30
-
-	// carFrontAcceleration = 125
-	// carRearAcceleration  = 190
-
+	carMaxSteeringAngle  = 30
 	carFrontAcceleration = 155
 	carRearAcceleration  = 160
 
-	// carFrontAcceleration = 125 + 190
-	// carRearAcceleration  = 0
-
-	// carFrontAcceleration = 0
-	// carRearAcceleration  = 190
-
-	carFrontDeceleration = 350
-	carRearDeceleration  = 150
+	// FIXME: Currently, too much front brakes cause the car
+	// to straighten. This is due to there being more pressure
+	// on the outer wheel which causes it to brake more and turn
+	// the car to neutral orientation.
+	carFrontDeceleration = 250
+	carRearDeceleration  = 180
 )
 
 type CarInput struct {
@@ -54,11 +39,14 @@ type CarInput struct {
 }
 
 func NewStage(gfxWorker *async.Worker) *Stage {
-	scene := world.NewScene(nil, gfxWorker)
+	scene := render.NewScene()
+	if err := scene.Init(gfxWorker).Wait().Err; err != nil {
+		panic(err) // FIXME
+	}
 	ecsManager := ecs.NewManager()
 	stage := &Stage{
 		scene:                scene,
-		camera:               world.NewCamera(),
+		camera:               render.NewCamera(),
 		ecsManager:           ecsManager,
 		ecsRenderer:          ecs.NewRenderer(ecsManager, scene),
 		ecsVehicleSystem:     ecs.NewVehicleSystem(ecsManager),
@@ -70,21 +58,19 @@ func NewStage(gfxWorker *async.Worker) *Stage {
 }
 
 type Stage struct {
-	scene                *world.Scene
-	camera               *world.Camera
+	scene                *render.Scene
+	camera               *render.Camera
 	ecsManager           *ecs.Manager
 	ecsRenderer          *ecs.Renderer
 	ecsVehicleSystem     *ecs.VehicleSystem
 	ecsCameraStandSystem *ecs.CameraStandSystem
 	physicsEngine        *physics.Engine
-	quadMesh             *resource.Mesh
 }
 
 func (s *Stage) Init(data *Data) {
 	level := data.Level
-	s.quadMesh = data.QuadMesh
 
-	s.scene.Layout().SetEnvironment(&world.Environment{
+	s.scene.Layout().SetSkybox(&render.Skybox{
 		SkyboxTexture: data.Level.SkyboxTexture.GFXTexture,
 	})
 
@@ -116,7 +102,7 @@ func (s *Stage) Init(data *Data) {
 	}
 
 	carModel := data.CarModel
-	targetEntity := s.setupCarDemo(carModel, sprec.NewVec3(0.0, 2.0, 0.0))
+	targetEntity := s.setupCarDemo(carModel, sprec.NewVec3(0.0, 3.0, 0.0))
 	standTarget := targetEntity
 	standEntity := s.ecsManager.CreateEntity()
 	standEntity.CameraStand = &ecs.CameraStand{

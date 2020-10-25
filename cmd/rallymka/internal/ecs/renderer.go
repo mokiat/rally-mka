@@ -3,10 +3,10 @@ package ecs
 import (
 	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/lacking/game"
-	"github.com/mokiat/lacking/world"
+	"github.com/mokiat/lacking/render"
 )
 
-func NewRenderer(ecsManager *Manager, scene *world.Scene) *Renderer {
+func NewRenderer(ecsManager *Manager, scene *render.Scene) *Renderer {
 	return &Renderer{
 		ecsManager: ecsManager,
 		scene:      scene,
@@ -15,7 +15,7 @@ func NewRenderer(ecsManager *Manager, scene *world.Scene) *Renderer {
 
 type Renderer struct {
 	ecsManager *Manager
-	scene      *world.Scene
+	scene      *render.Scene
 }
 
 func (r *Renderer) Update(ctx game.UpdateContext) {
