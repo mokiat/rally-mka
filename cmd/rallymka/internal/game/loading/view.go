@@ -1,25 +1,15 @@
 package loading
 
 import (
-	"time"
-
 	"github.com/mokiat/gomath/sprec"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/game/input"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/stream"
-	"github.com/mokiat/rally-mka/internal/engine/graphics"
-	"github.com/mokiat/rally-mka/internal/engine/resource"
+	"github.com/mokiat/lacking/async"
+	"github.com/mokiat/lacking/game"
+	"github.com/mokiat/lacking/resource"
 )
 
 func NewView(registry *resource.Registry) *View {
 	return &View{
-		registry: registry,
-
-		screenFramebuffer: &graphics.Framebuffer{},
-		program:           stream.GetProgram(registry, "diffuse"),
-		texture:           stream.GetTwoDTexture(registry, "loading"),
-		mesh:              stream.GetMesh(registry, "quad"),
-
-		projectionMatrix:     sprec.IdentityMat4(),
+		registry:             registry,
 		indicatorModelMatrix: sprec.IdentityMat4(),
 	}
 }
@@ -27,69 +17,78 @@ func NewView(registry *resource.Registry) *View {
 type View struct {
 	registry *resource.Registry
 
-	screenFramebuffer *graphics.Framebuffer
-	program           stream.ProgramHandle
-	texture           stream.TwoDTextureHandle
-	mesh              stream.MeshHandle
+	loadOutcome async.Outcome
+	program     *resource.Program
+	texture     *resource.TwoDTexture
+	quadModel   *resource.Model
 
-	projectionMatrix     sprec.Mat4
 	indicatorModelMatrix sprec.Mat4
 }
 
 func (v *View) Load() {
-	v.registry.Request(v.program.Handle)
-	v.registry.Request(v.texture.Handle)
-	v.registry.Request(v.mesh.Handle)
+	v.loadOutcome = async.NewCompositeOutcome(
+		v.registry.LoadProgram("forward-albedo").OnSuccess(resource.InjectProgram(&v.program)),
+		v.registry.LoadTwoDTexture("loading").OnSuccess(resource.InjectTwoDTexture(&v.texture)),
+		v.registry.LoadModel("quad").OnSuccess(resource.InjectModel(&v.quadModel)),
+	)
 }
 
 func (v *View) Unload() {
-	v.registry.Dismiss(v.program.Handle)
-	v.registry.Dismiss(v.texture.Handle)
-	v.registry.Dismiss(v.mesh.Handle)
+	async.NewCompositeOutcome(
+		v.registry.UnloadProgram(v.program),
+		v.registry.UnloadTwoDTexture(v.texture),
+		v.registry.UnloadModel(v.quadModel),
+	)
 }
 
 func (v *View) IsAvailable() bool {
-	return v.program.IsAvailable() && v.texture.IsAvailable() && v.mesh.IsAvailable()
+	if v.loadOutcome.IsAvailable() {
+		if err := v.loadOutcome.Wait().Err; err != nil {
+			panic(err)
+		}
+		return true
+	}
+	return false
 }
 
 func (v *View) Open() {}
 
 func (v *View) Close() {}
 
-func (v *View) Resize(width, height int) {
-	screenHalfWidth := float32(width) / float32(height)
-	screenHalfHeight := float32(1.0)
-	v.projectionMatrix = sprec.OrthoMat4(
-		-screenHalfWidth, screenHalfWidth, screenHalfHeight, -screenHalfHeight, -1.0, 1.0,
-	)
-	v.screenFramebuffer.Width = int32(width)
-	v.screenFramebuffer.Height = int32(height)
-}
-
-func (v *View) Update(elapsedTime time.Duration, actions input.ActionSet) {
-	elapsedSeconds := float32(elapsedTime.Seconds())
+func (v *View) Update(ctx game.UpdateContext) {
+	elapsedSeconds := float32(ctx.ElapsedTime.Seconds())
 	v.indicatorModelMatrix = sprec.Mat4Prod(v.indicatorModelMatrix,
 		sprec.RotationMat4(sprec.Degrees(elapsedSeconds*360.0), 0.0, 0.0, -1.0),
 	)
 }
 
-func (v *View) Render(pipeline *graphics.Pipeline) {
-	sequence := pipeline.BeginSequence()
-	sequence.TargetFramebuffer = v.screenFramebuffer
+func (v *View) Render(ctx game.RenderContext) {
+	screenHalfWidth := float32(ctx.WindowSize.Width) / float32(ctx.WindowSize.Height)
+	screenHalfHeight := float32(1.0)
+	projectionMatrix := sprec.OrthoMat4(
+		-screenHalfWidth, screenHalfWidth, screenHalfHeight, -screenHalfHeight, -1.0, 1.0,
+	)
+
+	sequence := ctx.GFXPipeline.BeginSequence()
 	sequence.BackgroundColor = sprec.NewVec4(0.0, 0.0, 0.0, 1.0)
 	sequence.ClearColor = true
 	sequence.ClearDepth = true
 	sequence.WriteDepth = false
-	sequence.ProjectionMatrix = v.projectionMatrix
+	sequence.TestDepth = false
+	sequence.ProjectionMatrix = projectionMatrix
 	sequence.ViewMatrix = sprec.ScaleMat4(0.1, 0.1, 1.0)
 
 	indicatorItem := sequence.BeginItem()
-	indicatorItem.Program = v.program.Get()
+	indicatorItem.Program = v.program.GFXProgram
 	indicatorItem.ModelMatrix = v.indicatorModelMatrix
-	indicatorItem.DiffuseTexture = v.texture.Get()
-	indicatorItem.VertexArray = v.mesh.Get().VertexArray
-	indicatorItem.IndexCount = v.mesh.Get().SubMeshes[0].IndexCount
+	indicatorItem.AlbedoTwoDTexture = v.texture.GFXTexture
+
+	quadMesh := v.quadModel.Nodes[0].Mesh
+	quadSubMesh := quadMesh.SubMeshes[0]
+	indicatorItem.VertexArray = quadMesh.GFXVertexArray
+	indicatorItem.IndexOffset = quadSubMesh.IndexOffset
+	indicatorItem.IndexCount = quadSubMesh.IndexCount
 	sequence.EndItem(indicatorItem)
 
-	pipeline.EndSequence(sequence)
+	ctx.GFXPipeline.EndSequence(sequence)
 }

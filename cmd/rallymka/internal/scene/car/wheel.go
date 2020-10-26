@@ -4,11 +4,11 @@ import (
 	"fmt"
 
 	"github.com/mokiat/gomath/sprec"
+	"github.com/mokiat/lacking/physics"
+	"github.com/mokiat/lacking/render"
+	"github.com/mokiat/lacking/resource"
+	"github.com/mokiat/lacking/shape"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecs"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/stream"
-	"github.com/mokiat/rally-mka/internal/engine/graphics"
-	"github.com/mokiat/rally-mka/internal/engine/physics"
-	"github.com/mokiat/rally-mka/internal/engine/shape"
 )
 
 const (
@@ -17,29 +17,27 @@ const (
 	wheelMomentOfInertia   = wheelMass * wheelRadius * wheelRadius / 2.0 // using cylinder as approximation
 	wheelDragFactor        = 0.0                                         // 0.5 * 0.3 * 0.8
 	wheelAngularDragFactor = 0.0                                         // 0.5 * 0.3 * 0.8
-	wheelRestitutionCoef   = 0.5
+	wheelRestitutionCoef   = 0.0
 )
 
 type WheelLocation string
 
 const (
-	FrontLeftWheelLocation  WheelLocation = "front_left"
-	FrontRightWheelLocation WheelLocation = "front_right"
-	BackLeftWheelLocation   WheelLocation = "back_left"
-	BackRightWheelLocation  WheelLocation = "back_right"
+	FrontLeftWheelLocation  WheelLocation = "FL"
+	FrontRightWheelLocation WheelLocation = "FR"
+	BackLeftWheelLocation   WheelLocation = "BL"
+	BackRightWheelLocation  WheelLocation = "BR"
 )
 
-func Wheel(program *graphics.Program, model *stream.Model, location WheelLocation) *WheelBuilder {
+func Wheel(model *resource.Model, location WheelLocation) *WheelBuilder {
 	return &WheelBuilder{
-		program:  program,
 		model:    model,
 		location: location,
 	}
 }
 
 type WheelBuilder struct {
-	program   *graphics.Program
-	model     *stream.Model
+	model     *resource.Model
 	location  WheelLocation
 	modifiers []func(entity *ecs.Entity)
 }
@@ -58,8 +56,8 @@ func (b *WheelBuilder) WithPosition(position sprec.Vec3) *WheelBuilder {
 	return b
 }
 
-func (b *WheelBuilder) Build(ecsManager *ecs.Manager) *ecs.Entity {
-	modelNode, _ := b.model.FindNode(fmt.Sprintf("wheel_%s", b.location))
+func (b *WheelBuilder) Build(ecsManager *ecs.Manager, scene *render.Scene) *ecs.Entity {
+	modelNode, _ := b.model.FindNode(fmt.Sprintf("%sWheel", b.location))
 
 	entity := ecsManager.CreateEntity()
 	entity.Physics = &ecs.PhysicsComponent{
@@ -82,9 +80,11 @@ func (b *WheelBuilder) Build(ecsManager *ecs.Manager) *ecs.Entity {
 		},
 	}
 	entity.Render = &ecs.RenderComponent{
-		GeomProgram: b.program,
-		Mesh:        modelNode.Mesh,
-		Matrix:      sprec.IdentityMat4(),
+		Renderable: scene.Layout().CreateRenderable(sprec.IdentityMat4(), 100.0, &resource.Model{
+			Nodes: []*resource.Node{
+				modelNode,
+			},
+		}),
 	}
 	for _, modifier := range b.modifiers {
 		modifier(entity)

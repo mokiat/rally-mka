@@ -2,18 +2,16 @@ package ecs
 
 import (
 	"github.com/mokiat/gomath/sprec"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/stream"
-	"github.com/mokiat/rally-mka/internal/engine/graphics"
-	"github.com/mokiat/rally-mka/internal/engine/physics"
+	"github.com/mokiat/lacking/physics"
+	"github.com/mokiat/lacking/render"
 )
 
 type Entity struct {
-	Physics      *PhysicsComponent
-	Render       *RenderComponent
-	RenderSkybox *RenderSkybox
-	Car          *Car
-	CameraStand  *CameraStand
-	HumanInput   bool
+	Physics       *PhysicsComponent
+	Render        *RenderComponent
+	Vehicle       *Vehicle
+	CameraStand   *CameraStand
+	PlayerControl *PlayerControl
 }
 
 type PhysicsComponent struct {
@@ -21,35 +19,32 @@ type PhysicsComponent struct {
 }
 
 type RenderComponent struct {
-	GeomProgram *graphics.Program
-	Model       *stream.Model
-	Mesh        *stream.Mesh
-	Matrix      sprec.Mat4
+	Renderable *render.Renderable
 }
 
-type RenderSkybox struct {
-	Program *graphics.Program
-	Texture *graphics.CubeTexture
-	Mesh    *stream.Mesh
+type PlayerControl struct {
 }
 
-type CarInput struct {
-	Forward   bool
-	Backward  bool
-	TurnLeft  bool
-	TurnRight bool
-	Handbrake bool
+type Vehicle struct {
+	MaxSteeringAngle sprec.Angle
+	SteeringAngle    sprec.Angle
+	Acceleration     float32
+	Deceleration     float32
+	Recover          bool
+
+	Chassis *Chassis
+	Wheels  []*Wheel
 }
 
-type Car struct {
-	SteeringAngle   sprec.Angle
-	Chassis         *physics.Body
-	FLWheelRotation *physics.MatchAxisConstraint
-	FRWheelRotation *physics.MatchAxisConstraint
-	FLWheel         *physics.Body
-	FRWheel         *physics.Body
-	BLWheel         *physics.Body
-	BRWheel         *physics.Body
+type Chassis struct {
+	Body *physics.Body
+}
+
+type Wheel struct {
+	Body                 *physics.Body
+	RotationConstraint   *physics.MatchAxisConstraint
+	AccelerationVelocity float32
+	DecelerationVelocity float32
 }
 
 type CameraStand struct {
@@ -57,5 +52,5 @@ type CameraStand struct {
 	AnchorPosition sprec.Vec3
 	AnchorDistance float32
 	CameraDistance float32
-	Camera         *Camera
+	Camera         *render.Camera
 }

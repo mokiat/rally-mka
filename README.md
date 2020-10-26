@@ -4,23 +4,15 @@ Rally MKA is a really old game of mine ported to Go for fun and as a way to try 
 
 ![Game Screenshot](preview.png)
 
-**WARNING:** This repository is under heavy refactoring, experimentation and redesign and no branch is currently guaranteed to be stable or well documented! I am hoping to get things sorted out eventually and have feature branches contain experimental stuff.
-
-## Remarks
-
-Being a port of a very old project of mine, some remarks are in order:
-
-* Though some parts of the code I have rewritten entirely, others I have left as they were originally. Hence, nasty variable names and difficult to understand formulas are to be expected. The project was originally written in Delphi, back when 'clean code' wasn't something I was aware of.
-* Currently, the physics of the car is whacky. It was meant to be that way when I originally wrote it - I wanted a strange rally type drifting feel to it.
-* Though some corrections on the art have been made, it is quite dated.
+**WARNING:** This repository is under development, experimentation and redesign and is not guaranteed to be stable or well documented!
 
 ## Getting Started
 
-This section describes how to setup the project and run the game locally. If you are interested in just running the game, check the [Releases](https://github.com/mokiat/rally-mka/releases) section of the repository.
+This section describes how to setup the project and run the game locally.
 
 ### Prerequisites
 
-* You need [Go 1.14](https://golang.org/dl/) or newer.
+* You need [Go 1.15](https://golang.org/dl/) or newer.
 * You need the [Git LFS](https://git-lfs.github.com/) plugin. As the project contains large images and models, this is the official way on how not to clog a repository.
 
 ### Setting Up
@@ -44,14 +36,6 @@ This section describes how to setup the project and run the game locally. If you
     go mod download
     ```
 
-1. Build the rallygen tool
-
-    ```sh
-    (cd cmd/rallygen && go install)
-    ```
-
-    **Note:** This tool is used to convert raw image and model resources into an optimized format for the game.
-
 1. Generate game assets
 
     ```sh
@@ -61,7 +45,7 @@ This section describes how to setup the project and run the game locally. If you
 1. Run the game
 
     ```sh
-    go run cmd/rallymka/main.go
+    make play
     ```
 
 ## Licensing
@@ -81,3 +65,4 @@ The following projects and individuals have contributed significantly to the pro
 * **[GLFW for Go](https://github.com/go-gl/glfw)** for making it possible to use GLFW and OpenGL in Go.
 * **[Bo0mer](https://github.com/Bo0mer)** for the panoramic image that was used to generate the individual `city` skybox images.
 * **[Erin Catto](https://github.com/erincatto)** for all the presentations and articles that were used as reference.
+* **[TextureHeaven](https://texturehaven.com/)** for the free images.

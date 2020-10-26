@@ -2,33 +2,30 @@ package car
 
 import (
 	"github.com/mokiat/gomath/sprec"
+	"github.com/mokiat/lacking/physics"
+	"github.com/mokiat/lacking/render"
+	"github.com/mokiat/lacking/resource"
+	"github.com/mokiat/lacking/shape"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecs"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/stream"
-	"github.com/mokiat/rally-mka/internal/engine/graphics"
-	"github.com/mokiat/rally-mka/internal/engine/physics"
-	"github.com/mokiat/rally-mka/internal/engine/shape"
 )
 
 const (
-	chassisRadius = 2
-	chassisMass   = 1300.0 / 5.0
-	// chassisMass              = 1300.0 / 10.0
-	chassisMomentOfInertia   = chassisMass * chassisRadius * chassisRadius / 2.0
+	chassisRadius            = 2
+	chassisMass              = 1300.0 / 5.0
+	chassisMomentOfInertia   = chassisMass * chassisRadius * chassisRadius / 5.0
 	chassisDragFactor        = 0.0 // 0.5 * 6.8 * 1.0
 	chassisAngularDragFactor = 0.0 // 0.5 * 6.8 * 1.0
-	chassisRestitutionCoef   = 0.3
+	chassisRestitutionCoef   = 0.0
 )
 
-func Chassis(program *graphics.Program, model *stream.Model) *ChassisBuilder {
+func Chassis(model *resource.Model) *ChassisBuilder {
 	return &ChassisBuilder{
-		program: program,
-		model:   model,
+		model: model,
 	}
 }
 
 type ChassisBuilder struct {
-	program   *graphics.Program
-	model     *stream.Model
+	model     *resource.Model
 	modifiers []func(entity *ecs.Entity)
 }
 
@@ -46,8 +43,8 @@ func (b *ChassisBuilder) WithPosition(position sprec.Vec3) *ChassisBuilder {
 	return b
 }
 
-func (b *ChassisBuilder) Build(ecsManager *ecs.Manager) *ecs.Entity {
-	bodyNode, _ := b.model.FindNode("body")
+func (b *ChassisBuilder) Build(ecsManager *ecs.Manager, scene *render.Scene) *ecs.Entity {
+	bodyNode, _ := b.model.FindNode("Chassis")
 
 	entity := ecsManager.CreateEntity()
 	entity.Physics = &ecs.PhysicsComponent{
@@ -61,18 +58,21 @@ func (b *ChassisBuilder) Build(ecsManager *ecs.Manager) *ecs.Entity {
 			RestitutionCoef:   chassisRestitutionCoef,
 			CollisionShapes: []shape.Placement{
 				{
-					Position:    sprec.NewVec3(0.0, 0.2, -0.3),
+					Position:    sprec.NewVec3(0.0, 0.3, -0.4),
 					Orientation: sprec.IdentityQuat(),
-					Shape:       shape.NewStaticBox(1.6, 1.2, 3.8),
+					Shape:       shape.NewStaticBox(1.6, 1.4, 4.0),
 				},
 			},
 		},
 	}
 	entity.Render = &ecs.RenderComponent{
-		GeomProgram: b.program,
-		Mesh:        bodyNode.Mesh,
-		Matrix:      sprec.IdentityMat4(),
+		Renderable: scene.Layout().CreateRenderable(sprec.IdentityMat4(), 100.0, &resource.Model{
+			Nodes: []*resource.Node{
+				bodyNode,
+			},
+		}),
 	}
+
 	for _, modifier := range b.modifiers {
 		modifier(entity)
 	}
