@@ -112,5 +112,20 @@ func main() {
 		)
 	})
 
+	// Levels
+	packer.Pipeline(func(p *pack.Pipeline) {
+		p.SaveLevelAsset("assets/levels/forest.dat",
+			p.OpenLevelResource("resources/levels/forest.json"),
+		)
+
+		p.SaveLevelAsset("assets/levels/highway.dat",
+			p.OpenLevelResource("resources/levels/highway.json"),
+		)
+
+		p.SaveLevelAsset("assets/levels/playground.dat",
+			p.OpenLevelResource("resources/levels/playground.json"),
+		)
+	})
+
 	packer.RunParallel()
 }
