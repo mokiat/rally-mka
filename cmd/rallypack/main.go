@@ -1,6 +1,9 @@
 package main
 
-import "github.com/mokiat/lacking/data/pack"
+import (
+	"github.com/mokiat/lacking/data/asset"
+	"github.com/mokiat/lacking/data/pack"
+)
 
 func main() {
 	packer := pack.NewPacker()
@@ -81,15 +84,30 @@ func main() {
 
 	// Cube Textures
 	packer.Pipeline(func(p *pack.Pipeline) {
-		p.SaveCubeTextureAsset("assets/textures/cube/city.dat",
-			p.BuildCubeImage(
-				pack.WithFrontImage(p.OpenImageResource("resources/images/city_front.png")),
-				pack.WithRearImage(p.OpenImageResource("resources/images/city_back.png")),
-				pack.WithLeftImage(p.OpenImageResource("resources/images/city_left.png")),
-				pack.WithRightImage(p.OpenImageResource("resources/images/city_right.png")),
-				pack.WithTopImage(p.OpenImageResource("resources/images/city_top.png")),
-				pack.WithBottomImage(p.OpenImageResource("resources/images/city_bottom.png")),
-			),
+		srcEquirectangularImage := p.OpenImageResource("resources/images/syferfontein.hdr")
+		skyboxCubeImage := p.BuildCubeImage(
+			pack.WithFrontImage(p.BuildCubeSideFromEquirectangular(pack.CubeSideFront, srcEquirectangularImage)),
+			pack.WithRearImage(p.BuildCubeSideFromEquirectangular(pack.CubeSideRear, srcEquirectangularImage)),
+			pack.WithLeftImage(p.BuildCubeSideFromEquirectangular(pack.CubeSideLeft, srcEquirectangularImage)),
+			pack.WithRightImage(p.BuildCubeSideFromEquirectangular(pack.CubeSideRight, srcEquirectangularImage)),
+			pack.WithTopImage(p.BuildCubeSideFromEquirectangular(pack.CubeSideTop, srcEquirectangularImage)),
+			pack.WithBottomImage(p.BuildCubeSideFromEquirectangular(pack.CubeSideBottom, srcEquirectangularImage)),
+		)
+
+		p.SaveCubeTextureAsset("assets/textures/cube/syferfontein.dat", skyboxCubeImage,
+			pack.WithFormat(asset.DataFormatRGBA32F),
+		)
+
+		reflectionCubeImage := p.ScaleCubeImage(skyboxCubeImage, 128)
+		p.SaveCubeTextureAsset("assets/textures/cube/syferfontein_reflection.dat", reflectionCubeImage,
+			pack.WithFormat(asset.DataFormatRGBA32F),
+		)
+
+		refractionCubeImage := p.BuildIrradianceCubeImage(reflectionCubeImage,
+			pack.WithSampleCount(50),
+		)
+		p.SaveCubeTextureAsset("assets/textures/cube/syferfontein_refraction.dat", refractionCubeImage,
+			pack.WithFormat(asset.DataFormatRGBA32F),
 		)
 	})
 
