@@ -72,7 +72,9 @@ func (s *Stage) Init(data *Data) {
 	level := data.Level
 
 	s.scene.Layout().SetSkybox(&render.Skybox{
-		SkyboxTexture: data.Level.SkyboxTexture.GFXTexture,
+		SkyboxTexture:            data.Level.SkyboxTexture.GFXTexture,
+		AmbientReflectionTexture: data.Level.AmbientReflectionTexture.GFXTexture,
+		AmbientRefractionTexture: data.Level.AmbientRefractionTexture.GFXTexture,
 	})
 
 	for _, staticMesh := range level.StaticMeshes {
@@ -310,7 +312,7 @@ func (s *Stage) Render(ctx game.RenderContext) {
 	screenHalfWidth := float32(ctx.WindowSize.Width) / float32(ctx.WindowSize.Height)
 	screenHalfHeight := float32(1.0)
 	s.camera.SetProjectionMatrix(sprec.PerspectiveMat4(
-		-screenHalfWidth, screenHalfWidth, -screenHalfHeight, screenHalfHeight, 1.5, 300.0,
+		-screenHalfWidth, screenHalfWidth, -screenHalfHeight, screenHalfHeight, 1.5, 900.0,
 	))
 	startTime := time.Now()
 	s.scene.Render(ctx)

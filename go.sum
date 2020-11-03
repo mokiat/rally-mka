@@ -19,8 +19,8 @@ github.com/mdouchement/hdr v0.2.3 h1:IxzxLgEarv9VPsk17DGIWnhA60MA5ASbekCU8YSFmaY
 github.com/mdouchement/hdr v0.2.3/go.mod h1:2Yb3JAST9c66wTLZ1vQrejU5sDeOC+ukXVs1pFAUtPo=
 github.com/mokiat/gomath v0.0.0-20200423212154-8a093a9f6eff h1:fcg8e2m6iu9sX79QPFF543uYoz84Mmwm20HttG3SglY=
 github.com/mokiat/gomath v0.0.0-20200423212154-8a093a9f6eff/go.mod h1:t5I5hXzSNOgdr3TRQTTxmvp0KbwNgk8atDcxA2yjxDE=
-github.com/mokiat/lacking v0.0.0-20201031141233-2c2cfd966a24 h1:jLxUlZk9S9ZSICu2yjngS7fXIQ5/96JMJAYgEtUL794=
-github.com/mokiat/lacking v0.0.0-20201031141233-2c2cfd966a24/go.mod h1:kh8eUsqZN2fnBJViEoO8k9bTowxix+9NRTFYyHhB8Ms=
+github.com/mokiat/lacking v0.0.0-20201103205249-d0ca653ab1f2 h1:FDlHEjXuoPx0pJkrwkkGpC8DiFe/8GyfF0ud9ksoGpg=
+github.com/mokiat/lacking v0.0.0-20201103205249-d0ca653ab1f2/go.mod h1:kh8eUsqZN2fnBJViEoO8k9bTowxix+9NRTFYyHhB8Ms=
 github.com/onsi/ginkgo v1.6.0/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=
 github.com/onsi/ginkgo v1.12.0 h1:Iw5WCbBcaAAd0fpRb1c9r5YCylv4XDoCSigm1zLevwU=
 github.com/onsi/ginkgo v1.12.0/go.mod h1:oUhWkIvk5aDxtKvDDuw8gItl8pKl42LzjC9KZE0HfGg=
