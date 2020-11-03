@@ -56,13 +56,14 @@ All source code in this project is licensed under [Apache License v2](LICENSE).
 
 ### Assets
 
-Assets (images, models, textures, etc.), except shaders, are distributed under the [Creative Commons Attribution 4.0 International](http://creativecommons.org/licenses/by/4.0/) license.
+Assets (images, models, textures, etc.), are distributed under the [Creative Commons Attribution 4.0 International](http://creativecommons.org/licenses/by/4.0/) license.
 
 ## Special Thanks
 
 The following projects and individuals have contributed significantly to the project:
 
 * **[GLFW for Go](https://github.com/go-gl/glfw)** for making it possible to use GLFW and OpenGL in Go.
-* **[Bo0mer](https://github.com/Bo0mer)** for the panoramic image that was used to generate the individual `city` skybox images.
+* **[LearnOpenGL](https://learnopengl.com/)** for the amazing tutorials.
+* **[TextureHeaven](https://texturehaven.com/)** for the excellent free images.
 * **[Erin Catto](https://github.com/erincatto)** for all the presentations and articles that were used as reference.
-* **[TextureHeaven](https://texturehaven.com/)** for the free images.
+* **[Bo0mer](https://github.com/Bo0mer)** for the panoramic image that was used to generate the original `city` skybox images.
