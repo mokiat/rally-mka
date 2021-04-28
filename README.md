@@ -1,25 +1,24 @@
-# Rally MKA
+# Rally MKA [![Go Report Card](https://goreportcard.com/badge/github.com/mokiat/rally-mka)](https://goreportcard.com/report/github.com/mokiat/rally-mka) [![Go Reference](https://pkg.go.dev/badge/github.com/mokiat/rally-mka@master.svg)](https://pkg.go.dev/github.com/mokiat/rally-mka@master)
 
-Rally MKA is a really old game of mine ported to Go for fun and as a way to try out new concepts.
+Rally MKA is a really old game of mine ported to Go for fun and as a way to try new concepts out.
 
 ![Game Screenshot](preview.png)
 
-**WARNING:** This repository is under development, experimentation and redesign and is not guaranteed to be stable or well documented!
+## User's Guide
 
-## Getting Started
+Check the [Releases](https://github.com/mokiat/rally-mka/releases) section for ready-to-use binaries.
 
-This section describes how to setup the project and run the game locally.
+## Developer's Guide
+
+This section describes how to setup the project on your machine and compile it yourself.
 
 ### Prerequisites
 
-* You need [Go 1.15](https://golang.org/dl/) or newer.
+* You need [Go 1.16](https://golang.org/dl/) or newer.
 * You need the [Git LFS](https://git-lfs.github.com/) plugin. As the project contains large images and models, this is the official way on how not to clog a repository.
+* Follow the instructions on the [GLFW for Go](https://github.com/go-gl/glfw) repository and make sure you can run the [GLFW examples](https://github.com/go-gl/example) on your platform.
 
 ### Setting Up
-
-1. Setup GLFW 3.3 for Go
-
-    Follow the instructions on the [GLFW for Go](https://github.com/go-gl/glfw) repository and make sure you can run the [GLFW examples](https://github.com/go-gl/example).
 
 1. Clone the repository
 
@@ -27,8 +26,6 @@ This section describes how to setup the project and run the game locally.
     git clone https://github.com/mokiat/rally-mka
     cd rally-mka
     ```
-
-    **Note:** As the project uses _go modules_, there is no need to clone or `go get` the project inside your `GOPATH`.
 
 1. Download Go dependencies
 
