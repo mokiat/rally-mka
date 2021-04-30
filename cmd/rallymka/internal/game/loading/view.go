@@ -1,9 +1,12 @@
 package loading
 
 import (
+	"time"
+
 	"github.com/mokiat/gomath/sprec"
+	"github.com/mokiat/lacking/app"
 	"github.com/mokiat/lacking/async"
-	"github.com/mokiat/lacking/game"
+	"github.com/mokiat/lacking/graphics"
 	"github.com/mokiat/lacking/resource"
 )
 
@@ -17,23 +20,29 @@ func NewView(registry *resource.Registry) *View {
 type View struct {
 	registry *resource.Registry
 
-	loadOutcome async.Outcome
-	program     *resource.Program
-	texture     *resource.TwoDTexture
-	quadModel   *resource.Model
+	program   *resource.Program
+	texture   *resource.TwoDTexture
+	quadModel *resource.Model
 
 	indicatorModelMatrix sprec.Mat4
 }
 
-func (v *View) Load() {
-	v.loadOutcome = async.NewCompositeOutcome(
+func (v *View) Load(window app.Window, cb func()) {
+	loadOutcome := async.NewCompositeOutcome(
 		v.registry.LoadProgram("forward-albedo").OnSuccess(resource.InjectProgram(&v.program)),
 		v.registry.LoadTwoDTexture("loading").OnSuccess(resource.InjectTwoDTexture(&v.texture)),
 		v.registry.LoadModel("quad").OnSuccess(resource.InjectModel(&v.quadModel)),
 	)
+	go func() {
+		loadOutcome.Wait()
+		window.Schedule(func() error {
+			cb()
+			return nil
+		})
+	}()
 }
 
-func (v *View) Unload() {
+func (v *View) Unload(window app.Window) {
 	async.NewCompositeOutcome(
 		v.registry.UnloadProgram(v.program),
 		v.registry.UnloadTwoDTexture(v.texture),
@@ -41,35 +50,33 @@ func (v *View) Unload() {
 	)
 }
 
-func (v *View) IsAvailable() bool {
-	if v.loadOutcome.IsAvailable() {
-		if err := v.loadOutcome.Wait().Err; err != nil {
-			panic(err)
-		}
-		return true
-	}
+func (v *View) Open(window app.Window) {}
+
+func (v *View) Close(window app.Window) {}
+
+func (v *View) OnKeyboardEvent(window app.Window, event app.KeyboardEvent) bool {
 	return false
 }
 
-func (v *View) Open() {}
-
-func (v *View) Close() {}
-
-func (v *View) Update(ctx game.UpdateContext) {
-	elapsedSeconds := float32(ctx.ElapsedTime.Seconds())
+func (v *View) Update(window app.Window, elapsedTime time.Duration) {
+	elapsedSeconds := float32(elapsedTime.Seconds())
 	v.indicatorModelMatrix = sprec.Mat4Prod(v.indicatorModelMatrix,
 		sprec.RotationMat4(sprec.Degrees(elapsedSeconds*360.0), 0.0, 0.0, -1.0),
 	)
 }
 
-func (v *View) Render(ctx game.RenderContext) {
-	screenHalfWidth := float32(ctx.WindowSize.Width) / float32(ctx.WindowSize.Height)
+func (v *View) Render(window app.Window, width, height int, pipeline *graphics.Pipeline) {
+	screenHalfWidth := float32(width) / float32(height)
 	screenHalfHeight := float32(1.0)
 	projectionMatrix := sprec.OrthoMat4(
 		-screenHalfWidth, screenHalfWidth, screenHalfHeight, -screenHalfHeight, -1.0, 1.0,
 	)
 
-	sequence := ctx.GFXPipeline.BeginSequence()
+	sequence := pipeline.BeginSequence()
+	sequence.TargetFramebuffer = &graphics.Framebuffer{
+		Width:  int32(width),
+		Height: int32(height),
+	}
 	sequence.BackgroundColor = sprec.NewVec4(0.0, 0.0, 0.0, 1.0)
 	sequence.ClearColor = true
 	sequence.ClearDepth = true
@@ -90,5 +97,5 @@ func (v *View) Render(ctx game.RenderContext) {
 	indicatorItem.IndexCount = quadSubMesh.IndexCount
 	sequence.EndItem(indicatorItem)
 
-	ctx.GFXPipeline.EndSequence(sequence)
+	pipeline.EndSequence(sequence)
 }

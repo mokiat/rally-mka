@@ -21,11 +21,12 @@ type Data struct {
 	Level    *resource.Level
 }
 
-func (d *Data) Request() {
+func (d *Data) Request() async.Outcome {
 	d.loadOutcome = async.NewCompositeOutcome(
 		d.registry.LoadModel("suv").OnSuccess(resource.InjectModel(&d.CarModel)),
 		d.registry.LoadLevel("forest").OnSuccess(resource.InjectLevel(&d.Level)),
 	)
+	return d.loadOutcome
 }
 
 func (d *Data) Dismiss() {

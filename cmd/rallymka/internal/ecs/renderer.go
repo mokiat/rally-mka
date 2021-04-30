@@ -2,7 +2,6 @@ package ecs
 
 import (
 	"github.com/mokiat/gomath/sprec"
-	"github.com/mokiat/lacking/game"
 	"github.com/mokiat/lacking/render"
 )
 
@@ -18,7 +17,7 @@ type Renderer struct {
 	scene      *render.Scene
 }
 
-func (r *Renderer) Update(ctx game.UpdateContext) {
+func (r *Renderer) Update() {
 	for _, entity := range r.ecsManager.Entities() {
 		renderComp := entity.Render
 		physicsComp := entity.Physics

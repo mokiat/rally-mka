@@ -2,25 +2,21 @@ package main
 
 import (
 	"log"
-	"time"
 
-	"github.com/mokiat/lacking/game"
-	rallygame "github.com/mokiat/rally-mka/cmd/rallymka/internal/game"
+	glfwapp "github.com/mokiat/lacking/glfw/app"
+	"github.com/mokiat/rally-mka/cmd/rallymka/internal/game"
 )
 
 func main() {
-	log.Println("game started")
-	app := game.NewApp(game.AppConfig{
-		WindowTitle:        "RallyMKA",
-		WindowWidth:        1024,
-		WindowHeight:       576,
-		WindowHideCursor:   true,
-		WindowVSync:        true,
-		UpdateLoopInterval: 16 * time.Millisecond,
-	})
-	controller := rallygame.NewController()
-	if err := app.Run(controller); err != nil {
-		log.Fatalf("game crashed: %v", err)
+	cfg := glfwapp.NewConfig("Rally MKA", 1024, 576)
+	cfg.SetVSync(true)
+	cfg.SetCursorVisible(false)
+	cfg.SetIcon("resources/icon.png")
+
+	controller := game.NewController()
+	log.Println("running application")
+	if err := glfwapp.Run(cfg, controller); err != nil {
+		log.Fatalf("application error: %v", err)
 	}
-	log.Println("game closed")
+	log.Println("application closed")
 }
