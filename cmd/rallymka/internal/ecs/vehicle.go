@@ -1,9 +1,10 @@
 package ecs
 
 import (
+	"time"
+
 	"github.com/mokiat/gomath/sprec"
-	"github.com/mokiat/lacking/game"
-	"github.com/mokiat/lacking/input"
+	"github.com/mokiat/lacking/app"
 )
 
 const (
@@ -19,27 +20,52 @@ func NewVehicleSystem(ecsManager *Manager) *VehicleSystem {
 
 type VehicleSystem struct {
 	ecsManager *Manager
+
+	isSteerLeft  bool
+	isSteerRight bool
+	isAccelerate bool
+	isDecelerate bool
+	isRecover    bool
 }
 
-func (s *VehicleSystem) Update(ctx game.UpdateContext) {
+func (s *VehicleSystem) OnKeyboardEvent(event app.KeyboardEvent) bool {
+	active := event.Type != app.KeyboardEventTypeKeyUp
+	switch event.Code {
+	case app.KeyCodeArrowLeft:
+		s.isSteerLeft = active
+		return true
+	case app.KeyCodeArrowRight:
+		s.isSteerRight = active
+		return true
+	case app.KeyCodeArrowUp:
+		s.isAccelerate = active
+		return true
+	case app.KeyCodeArrowDown:
+		s.isDecelerate = active
+		return true
+	case app.KeyCodeEnter:
+		s.isRecover = active
+		return true
+	}
+	return false
+}
+
+func (s *VehicleSystem) Update(elapsedTime time.Duration, gamepad *app.GamepadState) {
 	for _, entity := range s.ecsManager.Entities() {
 		if vehicle := entity.Vehicle; vehicle != nil {
 			if entity.PlayerControl != nil {
-				switch {
-				case ctx.Gamepad.Available:
-					s.updateVehicleControlGamepad(vehicle, ctx)
-				default:
-					s.updateVehicleControlKeyboard(vehicle, ctx)
+				if gamepad != nil {
+					s.updateVehicleControlGamepad(vehicle, elapsedTime, gamepad)
+				} else {
+					s.updateVehicleControlKeyboard(vehicle, elapsedTime)
 				}
 			}
-			s.updateVehiclePhysics(vehicle, ctx)
+			s.updateVehiclePhysics(vehicle, elapsedTime)
 		}
 	}
 }
 
-func (s *VehicleSystem) updateVehicleControlGamepad(vehicle *Vehicle, ctx game.UpdateContext) {
-	gamepad := ctx.Gamepad
-
+func (s *VehicleSystem) updateVehicleControlGamepad(vehicle *Vehicle, elapsedTime time.Duration, gamepad *app.GamepadState) {
 	steeringAmount := gamepad.LeftStickX * sprec.Abs(gamepad.LeftStickX)
 	vehicle.SteeringAngle = -sprec.Degrees(steeringAmount * vehicle.MaxSteeringAngle.Degrees())
 	vehicle.Acceleration = gamepad.RightTrigger
@@ -47,18 +73,13 @@ func (s *VehicleSystem) updateVehicleControlGamepad(vehicle *Vehicle, ctx game.U
 	vehicle.Recover = gamepad.LeftBumper
 }
 
-func (s *VehicleSystem) updateVehicleControlKeyboard(vehicle *Vehicle, ctx game.UpdateContext) {
-	elapsedSeconds := float32(ctx.ElapsedTime.Seconds())
-	keyboard := ctx.Keyboard
-	isSteerLeft := keyboard.IsPressed(input.KeyLeft)
-	isSteerRight := keyboard.IsPressed(input.KeyRight)
-	isAccelerate := keyboard.IsPressed(input.KeyUp)
-	isDecelerate := keyboard.IsPressed(input.KeyDown)
-	vehicle.Recover = keyboard.IsPressed(input.KeyEnter)
+func (s *VehicleSystem) updateVehicleControlKeyboard(vehicle *Vehicle, elapsedTime time.Duration) {
+	elapsedSeconds := float32(elapsedTime.Seconds())
+	vehicle.Recover = s.isRecover
 
 	autoMaxSteeringAngle := sprec.Degrees(vehicle.MaxSteeringAngle.Degrees() / (1.0 + 0.05*vehicle.Chassis.Body.Velocity.Length()))
 	switch {
-	case isSteerLeft == isSteerRight:
+	case s.isSteerLeft == s.isSteerRight:
 		if vehicle.SteeringAngle > 0.001 {
 			vehicle.SteeringAngle -= sprec.Degrees(elapsedSeconds * steeringRestoreSpeed)
 			if vehicle.SteeringAngle < 0.0 {
@@ -71,32 +92,32 @@ func (s *VehicleSystem) updateVehicleControlKeyboard(vehicle *Vehicle, ctx game.
 				vehicle.SteeringAngle = 0.0
 			}
 		}
-	case isSteerLeft:
+	case s.isSteerLeft:
 		vehicle.SteeringAngle += sprec.Degrees(elapsedSeconds * steeringSpeed)
 		if vehicle.SteeringAngle > autoMaxSteeringAngle {
 			vehicle.SteeringAngle = autoMaxSteeringAngle
 		}
-	case isSteerRight:
+	case s.isSteerRight:
 		vehicle.SteeringAngle -= sprec.Degrees(elapsedSeconds * steeringSpeed)
 		if vehicle.SteeringAngle < -autoMaxSteeringAngle {
 			vehicle.SteeringAngle = -autoMaxSteeringAngle
 		}
 	}
 
-	if isAccelerate {
+	if s.isAccelerate {
 		vehicle.Acceleration = 0.8
 	} else {
 		vehicle.Acceleration = 0.0
 	}
-	if isDecelerate {
+	if s.isDecelerate {
 		vehicle.Deceleration = 0.8
 	} else {
 		vehicle.Deceleration = 0.0
 	}
 }
 
-func (s *VehicleSystem) updateVehiclePhysics(vehicle *Vehicle, ctx game.UpdateContext) {
-	elapsedSeconds := float32(ctx.ElapsedTime.Seconds())
+func (s *VehicleSystem) updateVehiclePhysics(vehicle *Vehicle, elapsedTime time.Duration) {
+	elapsedSeconds := float32(elapsedTime.Seconds())
 
 	if vehicle.Recover {
 		vehicle.Chassis.Body.AngularVelocity = sprec.Vec3Sum(vehicle.Chassis.Body.AngularVelocity, sprec.NewVec3(0.0, 0.0, 0.1))

@@ -1,12 +1,12 @@
 package scene
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/mokiat/gomath/sprec"
+	"github.com/mokiat/lacking/app"
 	"github.com/mokiat/lacking/async"
-	"github.com/mokiat/lacking/game"
+	"github.com/mokiat/lacking/graphics"
 	"github.com/mokiat/lacking/physics"
 	"github.com/mokiat/lacking/render"
 	"github.com/mokiat/lacking/resource"
@@ -39,11 +39,8 @@ type CarInput struct {
 	Handbrake bool
 }
 
-func NewStage(gfxWorker *async.Worker) *Stage {
+func NewStage() *Stage {
 	scene := render.NewScene()
-	if err := scene.Init(gfxWorker).Wait().Err; err != nil {
-		panic(err) // FIXME
-	}
 	ecsManager := ecs.NewManager()
 	stage := &Stage{
 		scene:                scene,
@@ -54,7 +51,6 @@ func NewStage(gfxWorker *async.Worker) *Stage {
 		ecsCameraStandSystem: ecs.NewCameraStandSystem(ecsManager),
 		physicsEngine:        physics.NewEngine(15 * time.Millisecond),
 	}
-	scene.SetActiveCamera(stage.camera)
 	return stage
 }
 
@@ -68,8 +64,14 @@ type Stage struct {
 	physicsEngine        *physics.Engine
 }
 
-func (s *Stage) Init(data *Data) {
+func (s *Stage) Init(gfxWorker *async.Worker, data *Data) {
 	level := data.Level
+
+	if err := s.scene.Init(gfxWorker).Wait().Err; err != nil {
+		panic(err) // FIXME
+	}
+
+	s.scene.SetActiveCamera(s.camera)
 
 	s.scene.Layout().SetSkybox(&render.Skybox{
 		SkyboxTexture:            data.Level.SkyboxTexture.GFXTexture,
@@ -301,21 +303,27 @@ func (s *Stage) setupCarDemo(model *resource.Model, position sprec.Vec3) *ecs.En
 	return chasis
 }
 
-func (s *Stage) Update(ctx game.UpdateContext) {
-	s.physicsEngine.Update(ctx.ElapsedTime)
-	s.ecsVehicleSystem.Update(ctx)
-	s.ecsRenderer.Update(ctx)
-	s.ecsCameraStandSystem.Update(ctx)
+func (s *Stage) OnKeyboardEvent(event app.KeyboardEvent) bool {
+	return s.ecsVehicleSystem.OnKeyboardEvent(event)
 }
 
-func (s *Stage) Render(ctx game.RenderContext) {
-	screenHalfWidth := float32(ctx.WindowSize.Width) / float32(ctx.WindowSize.Height)
+func (s *Stage) Update(window app.Window, elapsedTime time.Duration) {
+	var gamepad *app.GamepadState
+	if state, ok := window.GamepadState(0); ok {
+		gamepad = &state
+	}
+
+	s.physicsEngine.Update(elapsedTime)
+	s.ecsVehicleSystem.Update(elapsedTime, gamepad)
+	s.ecsRenderer.Update()
+	s.ecsCameraStandSystem.Update(elapsedTime, gamepad)
+}
+
+func (s *Stage) Render(width, height int, pipeline *graphics.Pipeline) {
+	screenHalfWidth := float32(width) / float32(height)
 	screenHalfHeight := float32(1.0)
 	s.camera.SetProjectionMatrix(sprec.PerspectiveMat4(
 		-screenHalfWidth, screenHalfWidth, -screenHalfHeight, screenHalfHeight, 1.5, 900.0,
 	))
-	startTime := time.Now()
-	s.scene.Render(ctx)
-	elapsedTime := time.Since(startTime)
-	fmt.Printf("render duration: %s\n", elapsedTime)
+	s.scene.Render(width, height, pipeline)
 }

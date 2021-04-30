@@ -1,88 +1,130 @@
 package game
 
 import (
-	"github.com/mokiat/lacking/game"
-	"github.com/mokiat/lacking/input"
+	"time"
+
+	"github.com/mokiat/lacking/app"
+	"github.com/mokiat/lacking/async"
+	"github.com/mokiat/lacking/graphics"
 	"github.com/mokiat/lacking/resource"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/game/loading"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/game/simulation"
 )
 
 type View interface {
-	Load()
-	IsAvailable() bool
-	Unload()
+	Load(window app.Window, cb func())
+	Unload(window app.Window)
 
-	Open()
-	Close()
+	Open(window app.Window)
+	Close(window app.Window)
 
-	Update(ctx game.UpdateContext)
-	Render(ctx game.RenderContext)
+	OnKeyboardEvent(window app.Window, event app.KeyboardEvent) bool
+
+	Update(window app.Window, elapsedTime time.Duration)
+	Render(window app.Window, width, height int, pipeline *graphics.Pipeline)
 }
 
 func NewController() *Controller {
-	return &Controller{}
+	gfxWorker := async.NewWorker(1024)
+	gfxRenderer := graphics.NewRenderer()
+	locator := resource.FileLocator{}
+	registry := resource.NewRegistry(locator, gfxWorker)
+
+	return &Controller{
+		gfxWorker:   gfxWorker,
+		gfxRenderer: gfxRenderer,
+		registry:    registry,
+
+		loadingView:    loading.NewView(registry),
+		simulationView: simulation.NewView(registry, gfxWorker),
+
+		lastFrameTime: time.Now(),
+	}
 }
 
 type Controller struct {
+	app.NopController
+
+	window      app.Window
+	gfxWorker   *async.Worker
+	gfxRenderer *graphics.Renderer
+	registry    *resource.Registry
+
 	activeView     View
 	loadingView    View
 	simulationView View
+
+	lastFrameTime time.Time
+	width         int
+	height        int
 }
 
-func (c *Controller) Init(ctx game.InitContext) error {
-	locator := resource.FileLocator{}
-	registry := resource.NewRegistry(locator, ctx.GFXWorker)
+func (c *Controller) OnCreate(window app.Window) {
+	c.window = window
+	c.width, c.height = window.Size()
 
-	c.loadingView = loading.NewView(registry)
-	c.simulationView = simulation.NewView(registry, ctx.GFXWorker)
-
-	c.loadingView.Load()
-	c.simulationView.Load()
-	return nil
+	c.loadingView.Load(window, c.onLoadingAvailable)
+	c.simulationView.Load(window, c.onSimulationAvailable)
 }
 
-func (c *Controller) Update(ctx game.UpdateContext) bool {
-	c.pickView()
+func (c *Controller) OnResize(window app.Window, width, height int) {
+	c.width, c.height = width, height
+}
+
+func (c *Controller) OnCloseRequested(window app.Window) {
+	window.Close()
+}
+
+func (c *Controller) OnKeyboardEvent(window app.Window, event app.KeyboardEvent) bool {
+	if event.Code == app.KeyCodeEscape {
+		window.Close()
+		return true
+	}
 	if c.activeView != nil {
-		c.activeView.Update(ctx)
+		return c.activeView.OnKeyboardEvent(window, event)
 	}
-	return !ctx.Keyboard.IsPressed(input.KeyEscape)
+	return false
 }
 
-func (c *Controller) Render(ctx game.RenderContext) {
+func (c *Controller) OnRender(window app.Window) {
+	c.gfxWorker.ProcessTryMultiple(10)
+
+	currentTime := time.Now()
+	elapsedTime := currentTime.Sub(c.lastFrameTime)
+	c.lastFrameTime = currentTime
+
 	if c.activeView != nil {
-		c.activeView.Render(ctx)
+		c.activeView.Update(window, elapsedTime)
+		pipeline := c.gfxRenderer.BeginPipeline()
+		c.activeView.Render(window, c.width, c.height, pipeline)
+		c.gfxRenderer.EndPipeline(pipeline)
+		c.gfxRenderer.Render()
 	}
+
+	window.Invalidate() // force redraw
 }
 
-func (c *Controller) Release(ctx game.ReleaseContext) error {
-	if c.activeView != nil {
-		c.activeView.Close()
-		c.activeView.Unload()
-	}
-	return nil
+func (c *Controller) OnDestroy(window app.Window) {
+	c.changeView(nil)
+
+	c.loadingView.Unload(window)
+	c.simulationView.Unload(window)
 }
 
-func (c *Controller) pickView() {
-	switch c.activeView {
-	case nil:
-		if c.loadingView.IsAvailable() {
-			c.changeView(c.loadingView)
-		}
-	case c.loadingView:
-		if c.simulationView.IsAvailable() {
-			c.changeView(c.simulationView)
-		}
-	}
+func (c *Controller) onLoadingAvailable() {
+	c.changeView(c.loadingView)
+}
+
+func (c *Controller) onSimulationAvailable() {
+	c.changeView(c.simulationView)
 }
 
 func (c *Controller) changeView(view View) {
 	if c.activeView != nil {
-		c.activeView.Close()
+		c.activeView.Close(c.window)
 	}
 	c.activeView = view
 	if c.activeView != nil {
-		c.activeView.Open()
+		c.activeView.Open(c.window)
 	}
 }
