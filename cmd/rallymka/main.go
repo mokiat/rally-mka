@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	glfwapp "github.com/mokiat/lacking/glfw/app"
+	glfwapp "github.com/mokiat/lacking/framework/glfw/app"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/game"
 )
 
