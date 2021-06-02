@@ -77,7 +77,7 @@ func (s *VehicleSystem) updateVehicleControlKeyboard(vehicle *Vehicle, elapsedTi
 	elapsedSeconds := float32(elapsedTime.Seconds())
 	vehicle.Recover = s.isRecover
 
-	autoMaxSteeringAngle := sprec.Degrees(vehicle.MaxSteeringAngle.Degrees() / (1.0 + 0.05*vehicle.Chassis.Body.Velocity.Length()))
+	autoMaxSteeringAngle := sprec.Degrees(vehicle.MaxSteeringAngle.Degrees() / (1.0 + 0.05*vehicle.Chassis.Body.Velocity().Length()))
 	switch {
 	case s.isSteerLeft == s.isSteerRight:
 		if vehicle.SteeringAngle > 0.001 {
@@ -120,42 +120,42 @@ func (s *VehicleSystem) updateVehiclePhysics(vehicle *Vehicle, elapsedTime time.
 	elapsedSeconds := float32(elapsedTime.Seconds())
 
 	if vehicle.Recover {
-		vehicle.Chassis.Body.AngularVelocity = sprec.Vec3Sum(vehicle.Chassis.Body.AngularVelocity, sprec.NewVec3(0.0, 0.0, 0.1))
-		vehicle.Chassis.Body.Velocity = sprec.Vec3Sum(vehicle.Chassis.Body.Velocity, sprec.NewVec3(0.0, 0.2, 0.0))
+		vehicle.Chassis.Body.SetAngularVelocity(sprec.Vec3Sum(vehicle.Chassis.Body.AngularVelocity(), sprec.NewVec3(0.0, 0.0, 0.1)))
+		vehicle.Chassis.Body.SetVelocity(sprec.Vec3Sum(vehicle.Chassis.Body.Velocity(), sprec.NewVec3(0.0, 0.2, 0.0)))
 	}
 
 	steeringQuat := sprec.RotationQuat(vehicle.SteeringAngle, sprec.BasisYVec3())
-	isMovingForward := sprec.Vec3Dot(vehicle.Chassis.Body.Velocity, vehicle.Chassis.Body.Orientation.OrientationZ()) > 5.0
-	isMovingBackward := sprec.Vec3Dot(vehicle.Chassis.Body.Velocity, vehicle.Chassis.Body.Orientation.OrientationZ()) < -5.0
+	isMovingForward := sprec.Vec3Dot(vehicle.Chassis.Body.Velocity(), vehicle.Chassis.Body.Orientation().OrientationZ()) > 5.0
+	isMovingBackward := sprec.Vec3Dot(vehicle.Chassis.Body.Velocity(), vehicle.Chassis.Body.Orientation().OrientationZ()) < -5.0
 
 	for _, wheel := range vehicle.Wheels {
 		if wheel.RotationConstraint != nil {
-			wheel.RotationConstraint.FirstBodyAxis = sprec.QuatVec3Rotation(steeringQuat, sprec.BasisXVec3())
+			wheel.RotationConstraint.SetPrimaryAxis(sprec.QuatVec3Rotation(steeringQuat, sprec.BasisXVec3()))
 		}
 
 		if vehicle.Acceleration > 0.0 {
 			if isMovingBackward {
-				if wheelVelocity := sprec.Vec3Dot(wheel.Body.AngularVelocity, wheel.Body.Orientation.OrientationX()); wheelVelocity < 0.0 {
+				if wheelVelocity := sprec.Vec3Dot(wheel.Body.AngularVelocity(), wheel.Body.Orientation().OrientationX()); wheelVelocity < 0.0 {
 					correction := sprec.Max(-vehicle.Acceleration*wheel.DecelerationVelocity*elapsedSeconds, wheelVelocity)
-					wheel.Body.AngularVelocity = sprec.Vec3Prod(wheel.Body.AngularVelocity, 1.0-correction/wheelVelocity)
+					wheel.Body.SetAngularVelocity(sprec.Vec3Prod(wheel.Body.AngularVelocity(), 1.0-correction/wheelVelocity))
 				}
 			} else {
-				wheel.Body.AngularVelocity = sprec.Vec3Sum(wheel.Body.AngularVelocity,
-					sprec.Vec3Prod(wheel.Body.Orientation.OrientationX(), vehicle.Acceleration*wheel.AccelerationVelocity*elapsedSeconds),
-				)
+				wheel.Body.SetAngularVelocity(sprec.Vec3Sum(wheel.Body.AngularVelocity(),
+					sprec.Vec3Prod(wheel.Body.Orientation().OrientationX(), vehicle.Acceleration*wheel.AccelerationVelocity*elapsedSeconds),
+				))
 			}
 		}
 
 		if vehicle.Deceleration > 0.0 {
 			if isMovingForward {
-				if wheelVelocity := sprec.Vec3Dot(wheel.Body.AngularVelocity, wheel.Body.Orientation.OrientationX()); wheelVelocity > 0.0 {
+				if wheelVelocity := sprec.Vec3Dot(wheel.Body.AngularVelocity(), wheel.Body.Orientation().OrientationX()); wheelVelocity > 0.0 {
 					correction := sprec.Min(vehicle.Deceleration*wheel.DecelerationVelocity*elapsedSeconds, wheelVelocity)
-					wheel.Body.AngularVelocity = sprec.Vec3Prod(wheel.Body.AngularVelocity, 1.0-correction/wheelVelocity)
+					wheel.Body.SetAngularVelocity(sprec.Vec3Prod(wheel.Body.AngularVelocity(), 1.0-correction/wheelVelocity))
 				}
 			} else {
-				wheel.Body.AngularVelocity = sprec.Vec3Sum(wheel.Body.AngularVelocity,
-					sprec.Vec3Prod(wheel.Body.Orientation.OrientationX(), -vehicle.Deceleration*wheel.AccelerationVelocity*elapsedSeconds),
-				)
+				wheel.Body.SetAngularVelocity(sprec.Vec3Sum(wheel.Body.AngularVelocity(),
+					sprec.Vec3Prod(wheel.Body.Orientation().OrientationX(), -vehicle.Deceleration*wheel.AccelerationVelocity*elapsedSeconds),
+				))
 			}
 		}
 	}

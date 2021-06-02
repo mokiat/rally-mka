@@ -6,11 +6,11 @@ import (
 	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/lacking/app"
 	"github.com/mokiat/lacking/async"
+	"github.com/mokiat/lacking/game/physics"
+	"github.com/mokiat/lacking/game/physics/solver"
 	"github.com/mokiat/lacking/graphics"
-	"github.com/mokiat/lacking/physics"
 	"github.com/mokiat/lacking/render"
 	"github.com/mokiat/lacking/resource"
-	"github.com/mokiat/lacking/shape"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecs"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/scene/car"
 )
@@ -42,6 +42,7 @@ type CarInput struct {
 func NewStage() *Stage {
 	scene := render.NewScene()
 	ecsManager := ecs.NewManager()
+	physicsEngine := physics.NewEngine()
 	stage := &Stage{
 		scene:                scene,
 		camera:               render.NewCamera(),
@@ -49,7 +50,7 @@ func NewStage() *Stage {
 		ecsRenderer:          ecs.NewRenderer(ecsManager, scene),
 		ecsVehicleSystem:     ecs.NewVehicleSystem(ecsManager),
 		ecsCameraStandSystem: ecs.NewCameraStandSystem(ecsManager),
-		physicsEngine:        physics.NewEngine(15 * time.Millisecond),
+		physicsScene:         physicsEngine.CreateScene(0.015),
 	}
 	return stage
 }
@@ -61,7 +62,7 @@ type Stage struct {
 	ecsRenderer          *ecs.Renderer
 	ecsVehicleSystem     *ecs.VehicleSystem
 	ecsCameraStandSystem *ecs.CameraStandSystem
-	physicsEngine        *physics.Engine
+	physicsScene         *physics.Scene
 }
 
 func (s *Stage) Init(gfxWorker *async.Worker, data *Data) {
@@ -93,13 +94,12 @@ func (s *Stage) Init(gfxWorker *async.Worker, data *Data) {
 	}
 
 	for _, collisionMesh := range level.CollisionMeshes {
-		s.physicsEngine.AddBody(&physics.Body{
-			Position:        sprec.ZeroVec3(),
-			Orientation:     sprec.IdentityQuat(),
-			IsStatic:        true,
-			RestitutionCoef: 1.0,
-			CollisionShapes: []shape.Placement{collisionMesh},
-		})
+		body := s.physicsScene.CreateBody()
+		body.SetPosition(sprec.ZeroVec3())
+		body.SetOrientation(sprec.IdentityQuat())
+		body.SetStatic(true)
+		body.SetRestitutionCoefficient(1.0)
+		body.SetCollisionShapes([]physics.CollisionShape{collisionMesh})
 	}
 
 	for _, staticEntity := range level.StaticEntities {
@@ -113,7 +113,7 @@ func (s *Stage) Init(gfxWorker *async.Worker, data *Data) {
 	standEntity.CameraStand = &ecs.CameraStand{
 		Target:         standTarget,
 		Camera:         s.camera,
-		AnchorPosition: sprec.Vec3Sum(standTarget.Physics.Body.Position, sprec.NewVec3(0.0, 0.0, -cameraDistance)),
+		AnchorPosition: sprec.Vec3Sum(standTarget.Physics.Body.Position(), sprec.NewVec3(0.0, 0.0, -cameraDistance)),
 		AnchorDistance: anchorDistance,
 		CameraDistance: cameraDistance,
 	}
@@ -123,8 +123,7 @@ func (s *Stage) setupCarDemo(model *resource.Model, position sprec.Vec3) *ecs.En
 	chasis := car.Chassis(model).
 		WithName("chasis").
 		WithPosition(position).
-		Build(s.ecsManager, s.scene)
-	s.physicsEngine.AddBody(chasis.Physics.Body)
+		Build(s.ecsManager, s.scene, s.physicsScene)
 
 	suspensionEnabled := true
 	suspensionStart := float32(-0.25)
@@ -138,130 +137,98 @@ func (s *Stage) setupCarDemo(model *resource.Model, position sprec.Vec3) *ecs.En
 	flWheel := car.Wheel(model, car.FrontLeftWheelLocation).
 		WithName("front-left-wheel").
 		WithPosition(sprec.Vec3Sum(position, flWheelRelativePosition)).
-		Build(s.ecsManager, s.scene)
-	s.physicsEngine.AddBody(flWheel.Physics.Body)
-	s.physicsEngine.AddConstraint(physics.MatchTranslationConstraint{
-		FirstBody:       chasis.Physics.Body,
-		FirstBodyAnchor: flWheelRelativePosition,
-		SecondBody:      flWheel.Physics.Body,
-		IgnoreY:         suspensionEnabled,
+		Build(s.ecsManager, s.scene, s.physicsScene)
+
+	s.physicsScene.CreateDoubleBodyConstraint(chasis.Physics.Body, flWheel.Physics.Body,
+		solver.NewMatchTranslation().
+			SetPrimaryAnchor(flWheelRelativePosition).
+			SetIgnoreY(suspensionEnabled),
+	)
+	s.physicsScene.CreateDoubleBodyConstraint(chasis.Physics.Body, flWheel.Physics.Body, &solver.LimitTranslation{
+		MaxY: suspensionStart,
+		MinY: suspensionEnd,
 	})
-	s.physicsEngine.AddConstraint(physics.LimitTranslationConstraint{
-		FirstBody:  chasis.Physics.Body,
-		SecondBody: flWheel.Physics.Body,
-		MaxY:       suspensionStart,
-		MinY:       suspensionEnd,
-	})
-	flRotation := &physics.MatchAxisConstraint{
-		FirstBody:      chasis.Physics.Body,
-		FirstBodyAxis:  sprec.BasisXVec3(),
-		SecondBody:     flWheel.Physics.Body,
-		SecondBodyAxis: sprec.BasisXVec3(),
-	}
-	s.physicsEngine.AddConstraint(flRotation)
-	s.physicsEngine.AddConstraint(&physics.CoiloverConstraint{
-		FirstBody:       chasis.Physics.Body,
-		FirstBodyAnchor: flWheelRelativePosition,
-		SecondBody:      flWheel.Physics.Body,
-		FrequencyHz:     suspensionFrequencyHz,
-		DampingRatio:    suspensionDampingRatio,
+	flRotation := solver.NewMatchAxis().
+		SetPrimaryAxis(sprec.BasisXVec3()).
+		SetSecondaryAxis(sprec.BasisXVec3())
+	s.physicsScene.CreateDoubleBodyConstraint(chasis.Physics.Body, flWheel.Physics.Body, flRotation)
+	s.physicsScene.CreateDoubleBodyConstraint(chasis.Physics.Body, flWheel.Physics.Body, &solver.Coilover{
+		PrimaryAnchor: flWheelRelativePosition,
+		FrequencyHz:   suspensionFrequencyHz,
+		DampingRatio:  suspensionDampingRatio,
 	})
 
 	frWheelRelativePosition := sprec.NewVec3(-suspensionWidth, suspensionStart-suspensionLength, 1.07)
 	frWheel := car.Wheel(model, car.FrontRightWheelLocation).
 		WithName("front-right-wheel").
 		WithPosition(sprec.Vec3Sum(position, frWheelRelativePosition)).
-		Build(s.ecsManager, s.scene)
-	s.physicsEngine.AddBody(frWheel.Physics.Body)
-	s.physicsEngine.AddConstraint(physics.MatchTranslationConstraint{
-		FirstBody:       chasis.Physics.Body,
-		FirstBodyAnchor: frWheelRelativePosition,
-		SecondBody:      frWheel.Physics.Body,
-		IgnoreY:         suspensionEnabled,
+		Build(s.ecsManager, s.scene, s.physicsScene)
+	s.physicsScene.CreateDoubleBodyConstraint(chasis.Physics.Body, frWheel.Physics.Body,
+		solver.NewMatchTranslation().
+			SetPrimaryAnchor(frWheelRelativePosition).
+			SetIgnoreY(suspensionEnabled),
+	)
+	s.physicsScene.CreateDoubleBodyConstraint(chasis.Physics.Body, frWheel.Physics.Body, &solver.LimitTranslation{
+		MaxY: suspensionStart,
+		MinY: suspensionEnd,
 	})
-	s.physicsEngine.AddConstraint(physics.LimitTranslationConstraint{
-		FirstBody:  chasis.Physics.Body,
-		SecondBody: frWheel.Physics.Body,
-		MaxY:       suspensionStart,
-		MinY:       suspensionEnd,
-	})
-	frRotation := &physics.MatchAxisConstraint{
-		FirstBody:      chasis.Physics.Body,
-		FirstBodyAxis:  sprec.BasisXVec3(),
-		SecondBody:     frWheel.Physics.Body,
-		SecondBodyAxis: sprec.BasisXVec3(),
-	}
-	s.physicsEngine.AddConstraint(frRotation)
-	s.physicsEngine.AddConstraint(&physics.CoiloverConstraint{
-		FirstBody:       chasis.Physics.Body,
-		FirstBodyAnchor: frWheelRelativePosition,
-		SecondBody:      frWheel.Physics.Body,
-		FrequencyHz:     suspensionFrequencyHz,
-		DampingRatio:    suspensionDampingRatio,
+	frRotation := solver.NewMatchAxis().
+		SetPrimaryAxis(sprec.BasisXVec3()).
+		SetSecondaryAxis(sprec.BasisXVec3())
+	s.physicsScene.CreateDoubleBodyConstraint(chasis.Physics.Body, frWheel.Physics.Body, frRotation)
+	s.physicsScene.CreateDoubleBodyConstraint(chasis.Physics.Body, frWheel.Physics.Body, &solver.Coilover{
+		PrimaryAnchor: frWheelRelativePosition,
+		FrequencyHz:   suspensionFrequencyHz,
+		DampingRatio:  suspensionDampingRatio,
 	})
 
 	blWheelRelativePosition := sprec.NewVec3(suspensionWidth, suspensionStart-suspensionLength, -1.56)
 	blWheel := car.Wheel(model, car.BackLeftWheelLocation).
 		WithName("back-left-wheel").
 		WithPosition(sprec.Vec3Sum(position, blWheelRelativePosition)).
-		Build(s.ecsManager, s.scene)
-	s.physicsEngine.AddBody(blWheel.Physics.Body)
-	s.physicsEngine.AddConstraint(physics.MatchTranslationConstraint{
-		FirstBody:       chasis.Physics.Body,
-		FirstBodyAnchor: blWheelRelativePosition,
-		SecondBody:      blWheel.Physics.Body,
-		IgnoreY:         suspensionEnabled,
+		Build(s.ecsManager, s.scene, s.physicsScene)
+	s.physicsScene.CreateDoubleBodyConstraint(chasis.Physics.Body, blWheel.Physics.Body,
+		solver.NewMatchTranslation().
+			SetPrimaryAnchor(blWheelRelativePosition).
+			SetIgnoreY(suspensionEnabled),
+	)
+	s.physicsScene.CreateDoubleBodyConstraint(chasis.Physics.Body, blWheel.Physics.Body, &solver.LimitTranslation{
+		MaxY: suspensionStart,
+		MinY: suspensionEnd,
 	})
-	s.physicsEngine.AddConstraint(physics.LimitTranslationConstraint{
-		FirstBody:  chasis.Physics.Body,
-		SecondBody: blWheel.Physics.Body,
-		MaxY:       suspensionStart,
-		MinY:       suspensionEnd,
-	})
-	s.physicsEngine.AddConstraint(physics.MatchAxisConstraint{
-		FirstBody:      chasis.Physics.Body,
-		FirstBodyAxis:  sprec.BasisXVec3(),
-		SecondBody:     blWheel.Physics.Body,
-		SecondBodyAxis: sprec.BasisXVec3(),
-	})
-	s.physicsEngine.AddConstraint(&physics.CoiloverConstraint{
-		FirstBody:       chasis.Physics.Body,
-		FirstBodyAnchor: blWheelRelativePosition,
-		SecondBody:      blWheel.Physics.Body,
-		FrequencyHz:     suspensionFrequencyHz,
-		DampingRatio:    suspensionDampingRatio,
+	s.physicsScene.CreateDoubleBodyConstraint(chasis.Physics.Body, blWheel.Physics.Body,
+		solver.NewMatchAxis().
+			SetPrimaryAxis(sprec.BasisXVec3()).
+			SetSecondaryAxis(sprec.BasisXVec3()),
+	)
+	s.physicsScene.CreateDoubleBodyConstraint(chasis.Physics.Body, blWheel.Physics.Body, &solver.Coilover{
+		PrimaryAnchor: blWheelRelativePosition,
+		FrequencyHz:   suspensionFrequencyHz,
+		DampingRatio:  suspensionDampingRatio,
 	})
 
 	brWheelRelativePosition := sprec.NewVec3(-suspensionWidth, suspensionStart-suspensionLength, -1.56)
 	brWheel := car.Wheel(model, car.BackRightWheelLocation).
 		WithName("back-right-wheel").
 		WithPosition(sprec.Vec3Sum(position, brWheelRelativePosition)).
-		Build(s.ecsManager, s.scene)
-	s.physicsEngine.AddBody(brWheel.Physics.Body)
-	s.physicsEngine.AddConstraint(physics.MatchTranslationConstraint{
-		FirstBody:       chasis.Physics.Body,
-		FirstBodyAnchor: brWheelRelativePosition,
-		SecondBody:      brWheel.Physics.Body,
-		IgnoreY:         suspensionEnabled,
+		Build(s.ecsManager, s.scene, s.physicsScene)
+	s.physicsScene.CreateDoubleBodyConstraint(chasis.Physics.Body, brWheel.Physics.Body,
+		solver.NewMatchTranslation().
+			SetPrimaryAnchor(brWheelRelativePosition).
+			SetIgnoreY(suspensionEnabled),
+	)
+	s.physicsScene.CreateDoubleBodyConstraint(chasis.Physics.Body, brWheel.Physics.Body, &solver.LimitTranslation{
+		MaxY: suspensionStart,
+		MinY: suspensionEnd,
 	})
-	s.physicsEngine.AddConstraint(physics.LimitTranslationConstraint{
-		FirstBody:  chasis.Physics.Body,
-		SecondBody: brWheel.Physics.Body,
-		MaxY:       suspensionStart,
-		MinY:       suspensionEnd,
-	})
-	s.physicsEngine.AddConstraint(physics.MatchAxisConstraint{
-		FirstBody:      chasis.Physics.Body,
-		FirstBodyAxis:  sprec.BasisXVec3(),
-		SecondBody:     brWheel.Physics.Body,
-		SecondBodyAxis: sprec.BasisXVec3(),
-	})
-	s.physicsEngine.AddConstraint(&physics.CoiloverConstraint{
-		FirstBody:       chasis.Physics.Body,
-		FirstBodyAnchor: brWheelRelativePosition,
-		SecondBody:      brWheel.Physics.Body,
-		FrequencyHz:     suspensionFrequencyHz,
-		DampingRatio:    suspensionDampingRatio,
+	s.physicsScene.CreateDoubleBodyConstraint(chasis.Physics.Body, brWheel.Physics.Body, solver.NewMatchAxis().
+		SetPrimaryAxis(sprec.BasisXVec3()).
+		SetSecondaryAxis(sprec.BasisXVec3()),
+	)
+	s.physicsScene.CreateDoubleBodyConstraint(chasis.Physics.Body, brWheel.Physics.Body, &solver.Coilover{
+		PrimaryAnchor: brWheelRelativePosition,
+		FrequencyHz:   suspensionFrequencyHz,
+		DampingRatio:  suspensionDampingRatio,
 	})
 
 	car := s.ecsManager.CreateEntity()
@@ -313,7 +280,7 @@ func (s *Stage) Update(window app.Window, elapsedTime time.Duration) {
 		gamepad = &state
 	}
 
-	s.physicsEngine.Update(elapsedTime)
+	s.physicsScene.Update(float32(elapsedTime.Seconds()))
 	s.ecsVehicleSystem.Update(elapsedTime, gamepad)
 	s.ecsRenderer.Update()
 	s.ecsCameraStandSystem.Update(elapsedTime, gamepad)

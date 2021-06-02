@@ -29,7 +29,7 @@ func (s *CameraStandSystem) updateCameraStand(cameraStand *CameraStand, elapsedT
 	var targetPosition sprec.Vec3
 	switch {
 	case cameraStand.Target.Physics != nil:
-		targetPosition = cameraStand.Target.Physics.Body.Position
+		targetPosition = cameraStand.Target.Physics.Body.Position()
 	case cameraStand.Target.Render != nil:
 		targetPosition = cameraStand.Target.Render.Renderable.Matrix.Translation()
 	}

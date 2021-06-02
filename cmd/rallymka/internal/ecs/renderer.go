@@ -26,10 +26,10 @@ func (r *Renderer) Update() {
 		}
 		body := physicsComp.Body
 		renderComp.Renderable.Matrix = sprec.TransformationMat4(
-			body.Orientation.OrientationX(),
-			body.Orientation.OrientationY(),
-			body.Orientation.OrientationZ(),
-			body.Position,
+			body.Orientation().OrientationX(),
+			body.Orientation().OrientationY(),
+			body.Orientation().OrientationZ(),
+			body.Position(),
 		)
 		r.scene.Layout().InvalidateRenderable(renderComp.Renderable)
 	}
