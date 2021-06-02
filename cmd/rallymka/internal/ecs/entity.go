@@ -2,7 +2,8 @@ package ecs
 
 import (
 	"github.com/mokiat/gomath/sprec"
-	"github.com/mokiat/lacking/physics"
+	"github.com/mokiat/lacking/game/physics"
+	"github.com/mokiat/lacking/game/physics/solver"
 	"github.com/mokiat/lacking/render"
 )
 
@@ -42,7 +43,7 @@ type Chassis struct {
 
 type Wheel struct {
 	Body                 *physics.Body
-	RotationConstraint   *physics.MatchAxisConstraint
+	RotationConstraint   *solver.MatchAxis
 	AccelerationVelocity float32
 	DecelerationVelocity float32
 }

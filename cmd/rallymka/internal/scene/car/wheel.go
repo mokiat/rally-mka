@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/mokiat/gomath/sprec"
-	"github.com/mokiat/lacking/physics"
+	"github.com/mokiat/lacking/game/physics"
 	"github.com/mokiat/lacking/render"
 	"github.com/mokiat/lacking/resource"
 	"github.com/mokiat/lacking/shape"
@@ -44,40 +44,41 @@ type WheelBuilder struct {
 
 func (b *WheelBuilder) WithName(name string) *WheelBuilder {
 	b.modifiers = append(b.modifiers, func(entity *ecs.Entity) {
-		entity.Physics.Body.Name = name
+		entity.Physics.Body.SetName(name)
 	})
 	return b
 }
 
 func (b *WheelBuilder) WithPosition(position sprec.Vec3) *WheelBuilder {
 	b.modifiers = append(b.modifiers, func(entity *ecs.Entity) {
-		entity.Physics.Body.Position = position
+		entity.Physics.Body.SetPosition(position)
 	})
 	return b
 }
 
-func (b *WheelBuilder) Build(ecsManager *ecs.Manager, scene *render.Scene) *ecs.Entity {
+func (b *WheelBuilder) Build(ecsManager *ecs.Manager, scene *render.Scene, physicsScene *physics.Scene) *ecs.Entity {
 	modelNode, _ := b.model.FindNode(fmt.Sprintf("%sWheel", b.location))
+
+	physicsBody := physicsScene.CreateBody()
+	physicsBody.SetPosition(sprec.ZeroVec3())
+	physicsBody.SetOrientation(sprec.IdentityQuat())
+	physicsBody.SetMass(wheelMass)
+	physicsBody.SetMomentOfInertia(physics.SymmetricMomentOfInertia(wheelMomentOfInertia))
+	physicsBody.SetDragFactor(wheelDragFactor)
+	physicsBody.SetAngularDragFactor(wheelAngularDragFactor)
+	physicsBody.SetRestitutionCoefficient(wheelRestitutionCoef)
+	physicsBody.SetCollisionShapes([]physics.CollisionShape{
+		// using sphere shape at is easier to do in physics engine at the moment
+		shape.Placement{
+			Position:    sprec.ZeroVec3(),
+			Orientation: sprec.IdentityQuat(),
+			Shape:       shape.NewStaticSphere(0.3),
+		},
+	})
 
 	entity := ecsManager.CreateEntity()
 	entity.Physics = &ecs.PhysicsComponent{
-		Body: &physics.Body{
-			Position:          sprec.ZeroVec3(),
-			Orientation:       sprec.IdentityQuat(),
-			Mass:              wheelMass,
-			MomentOfInertia:   physics.SymmetricMomentOfInertia(wheelMomentOfInertia),
-			DragFactor:        wheelDragFactor,
-			AngularDragFactor: wheelAngularDragFactor,
-			RestitutionCoef:   wheelRestitutionCoef,
-			// using sphere shape at is easier to do in physics engine at the moment
-			CollisionShapes: []shape.Placement{
-				{
-					Position:    sprec.ZeroVec3(),
-					Orientation: sprec.IdentityQuat(),
-					Shape:       shape.NewStaticSphere(0.3),
-				},
-			},
-		},
+		Body: physicsBody,
 	}
 	entity.Render = &ecs.RenderComponent{
 		Renderable: scene.Layout().CreateRenderable(sprec.IdentityMat4(), 100.0, &resource.Model{

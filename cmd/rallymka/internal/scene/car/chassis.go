@@ -2,7 +2,7 @@ package car
 
 import (
 	"github.com/mokiat/gomath/sprec"
-	"github.com/mokiat/lacking/physics"
+	"github.com/mokiat/lacking/game/physics"
 	"github.com/mokiat/lacking/render"
 	"github.com/mokiat/lacking/resource"
 	"github.com/mokiat/lacking/shape"
@@ -31,39 +31,40 @@ type ChassisBuilder struct {
 
 func (b *ChassisBuilder) WithName(name string) *ChassisBuilder {
 	b.modifiers = append(b.modifiers, func(entity *ecs.Entity) {
-		entity.Physics.Body.Name = name
+		entity.Physics.Body.SetName(name)
 	})
 	return b
 }
 
 func (b *ChassisBuilder) WithPosition(position sprec.Vec3) *ChassisBuilder {
 	b.modifiers = append(b.modifiers, func(entity *ecs.Entity) {
-		entity.Physics.Body.Position = position
+		entity.Physics.Body.SetPosition(position)
 	})
 	return b
 }
 
-func (b *ChassisBuilder) Build(ecsManager *ecs.Manager, scene *render.Scene) *ecs.Entity {
+func (b *ChassisBuilder) Build(ecsManager *ecs.Manager, scene *render.Scene, physicsScene *physics.Scene) *ecs.Entity {
 	bodyNode, _ := b.model.FindNode("Chassis")
+
+	physicsBody := physicsScene.CreateBody()
+	physicsBody.SetPosition(sprec.ZeroVec3())
+	physicsBody.SetOrientation(sprec.IdentityQuat())
+	physicsBody.SetMass(chassisMass)
+	physicsBody.SetMomentOfInertia(physics.SymmetricMomentOfInertia(chassisMomentOfInertia))
+	physicsBody.SetDragFactor(chassisDragFactor)
+	physicsBody.SetAngularDragFactor(chassisAngularDragFactor)
+	physicsBody.SetRestitutionCoefficient(chassisRestitutionCoef)
+	physicsBody.SetCollisionShapes([]physics.CollisionShape{
+		shape.Placement{
+			Position:    sprec.NewVec3(0.0, 0.3, -0.4),
+			Orientation: sprec.IdentityQuat(),
+			Shape:       shape.NewStaticBox(1.6, 1.4, 4.0),
+		},
+	})
 
 	entity := ecsManager.CreateEntity()
 	entity.Physics = &ecs.PhysicsComponent{
-		Body: &physics.Body{
-			Position:          sprec.ZeroVec3(),
-			Orientation:       sprec.IdentityQuat(),
-			Mass:              chassisMass,
-			MomentOfInertia:   physics.SymmetricMomentOfInertia(chassisMomentOfInertia),
-			DragFactor:        chassisDragFactor,
-			AngularDragFactor: chassisAngularDragFactor,
-			RestitutionCoef:   chassisRestitutionCoef,
-			CollisionShapes: []shape.Placement{
-				{
-					Position:    sprec.NewVec3(0.0, 0.3, -0.4),
-					Orientation: sprec.IdentityQuat(),
-					Shape:       shape.NewStaticBox(1.6, 1.4, 4.0),
-				},
-			},
-		},
+		Body: physicsBody,
 	}
 	entity.Render = &ecs.RenderComponent{
 		Renderable: scene.Layout().CreateRenderable(sprec.IdentityMat4(), 100.0, &resource.Model{
