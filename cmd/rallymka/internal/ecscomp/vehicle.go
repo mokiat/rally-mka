@@ -1,29 +1,22 @@
-package ecs
+package ecscomp
 
 import (
 	"github.com/mokiat/gomath/sprec"
+	"github.com/mokiat/lacking/game/ecs"
 	"github.com/mokiat/lacking/game/physics"
 	"github.com/mokiat/lacking/game/physics/solver"
-	"github.com/mokiat/lacking/render"
 )
 
-type Entity struct {
-	Physics       *PhysicsComponent
-	Render        *RenderComponent
-	Vehicle       *Vehicle
-	CameraStand   *CameraStand
-	PlayerControl *PlayerControl
+func SetVehicle(entity *ecs.Entity, component *Vehicle) {
+	entity.SetComponent(VehicleComponentID, component)
 }
 
-type PhysicsComponent struct {
-	Body *physics.Body
-}
-
-type RenderComponent struct {
-	Renderable *render.Renderable
-}
-
-type PlayerControl struct {
+func GetVehicle(entity *ecs.Entity) *Vehicle {
+	component := entity.Component(VehicleComponentID)
+	if component == nil {
+		return nil
+	}
+	return component.(*Vehicle)
 }
 
 type Vehicle struct {
@@ -46,12 +39,4 @@ type Wheel struct {
 	RotationConstraint   *solver.MatchAxis
 	AccelerationVelocity float32
 	DecelerationVelocity float32
-}
-
-type CameraStand struct {
-	Target         *Entity
-	AnchorPosition sprec.Vec3
-	AnchorDistance float32
-	CameraDistance float32
-	Camera         *render.Camera
 }
