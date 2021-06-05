@@ -1,37 +1,47 @@
-package ecs
+package ecssys
 
 import (
 	"time"
 
 	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/lacking/app"
+	"github.com/mokiat/lacking/game/ecs"
+	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecscomp"
 )
 
-func NewCameraStandSystem(ecsManager *Manager) *CameraStandSystem {
+func NewCameraStandSystem(ecsScene *ecs.Scene) *CameraStandSystem {
 	return &CameraStandSystem{
-		ecsManager: ecsManager,
+		ecsScene: ecsScene,
 	}
 }
 
 type CameraStandSystem struct {
-	ecsManager *Manager
+	ecsScene *ecs.Scene
 }
 
 func (s *CameraStandSystem) Update(elapsedTime time.Duration, gamepad *app.GamepadState) {
-	for _, entity := range s.ecsManager.Entities() {
-		if cameraStand := entity.CameraStand; cameraStand != nil {
-			s.updateCameraStand(cameraStand, elapsedTime, gamepad)
-		}
+	result := s.ecsScene.Find(ecs.Having(ecscomp.CameraStandComponentID))
+	defer result.Close()
+
+	for result.HasNext() {
+		entity := result.Next()
+		cameraStand := ecscomp.GetCameraStand(entity)
+		s.updateCameraStand(cameraStand, elapsedTime, gamepad)
 	}
 }
 
-func (s *CameraStandSystem) updateCameraStand(cameraStand *CameraStand, elapsedTime time.Duration, gamepad *app.GamepadState) {
+func (s *CameraStandSystem) updateCameraStand(cameraStand *ecscomp.CameraStand, elapsedTime time.Duration, gamepad *app.GamepadState) {
+	var (
+		targetPhysicsComp = ecscomp.GetPhysics(cameraStand.Target)
+		targetRenderComp  = ecscomp.GetRender(cameraStand.Target)
+	)
+
 	var targetPosition sprec.Vec3
 	switch {
-	case cameraStand.Target.Physics != nil:
-		targetPosition = cameraStand.Target.Physics.Body.Position()
-	case cameraStand.Target.Render != nil:
-		targetPosition = cameraStand.Target.Render.Renderable.Matrix.Translation()
+	case targetPhysicsComp != nil:
+		targetPosition = targetPhysicsComp.Body.Position()
+	case targetRenderComp != nil:
+		targetPosition = targetRenderComp.Renderable.Matrix.Translation()
 	}
 	// we use a camera anchor to achieve the smooth effect of a
 	// camera following the target

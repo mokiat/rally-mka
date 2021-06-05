@@ -29,8 +29,8 @@ github.com/mdouchement/hdr v0.2.3 h1:IxzxLgEarv9VPsk17DGIWnhA60MA5ASbekCU8YSFmaY
 github.com/mdouchement/hdr v0.2.3/go.mod h1:2Yb3JAST9c66wTLZ1vQrejU5sDeOC+ukXVs1pFAUtPo=
 github.com/mokiat/gomath v0.1.0 h1:wSBt+R4mT+9ndA3iPGKxWRAI+G/8Nmdic2xiCFC6hvc=
 github.com/mokiat/gomath v0.1.0/go.mod h1:KWlJ2no76F4c6nrnJ7VFwdMKtzbmQXfYuDzwJsm/Xng=
-github.com/mokiat/lacking v0.1.1-0.20210602184749-78725fb3f0b0 h1:VNXH6m1mypqXGrDOMUSouQEjdyEbVAuNqXkxrxrqejI=
-github.com/mokiat/lacking v0.1.1-0.20210602184749-78725fb3f0b0/go.mod h1:GF61qQ47jiL3QepaCn5bGwHwRyb1YZupUyHbspzFVQI=
+github.com/mokiat/lacking v0.1.1-0.20210605144919-30a470105a07 h1:M32CDX4oX8tpzkvgs9oQrqkFRTRjTJGan30l0g/FoGY=
+github.com/mokiat/lacking v0.1.1-0.20210605144919-30a470105a07/go.mod h1:GF61qQ47jiL3QepaCn5bGwHwRyb1YZupUyHbspzFVQI=
 github.com/nxadm/tail v1.4.4/go.mod h1:kenIhsEOeOJmVchQTgglprH7qJGnHDVpk1VPCcaMI8A=
 github.com/nxadm/tail v1.4.8 h1:nPr65rt6Y5JFSKQO7qToXr7pePgD6Gwiw05lkbyAQTE=
 github.com/nxadm/tail v1.4.8/go.mod h1:+ncqLTQzXmGhMZNUePPaPqPvBxHAIsmXswZKocGu+AU=

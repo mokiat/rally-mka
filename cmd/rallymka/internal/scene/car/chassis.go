@@ -2,11 +2,12 @@ package car
 
 import (
 	"github.com/mokiat/gomath/sprec"
+	"github.com/mokiat/lacking/game/ecs"
 	"github.com/mokiat/lacking/game/physics"
 	"github.com/mokiat/lacking/render"
 	"github.com/mokiat/lacking/resource"
 	"github.com/mokiat/lacking/shape"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecs"
+	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecscomp"
 )
 
 const (
@@ -31,19 +32,21 @@ type ChassisBuilder struct {
 
 func (b *ChassisBuilder) WithName(name string) *ChassisBuilder {
 	b.modifiers = append(b.modifiers, func(entity *ecs.Entity) {
-		entity.Physics.Body.SetName(name)
+		physicsComponent := ecscomp.GetPhysics(entity)
+		physicsComponent.Body.SetName(name)
 	})
 	return b
 }
 
 func (b *ChassisBuilder) WithPosition(position sprec.Vec3) *ChassisBuilder {
 	b.modifiers = append(b.modifiers, func(entity *ecs.Entity) {
-		entity.Physics.Body.SetPosition(position)
+		physicsComponent := ecscomp.GetPhysics(entity)
+		physicsComponent.Body.SetPosition(position)
 	})
 	return b
 }
 
-func (b *ChassisBuilder) Build(ecsManager *ecs.Manager, scene *render.Scene, physicsScene *physics.Scene) *ecs.Entity {
+func (b *ChassisBuilder) Build(ecsScene *ecs.Scene, scene *render.Scene, physicsScene *physics.Scene) *ecs.Entity {
 	bodyNode, _ := b.model.FindNode("Chassis")
 
 	physicsBody := physicsScene.CreateBody()
@@ -62,17 +65,17 @@ func (b *ChassisBuilder) Build(ecsManager *ecs.Manager, scene *render.Scene, phy
 		},
 	})
 
-	entity := ecsManager.CreateEntity()
-	entity.Physics = &ecs.PhysicsComponent{
+	entity := ecsScene.CreateEntity()
+	ecscomp.SetPhysics(entity, &ecscomp.Physics{
 		Body: physicsBody,
-	}
-	entity.Render = &ecs.RenderComponent{
+	})
+	ecscomp.SetRender(entity, &ecscomp.Render{
 		Renderable: scene.Layout().CreateRenderable(sprec.IdentityMat4(), 100.0, &resource.Model{
 			Nodes: []*resource.Node{
 				bodyNode,
 			},
 		}),
-	}
+	})
 
 	for _, modifier := range b.modifiers {
 		modifier(entity)
