@@ -5,7 +5,9 @@ import (
 
 	"github.com/mokiat/lacking/app"
 	"github.com/mokiat/lacking/async"
-	"github.com/mokiat/lacking/graphics"
+	"github.com/mokiat/lacking/game/ecs"
+	"github.com/mokiat/lacking/game/graphics"
+	"github.com/mokiat/lacking/game/physics"
 	"github.com/mokiat/lacking/resource"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/game/loading"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/game/simulation"
@@ -20,23 +22,25 @@ type View interface {
 
 	OnKeyboardEvent(window app.Window, event app.KeyboardEvent) bool
 
-	Update(window app.Window, elapsedTime time.Duration)
-	Render(window app.Window, width, height int, pipeline *graphics.Pipeline)
+	Update(window app.Window, elapsedSeconds float32)
+	Render(window app.Window, width, height int)
 }
 
-func NewController() *Controller {
+func NewController(gfxEngine graphics.Engine) *Controller {
 	gfxWorker := async.NewWorker(1024)
-	gfxRenderer := graphics.NewRenderer()
+	physicsEngine := physics.NewEngine()
+	ecsEngine := ecs.NewEngine()
+
 	locator := resource.FileLocator{}
-	registry := resource.NewRegistry(locator, gfxWorker)
+	registry := resource.NewRegistry(locator, gfxEngine, gfxWorker)
 
 	return &Controller{
-		gfxWorker:   gfxWorker,
-		gfxRenderer: gfxRenderer,
-		registry:    registry,
+		gfxEngine: gfxEngine,
+		gfxWorker: gfxWorker,
+		registry:  registry,
 
-		loadingView:    loading.NewView(registry),
-		simulationView: simulation.NewView(registry, gfxWorker),
+		loadingView:    loading.NewView(gfxEngine),
+		simulationView: simulation.NewView(gfxEngine, physicsEngine, ecsEngine, registry, gfxWorker),
 
 		lastFrameTime: time.Now(),
 	}
@@ -45,10 +49,10 @@ func NewController() *Controller {
 type Controller struct {
 	app.NopController
 
-	window      app.Window
-	gfxWorker   *async.Worker
-	gfxRenderer *graphics.Renderer
-	registry    *resource.Registry
+	window    app.Window
+	gfxEngine graphics.Engine
+	gfxWorker *async.Worker
+	registry  *resource.Registry
 
 	activeView     View
 	loadingView    View
@@ -62,6 +66,8 @@ type Controller struct {
 func (c *Controller) OnCreate(window app.Window) {
 	c.window = window
 	c.width, c.height = window.Size()
+
+	c.gfxEngine.Create()
 
 	c.loadingView.Load(window, c.onLoadingAvailable)
 	c.simulationView.Load(window, c.onSimulationAvailable)
@@ -94,11 +100,8 @@ func (c *Controller) OnRender(window app.Window) {
 	c.lastFrameTime = currentTime
 
 	if c.activeView != nil {
-		c.activeView.Update(window, elapsedTime)
-		pipeline := c.gfxRenderer.BeginPipeline()
-		c.activeView.Render(window, c.width, c.height, pipeline)
-		c.gfxRenderer.EndPipeline(pipeline)
-		c.gfxRenderer.Render()
+		c.activeView.Update(window, float32(elapsedTime.Seconds()))
+		c.activeView.Render(window, c.width, c.height)
 	}
 
 	window.Invalidate() // force redraw
@@ -109,6 +112,8 @@ func (c *Controller) OnDestroy(window app.Window) {
 
 	c.loadingView.Unload(window)
 	c.simulationView.Unload(window)
+
+	c.gfxEngine.Destroy()
 }
 
 func (c *Controller) onLoadingAvailable() {

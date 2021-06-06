@@ -8,37 +8,6 @@ import (
 func main() {
 	packer := pack.NewPacker()
 
-	// Programs
-	packer.Pipeline(func(p *pack.Pipeline) {
-		p.SaveProgramAsset("assets/programs/forward-albedo.dat",
-			p.BuildProgram(
-				pack.WithVertexShader(p.OpenShaderResource("resources/shaders/forward-albedo.vert")),
-				pack.WithFragmentShader(p.OpenShaderResource("resources/shaders/forward-albedo.frag")),
-			),
-		)
-
-		p.SaveProgramAsset("assets/programs/forward-debug.dat",
-			p.BuildProgram(
-				pack.WithVertexShader(p.OpenShaderResource("resources/shaders/forward-debug.vert")),
-				pack.WithFragmentShader(p.OpenShaderResource("resources/shaders/forward-debug.frag")),
-			),
-		)
-
-		p.SaveProgramAsset("assets/programs/geometry-skybox.dat",
-			p.BuildProgram(
-				pack.WithVertexShader(p.OpenShaderResource("resources/shaders/geometry-skybox.vert")),
-				pack.WithFragmentShader(p.OpenShaderResource("resources/shaders/geometry-skybox.frag")),
-			),
-		)
-
-		p.SaveProgramAsset("assets/programs/lighting-pbr.dat",
-			p.BuildProgram(
-				pack.WithVertexShader(p.OpenShaderResource("resources/shaders/lighting-pbr.vert")),
-				pack.WithFragmentShader(p.OpenShaderResource("resources/shaders/lighting-pbr.frag")),
-			),
-		)
-	})
-
 	// TwoD Textures
 	packer.Pipeline(func(p *pack.Pipeline) {
 		p.SaveTwoDTextureAsset("assets/textures/twod/loading.dat",

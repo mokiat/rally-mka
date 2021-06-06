@@ -3,8 +3,8 @@ package car
 import (
 	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/lacking/game/ecs"
+	"github.com/mokiat/lacking/game/graphics"
 	"github.com/mokiat/lacking/game/physics"
-	"github.com/mokiat/lacking/render"
 	"github.com/mokiat/lacking/resource"
 	"github.com/mokiat/lacking/shape"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecscomp"
@@ -46,8 +46,8 @@ func (b *ChassisBuilder) WithPosition(position sprec.Vec3) *ChassisBuilder {
 	return b
 }
 
-func (b *ChassisBuilder) Build(ecsScene *ecs.Scene, scene *render.Scene, physicsScene *physics.Scene) *ecs.Entity {
-	bodyNode, _ := b.model.FindNode("Chassis")
+func (b *ChassisBuilder) Build(ecsScene *ecs.Scene, gfxScene graphics.Scene, physicsScene *physics.Scene) *ecs.Entity {
+	// bodyNode, _ := b.model.FindNode("Chassis")
 
 	physicsBody := physicsScene.CreateBody()
 	physicsBody.SetPosition(sprec.ZeroVec3())
@@ -69,13 +69,14 @@ func (b *ChassisBuilder) Build(ecsScene *ecs.Scene, scene *render.Scene, physics
 	ecscomp.SetPhysics(entity, &ecscomp.Physics{
 		Body: physicsBody,
 	})
-	ecscomp.SetRender(entity, &ecscomp.Render{
-		Renderable: scene.Layout().CreateRenderable(sprec.IdentityMat4(), 100.0, &resource.Model{
-			Nodes: []*resource.Node{
-				bodyNode,
-			},
-		}),
-	})
+	// TODO
+	// ecscomp.SetRender(entity, &ecscomp.Render{
+	// 	Renderable: scene.Layout().CreateRenderable(sprec.IdentityMat4(), 100.0, &resource.Model{
+	// 		Nodes: []*resource.Node{
+	// 			bodyNode,
+	// 		},
+	// 	}),
+	// })
 
 	for _, modifier := range b.modifiers {
 		modifier(entity)
