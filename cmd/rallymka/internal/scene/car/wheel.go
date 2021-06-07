@@ -1,6 +1,8 @@
 package car
 
 import (
+	"fmt"
+
 	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/lacking/game/ecs"
 	"github.com/mokiat/lacking/game/graphics"
@@ -58,7 +60,7 @@ func (b *WheelBuilder) WithPosition(position sprec.Vec3) *WheelBuilder {
 }
 
 func (b *WheelBuilder) Build(ecsScene *ecs.Scene, gfxScene graphics.Scene, physicsScene *physics.Scene) *ecs.Entity {
-	// modelNode, _ := b.model.FindNode(fmt.Sprintf("%sWheel", b.location))
+	modelNode, _ := b.model.FindNode(fmt.Sprintf("%sWheel", b.location))
 
 	physicsBody := physicsScene.CreateBody()
 	physicsBody.SetPosition(sprec.ZeroVec3())
@@ -81,14 +83,15 @@ func (b *WheelBuilder) Build(ecsScene *ecs.Scene, gfxScene graphics.Scene, physi
 	ecscomp.SetPhysics(entity, &ecscomp.Physics{
 		Body: physicsBody,
 	})
-	// TODO
-	// ecscomp.SetRender(entity, &ecscomp.Render{
-	// 	Renderable: scene.Layout().CreateRenderable(sprec.IdentityMat4(), 100.0, &resource.Model{
-	// 		Nodes: []*resource.Node{
-	// 			modelNode,
-	// 		},
-	// 	}),
-	// })
+
+	gfxMesh := gfxScene.CreateMesh(modelNode.Mesh.GFXMeshTemplate)
+	gfxMesh.SetPosition(modelNode.Matrix.Translation())
+	// TODO: Set Rotation
+	// TODO: Set Scale
+
+	ecscomp.SetRender(entity, &ecscomp.Render{
+		Mesh: gfxMesh,
+	})
 	for _, modifier := range b.modifiers {
 		modifier(entity)
 	}

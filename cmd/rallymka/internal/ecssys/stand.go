@@ -39,7 +39,7 @@ func (s *CameraStandSystem) updateCameraStand(cameraStand *ecscomp.CameraStand, 
 	case targetPhysicsComp != nil:
 		targetPosition = targetPhysicsComp.Body.Position()
 	case targetRenderComp != nil:
-		targetPosition = targetRenderComp.Renderable.Matrix.Translation()
+		targetPosition = targetRenderComp.Mesh.Position()
 	}
 	// we use a camera anchor to achieve the smooth effect of a
 	// camera following the target

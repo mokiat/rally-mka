@@ -47,7 +47,7 @@ func (b *ChassisBuilder) WithPosition(position sprec.Vec3) *ChassisBuilder {
 }
 
 func (b *ChassisBuilder) Build(ecsScene *ecs.Scene, gfxScene graphics.Scene, physicsScene *physics.Scene) *ecs.Entity {
-	// bodyNode, _ := b.model.FindNode("Chassis")
+	bodyNode, _ := b.model.FindNode("Chassis")
 
 	physicsBody := physicsScene.CreateBody()
 	physicsBody.SetPosition(sprec.ZeroVec3())
@@ -69,14 +69,15 @@ func (b *ChassisBuilder) Build(ecsScene *ecs.Scene, gfxScene graphics.Scene, phy
 	ecscomp.SetPhysics(entity, &ecscomp.Physics{
 		Body: physicsBody,
 	})
-	// TODO
-	// ecscomp.SetRender(entity, &ecscomp.Render{
-	// 	Renderable: scene.Layout().CreateRenderable(sprec.IdentityMat4(), 100.0, &resource.Model{
-	// 		Nodes: []*resource.Node{
-	// 			bodyNode,
-	// 		},
-	// 	}),
-	// })
+
+	gfxMesh := gfxScene.CreateMesh(bodyNode.Mesh.GFXMeshTemplate)
+	gfxMesh.SetPosition(bodyNode.Matrix.Translation())
+	// TODO: Set Rotation
+	// TODO: Set Scale
+
+	ecscomp.SetRender(entity, &ecscomp.Render{
+		Mesh: gfxMesh,
+	})
 
 	for _, modifier := range b.modifiers {
 		modifier(entity)

@@ -87,14 +87,14 @@ func (v *View) Open(window app.Window) {
 	v.physicsScene = v.physicsEngine.CreateScene(0.015)
 	v.ecsScene = v.ecsEngine.CreateScene()
 
-	v.renderSystem = ecssys.NewRenderer(v.ecsScene, nil) //
+	v.renderSystem = ecssys.NewRenderer(v.ecsScene)
 	v.vehicleSystem = ecssys.NewVehicleSystem(v.ecsScene)
 	v.cameraStandSystem = ecssys.NewCameraStandSystem(v.ecsScene)
 
 	v.camera = v.gfxScene.CreateCamera()
 	v.camera.SetPosition(sprec.NewVec3(0.0, 0.0, 0.0))
 	v.camera.SetFoVMode(graphics.FoVModeHorizontalPlus)
-	v.camera.SetFoV(sprec.Degrees(50)) // TODO: Originally around 110 degrees
+	v.camera.SetFoV(sprec.Degrees(66))
 	v.camera.SetAutoExposure(false)
 	v.camera.SetExposure(1.0)
 	v.camera.SetAutoFocus(false)
@@ -108,23 +108,14 @@ func (v *View) setupLevel(level *resource.Level) {
 	v.gfxScene.Sky().SetSkybox(level.SkyboxTexture.GFXTexture)
 
 	// s.scene.Layout().SetSkybox(&render.Skybox{
-	// 	SkyboxTexture:            level.SkyboxTexture.GFXTexture,
 	// 	AmbientReflectionTexture: level.AmbientReflectionTexture.GFXTexture,
 	// 	AmbientRefractionTexture: level.AmbientRefractionTexture.GFXTexture,
 	// })
+	// TODO: Add Ambient Light
 
-	// for _, staticMesh := range level.StaticMeshes {
-	// 	s.scene.Layout().CreateRenderable(sprec.IdentityMat4(), 100.0, &resource.Model{
-	// 		Name: "static",
-	// 		Nodes: []*resource.Node{
-	// 			{
-	// 				Name:   "root",
-	// 				Matrix: sprec.IdentityMat4(),
-	// 				Mesh:   staticMesh,
-	// 			},
-	// 		},
-	// 	})
-	// }
+	for _, staticMesh := range level.StaticMeshes {
+		v.gfxScene.CreateMesh(staticMesh.GFXMeshTemplate)
+	}
 
 	for _, collisionMesh := range level.CollisionMeshes {
 		body := v.physicsScene.CreateBody()
@@ -135,9 +126,25 @@ func (v *View) setupLevel(level *resource.Level) {
 		body.SetCollisionShapes([]physics.CollisionShape{collisionMesh})
 	}
 
-	// for _, staticEntity := range level.StaticEntities {
-	// 	s.scene.Layout().CreateRenderable(staticEntity.Matrix, 100.0, staticEntity.Model)
-	// }
+	var createModelMesh func(matrix sprec.Mat4, node *resource.Node)
+	createModelMesh = func(matrix sprec.Mat4, node *resource.Node) {
+		modelMatrix := sprec.Mat4Prod(matrix, node.Matrix)
+
+		gfxMesh := v.gfxScene.CreateMesh(node.Mesh.GFXMeshTemplate)
+		gfxMesh.SetPosition(modelMatrix.Translation())
+		// TODO: SetRotation
+		// TODO: SetScale
+
+		for _, child := range node.Children {
+			createModelMesh(modelMatrix, child)
+		}
+	}
+
+	for _, staticEntity := range level.StaticEntities {
+		for _, node := range staticEntity.Model.Nodes {
+			createModelMesh(staticEntity.Matrix, node)
+		}
+	}
 
 	carModel := v.gameData.CarModel
 	targetEntity := v.setupCarDemo(carModel, sprec.NewVec3(0.0, 3.0, 0.0))
