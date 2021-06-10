@@ -104,14 +104,18 @@ func (v *View) Open(window app.Window) {
 
 func (v *View) setupLevel(level *resource.Level) {
 	v.gfxScene.Sky().SetBackgroundColor(sprec.NewVec3(0.0, 0.3, 0.8))
-
 	v.gfxScene.Sky().SetSkybox(level.SkyboxTexture.GFXTexture)
 
-	// s.scene.Layout().SetSkybox(&render.Skybox{
-	// 	AmbientReflectionTexture: level.AmbientReflectionTexture.GFXTexture,
-	// 	AmbientRefractionTexture: level.AmbientRefractionTexture.GFXTexture,
-	// })
-	// TODO: Add Ambient Light
+	ambientLight := v.gfxScene.CreateAmbientLight()
+	ambientLight.SetReflectionTexture(level.AmbientReflectionTexture.GFXTexture)
+	ambientLight.SetRefractionTexture(level.AmbientRefractionTexture.GFXTexture)
+
+	sunLight := v.gfxScene.CreateDirectionalLight()
+	sunLight.SetRotation(sprec.QuatProd(
+		sprec.RotationQuat(sprec.Degrees(225), sprec.BasisYVec3()),
+		sprec.RotationQuat(sprec.Degrees(-45), sprec.BasisXVec3()),
+	))
+	sunLight.SetIntensity(sprec.NewVec3(1.2, 1.2, 1.2))
 
 	for _, staticMesh := range level.StaticMeshes {
 		v.gfxScene.CreateMesh(staticMesh.GFXMeshTemplate)
