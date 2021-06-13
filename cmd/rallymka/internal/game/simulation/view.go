@@ -95,7 +95,7 @@ func (v *View) Open(window app.Window) {
 	v.camera.SetPosition(sprec.NewVec3(0.0, 0.0, 0.0))
 	v.camera.SetFoVMode(graphics.FoVModeHorizontalPlus)
 	v.camera.SetFoV(sprec.Degrees(66))
-	v.camera.SetAutoExposure(false)
+	v.camera.SetAutoExposure(true)
 	v.camera.SetExposure(1.0)
 	v.camera.SetAutoFocus(false)
 
