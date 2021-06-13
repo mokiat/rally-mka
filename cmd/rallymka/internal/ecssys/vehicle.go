@@ -1,8 +1,6 @@
 package ecssys
 
 import (
-	"time"
-
 	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/lacking/app"
 	"github.com/mokiat/lacking/game/ecs"
@@ -52,7 +50,7 @@ func (s *VehicleSystem) OnKeyboardEvent(event app.KeyboardEvent) bool {
 	return false
 }
 
-func (s *VehicleSystem) Update(elapsedTime time.Duration, gamepad *app.GamepadState) {
+func (s *VehicleSystem) Update(elapsedSeconds float32, gamepad *app.GamepadState) {
 	result := s.ecsScene.Find(ecs.Having(ecscomp.VehicleComponentID))
 	defer result.Close()
 
@@ -61,16 +59,16 @@ func (s *VehicleSystem) Update(elapsedTime time.Duration, gamepad *app.GamepadSt
 		vehicle := ecscomp.GetVehicle(entity)
 		if ecscomp.GetPlayerControl(entity) != nil {
 			if gamepad != nil {
-				s.updateVehicleControlGamepad(vehicle, elapsedTime, gamepad)
+				s.updateVehicleControlGamepad(vehicle, elapsedSeconds, gamepad)
 			} else {
-				s.updateVehicleControlKeyboard(vehicle, elapsedTime)
+				s.updateVehicleControlKeyboard(vehicle, elapsedSeconds)
 			}
 		}
-		s.updateVehiclePhysics(vehicle, elapsedTime)
+		s.updateVehiclePhysics(vehicle, elapsedSeconds)
 	}
 }
 
-func (s *VehicleSystem) updateVehicleControlGamepad(vehicle *ecscomp.Vehicle, elapsedTime time.Duration, gamepad *app.GamepadState) {
+func (s *VehicleSystem) updateVehicleControlGamepad(vehicle *ecscomp.Vehicle, elapsedSeconds float32, gamepad *app.GamepadState) {
 	steeringAmount := gamepad.LeftStickX * sprec.Abs(gamepad.LeftStickX)
 	vehicle.SteeringAngle = -sprec.Degrees(steeringAmount * vehicle.MaxSteeringAngle.Degrees())
 	vehicle.Acceleration = gamepad.RightTrigger
@@ -78,8 +76,7 @@ func (s *VehicleSystem) updateVehicleControlGamepad(vehicle *ecscomp.Vehicle, el
 	vehicle.Recover = gamepad.LeftBumper
 }
 
-func (s *VehicleSystem) updateVehicleControlKeyboard(vehicle *ecscomp.Vehicle, elapsedTime time.Duration) {
-	elapsedSeconds := float32(elapsedTime.Seconds())
+func (s *VehicleSystem) updateVehicleControlKeyboard(vehicle *ecscomp.Vehicle, elapsedSeconds float32) {
 	vehicle.Recover = s.isRecover
 
 	autoMaxSteeringAngle := sprec.Degrees(vehicle.MaxSteeringAngle.Degrees() / (1.0 + 0.05*vehicle.Chassis.Body.Velocity().Length()))
@@ -121,9 +118,7 @@ func (s *VehicleSystem) updateVehicleControlKeyboard(vehicle *ecscomp.Vehicle, e
 	}
 }
 
-func (s *VehicleSystem) updateVehiclePhysics(vehicle *ecscomp.Vehicle, elapsedTime time.Duration) {
-	elapsedSeconds := float32(elapsedTime.Seconds())
-
+func (s *VehicleSystem) updateVehiclePhysics(vehicle *ecscomp.Vehicle, elapsedSeconds float32) {
 	if vehicle.Recover {
 		vehicle.Chassis.Body.SetAngularVelocity(sprec.Vec3Sum(vehicle.Chassis.Body.AngularVelocity(), sprec.NewVec3(0.0, 0.0, 0.1)))
 		vehicle.Chassis.Body.SetVelocity(sprec.Vec3Sum(vehicle.Chassis.Body.Velocity(), sprec.NewVec3(0.0, 0.2, 0.0)))

@@ -2,7 +2,7 @@ package ecscomp
 
 import (
 	"github.com/mokiat/lacking/game/ecs"
-	"github.com/mokiat/lacking/render"
+	"github.com/mokiat/lacking/game/graphics"
 )
 
 func SetRender(entity *ecs.Entity, component *Render) {
@@ -18,5 +18,5 @@ func GetRender(entity *ecs.Entity) *Render {
 }
 
 type Render struct {
-	Renderable *render.Renderable
+	Mesh graphics.Mesh
 }

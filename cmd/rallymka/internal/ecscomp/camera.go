@@ -3,7 +3,7 @@ package ecscomp
 import (
 	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/lacking/game/ecs"
-	"github.com/mokiat/lacking/render"
+	"github.com/mokiat/lacking/game/graphics"
 )
 
 func SetCameraStand(entity *ecs.Entity, component *CameraStand) {
@@ -23,5 +23,5 @@ type CameraStand struct {
 	AnchorPosition sprec.Vec3
 	AnchorDistance float32
 	CameraDistance float32
-	Camera         *render.Camera
+	Camera         graphics.Camera
 }
