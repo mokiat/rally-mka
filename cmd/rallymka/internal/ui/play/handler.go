@@ -1,16 +1,18 @@
-package simulation
+package play
 
 import (
+	"fmt"
+
 	"github.com/mokiat/gomath/sprec"
-	"github.com/mokiat/lacking/app"
-	"github.com/mokiat/lacking/async"
 	"github.com/mokiat/lacking/game/ecs"
 	"github.com/mokiat/lacking/game/graphics"
 	"github.com/mokiat/lacking/game/physics"
 	"github.com/mokiat/lacking/game/physics/solver"
 	"github.com/mokiat/lacking/resource"
+	"github.com/mokiat/lacking/ui"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecscomp"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecssys"
+	"github.com/mokiat/rally-mka/cmd/rallymka/internal/game"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/scene"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/scene/car"
 )
@@ -39,22 +41,31 @@ const (
 	suspensionDampingRatio = float32(1.0)
 )
 
-func NewView(gfxEngine graphics.Engine, physicsEngine *physics.Engine, ecsEngine *ecs.Engine, registry *resource.Registry, gfxWorker *async.Worker) *View {
-	return &View{
-		gameData: scene.NewData(registry, gfxWorker),
-
-		gfxEngine:     gfxEngine,
-		physicsEngine: physicsEngine,
-		ecsEngine:     ecsEngine,
-	}
+type Config struct {
+	GameController *game.Controller
+	GameData       *scene.Data
 }
 
-type View struct {
-	gameData *scene.Data
+func (c Config) SetupView(view *ui.View) error {
+	template, err := view.Context().OpenTemplate("resources/ui/play/view.xml")
+	if err != nil {
+		return fmt.Errorf("failed to open template: %w", err)
+	}
+	rootControl, err := view.Context().InstantiateTemplate(template, nil)
+	if err != nil {
+		return fmt.Errorf("failed to instantiate template: %w", err)
+	}
+	view.SetRoot(rootControl)
+	view.SetHandler(&Handler{
+		gameController: c.GameController,
+		gameData:       c.GameData,
+	})
+	return nil
+}
 
-	gfxEngine     graphics.Engine
-	physicsEngine *physics.Engine
-	ecsEngine     *ecs.Engine
+type Handler struct {
+	gameController *game.Controller
+	gameData       *scene.Data
 
 	gfxScene     graphics.Scene
 	physicsScene *physics.Scene
@@ -65,52 +76,45 @@ type View struct {
 	cameraStandSystem *ecssys.CameraStandSystem
 
 	camera graphics.Camera
-
-	freezeFrame bool
 }
 
-func (v *View) Load(window app.Window, cb func()) {
-	v.gameData.Request().OnSuccess(func(interface{}) {
-		window.Schedule(func() error {
-			cb()
-			return nil
-		})
-	})
+func (h *Handler) OnCreate(view *ui.View) {
+	h.gfxScene = h.gameController.GFXScene()
+	h.physicsScene = h.gameController.PhysicsScene()
+	h.ecsScene = h.gameController.ECSScene()
+
+	h.renderSystem = h.gameController.RenderSystem()
+	h.vehicleSystem = h.gameController.VehicleSystem()
+	h.cameraStandSystem = h.gameController.CameraStandSystem()
+
+	h.camera = h.gameController.Camera()
+	h.camera.SetPosition(sprec.NewVec3(0.0, 0.0, 0.0))
+	h.camera.SetFoVMode(graphics.FoVModeHorizontalPlus)
+	h.camera.SetFoV(sprec.Degrees(66))
+	h.camera.SetAutoExposure(true)
+	h.camera.SetExposure(1.0)
+	h.camera.SetAutoFocus(false)
+
+	h.setupLevel(h.gameData.Level)
 }
 
-func (v *View) Unload(window app.Window) {
-	v.gameData.Dismiss()
+func (h *Handler) OnShow(view *ui.View) {}
+
+func (h *Handler) OnHide(view *ui.View) {}
+
+func (h *Handler) OnDestroy(view *ui.View) {
+	h.gameData.Dismiss()
 }
 
-func (v *View) Open(window app.Window) {
-	v.gfxScene = v.gfxEngine.CreateScene()
-	v.physicsScene = v.physicsEngine.CreateScene(0.015)
-	v.ecsScene = v.ecsEngine.CreateScene()
+func (h *Handler) setupLevel(level *resource.Level) {
+	h.gfxScene.Sky().SetBackgroundColor(sprec.NewVec3(0.0, 0.3, 0.8))
+	h.gfxScene.Sky().SetSkybox(level.SkyboxTexture.GFXTexture)
 
-	v.renderSystem = ecssys.NewRenderer(v.ecsScene)
-	v.vehicleSystem = ecssys.NewVehicleSystem(v.ecsScene)
-	v.cameraStandSystem = ecssys.NewCameraStandSystem(v.ecsScene)
-
-	v.camera = v.gfxScene.CreateCamera()
-	v.camera.SetPosition(sprec.NewVec3(0.0, 0.0, 0.0))
-	v.camera.SetFoVMode(graphics.FoVModeHorizontalPlus)
-	v.camera.SetFoV(sprec.Degrees(66))
-	v.camera.SetAutoExposure(true)
-	v.camera.SetExposure(1.0)
-	v.camera.SetAutoFocus(false)
-
-	v.setupLevel(v.gameData.Level)
-}
-
-func (v *View) setupLevel(level *resource.Level) {
-	v.gfxScene.Sky().SetBackgroundColor(sprec.NewVec3(0.0, 0.3, 0.8))
-	v.gfxScene.Sky().SetSkybox(level.SkyboxTexture.GFXTexture)
-
-	ambientLight := v.gfxScene.CreateAmbientLight()
+	ambientLight := h.gfxScene.CreateAmbientLight()
 	ambientLight.SetReflectionTexture(level.AmbientReflectionTexture.GFXTexture)
 	ambientLight.SetRefractionTexture(level.AmbientRefractionTexture.GFXTexture)
 
-	sunLight := v.gfxScene.CreateDirectionalLight()
+	sunLight := h.gfxScene.CreateDirectionalLight()
 	sunLight.SetRotation(sprec.QuatProd(
 		sprec.RotationQuat(sprec.Degrees(225), sprec.BasisYVec3()),
 		sprec.RotationQuat(sprec.Degrees(-45), sprec.BasisXVec3()),
@@ -118,11 +122,11 @@ func (v *View) setupLevel(level *resource.Level) {
 	sunLight.SetIntensity(sprec.NewVec3(1.2, 1.2, 1.2))
 
 	for _, staticMesh := range level.StaticMeshes {
-		v.gfxScene.CreateMesh(staticMesh.GFXMeshTemplate)
+		h.gfxScene.CreateMesh(staticMesh.GFXMeshTemplate)
 	}
 
 	for _, collisionMesh := range level.CollisionMeshes {
-		body := v.physicsScene.CreateBody()
+		body := h.physicsScene.CreateBody()
 		body.SetPosition(sprec.ZeroVec3())
 		body.SetOrientation(sprec.IdentityQuat())
 		body.SetStatic(true)
@@ -134,7 +138,7 @@ func (v *View) setupLevel(level *resource.Level) {
 	createModelMesh = func(matrix sprec.Mat4, node *resource.Node) {
 		modelMatrix := sprec.Mat4Prod(matrix, node.Matrix)
 
-		gfxMesh := v.gfxScene.CreateMesh(node.Mesh.GFXMeshTemplate)
+		gfxMesh := h.gfxScene.CreateMesh(node.Mesh.GFXMeshTemplate)
 		gfxMesh.SetPosition(modelMatrix.Translation())
 		// TODO: SetRotation
 		// TODO: SetScale
@@ -150,46 +154,46 @@ func (v *View) setupLevel(level *resource.Level) {
 		}
 	}
 
-	carModel := v.gameData.CarModel
-	targetEntity := v.setupCarDemo(carModel, sprec.NewVec3(0.0, 3.0, 0.0))
+	carModel := h.gameData.CarModel
+	targetEntity := h.setupCarDemo(carModel, sprec.NewVec3(0.0, 3.0, 0.0))
 	standTarget := targetEntity
-	standEntity := v.ecsScene.CreateEntity()
+	standEntity := h.ecsScene.CreateEntity()
 	ecscomp.SetCameraStand(standEntity, &ecscomp.CameraStand{
 		Target:         standTarget,
-		Camera:         v.camera,
+		Camera:         h.camera,
 		AnchorPosition: sprec.Vec3Sum(ecscomp.GetPhysics(standTarget).Body.Position(), sprec.NewVec3(0.0, 0.0, -cameraDistance)),
 		AnchorDistance: anchorDistance,
 		CameraDistance: cameraDistance,
 	})
 }
 
-func (v *View) setupCarDemo(model *resource.Model, position sprec.Vec3) *ecs.Entity {
+func (h *Handler) setupCarDemo(model *resource.Model, position sprec.Vec3) *ecs.Entity {
 	chasis := car.Chassis(model).
 		WithName("chasis").
 		WithPosition(position).
-		Build(v.ecsScene, v.gfxScene, v.physicsScene)
+		Build(h.ecsScene, h.gfxScene, h.physicsScene)
 	chasisPhysics := ecscomp.GetPhysics(chasis)
 
 	flWheelRelativePosition := sprec.NewVec3(suspensionWidth, suspensionStart-suspensionLength, 1.07)
 	flWheel := car.Wheel(model, car.FrontLeftWheelLocation).
 		WithName("front-left-wheel").
 		WithPosition(sprec.Vec3Sum(position, flWheelRelativePosition)).
-		Build(v.ecsScene, v.gfxScene, v.physicsScene)
+		Build(h.ecsScene, h.gfxScene, h.physicsScene)
 	flWheelPhysics := ecscomp.GetPhysics(flWheel)
-	v.physicsScene.CreateDoubleBodyConstraint(chasisPhysics.Body, flWheelPhysics.Body,
+	h.physicsScene.CreateDoubleBodyConstraint(chasisPhysics.Body, flWheelPhysics.Body,
 		solver.NewMatchTranslation().
 			SetPrimaryAnchor(flWheelRelativePosition).
 			SetIgnoreY(suspensionEnabled),
 	)
-	v.physicsScene.CreateDoubleBodyConstraint(chasisPhysics.Body, flWheelPhysics.Body, &solver.LimitTranslation{
+	h.physicsScene.CreateDoubleBodyConstraint(chasisPhysics.Body, flWheelPhysics.Body, &solver.LimitTranslation{
 		MaxY: suspensionStart,
 		MinY: suspensionEnd,
 	})
 	flRotation := solver.NewMatchAxis().
 		SetPrimaryAxis(sprec.BasisXVec3()).
 		SetSecondaryAxis(sprec.BasisXVec3())
-	v.physicsScene.CreateDoubleBodyConstraint(chasisPhysics.Body, flWheelPhysics.Body, flRotation)
-	v.physicsScene.CreateDoubleBodyConstraint(chasisPhysics.Body, flWheelPhysics.Body, &solver.Coilover{
+	h.physicsScene.CreateDoubleBodyConstraint(chasisPhysics.Body, flWheelPhysics.Body, flRotation)
+	h.physicsScene.CreateDoubleBodyConstraint(chasisPhysics.Body, flWheelPhysics.Body, &solver.Coilover{
 		PrimaryAnchor: flWheelRelativePosition,
 		FrequencyHz:   suspensionFrequencyHz,
 		DampingRatio:  suspensionDampingRatio,
@@ -199,22 +203,22 @@ func (v *View) setupCarDemo(model *resource.Model, position sprec.Vec3) *ecs.Ent
 	frWheel := car.Wheel(model, car.FrontRightWheelLocation).
 		WithName("front-right-wheel").
 		WithPosition(sprec.Vec3Sum(position, frWheelRelativePosition)).
-		Build(v.ecsScene, v.gfxScene, v.physicsScene)
+		Build(h.ecsScene, h.gfxScene, h.physicsScene)
 	frWheelPhysics := ecscomp.GetPhysics(frWheel)
-	v.physicsScene.CreateDoubleBodyConstraint(chasisPhysics.Body, frWheelPhysics.Body,
+	h.physicsScene.CreateDoubleBodyConstraint(chasisPhysics.Body, frWheelPhysics.Body,
 		solver.NewMatchTranslation().
 			SetPrimaryAnchor(frWheelRelativePosition).
 			SetIgnoreY(suspensionEnabled),
 	)
-	v.physicsScene.CreateDoubleBodyConstraint(chasisPhysics.Body, frWheelPhysics.Body, &solver.LimitTranslation{
+	h.physicsScene.CreateDoubleBodyConstraint(chasisPhysics.Body, frWheelPhysics.Body, &solver.LimitTranslation{
 		MaxY: suspensionStart,
 		MinY: suspensionEnd,
 	})
 	frRotation := solver.NewMatchAxis().
 		SetPrimaryAxis(sprec.BasisXVec3()).
 		SetSecondaryAxis(sprec.BasisXVec3())
-	v.physicsScene.CreateDoubleBodyConstraint(chasisPhysics.Body, frWheelPhysics.Body, frRotation)
-	v.physicsScene.CreateDoubleBodyConstraint(chasisPhysics.Body, frWheelPhysics.Body, &solver.Coilover{
+	h.physicsScene.CreateDoubleBodyConstraint(chasisPhysics.Body, frWheelPhysics.Body, frRotation)
+	h.physicsScene.CreateDoubleBodyConstraint(chasisPhysics.Body, frWheelPhysics.Body, &solver.Coilover{
 		PrimaryAnchor: frWheelRelativePosition,
 		FrequencyHz:   suspensionFrequencyHz,
 		DampingRatio:  suspensionDampingRatio,
@@ -224,23 +228,23 @@ func (v *View) setupCarDemo(model *resource.Model, position sprec.Vec3) *ecs.Ent
 	blWheel := car.Wheel(model, car.BackLeftWheelLocation).
 		WithName("back-left-wheel").
 		WithPosition(sprec.Vec3Sum(position, blWheelRelativePosition)).
-		Build(v.ecsScene, v.gfxScene, v.physicsScene)
+		Build(h.ecsScene, h.gfxScene, h.physicsScene)
 	blWheelPhysics := ecscomp.GetPhysics(blWheel)
-	v.physicsScene.CreateDoubleBodyConstraint(chasisPhysics.Body, blWheelPhysics.Body,
+	h.physicsScene.CreateDoubleBodyConstraint(chasisPhysics.Body, blWheelPhysics.Body,
 		solver.NewMatchTranslation().
 			SetPrimaryAnchor(blWheelRelativePosition).
 			SetIgnoreY(suspensionEnabled),
 	)
-	v.physicsScene.CreateDoubleBodyConstraint(chasisPhysics.Body, blWheelPhysics.Body, &solver.LimitTranslation{
+	h.physicsScene.CreateDoubleBodyConstraint(chasisPhysics.Body, blWheelPhysics.Body, &solver.LimitTranslation{
 		MaxY: suspensionStart,
 		MinY: suspensionEnd,
 	})
-	v.physicsScene.CreateDoubleBodyConstraint(chasisPhysics.Body, blWheelPhysics.Body,
+	h.physicsScene.CreateDoubleBodyConstraint(chasisPhysics.Body, blWheelPhysics.Body,
 		solver.NewMatchAxis().
 			SetPrimaryAxis(sprec.BasisXVec3()).
 			SetSecondaryAxis(sprec.BasisXVec3()),
 	)
-	v.physicsScene.CreateDoubleBodyConstraint(chasisPhysics.Body, blWheelPhysics.Body, &solver.Coilover{
+	h.physicsScene.CreateDoubleBodyConstraint(chasisPhysics.Body, blWheelPhysics.Body, &solver.Coilover{
 		PrimaryAnchor: blWheelRelativePosition,
 		FrequencyHz:   suspensionFrequencyHz,
 		DampingRatio:  suspensionDampingRatio,
@@ -250,28 +254,28 @@ func (v *View) setupCarDemo(model *resource.Model, position sprec.Vec3) *ecs.Ent
 	brWheel := car.Wheel(model, car.BackRightWheelLocation).
 		WithName("back-right-wheel").
 		WithPosition(sprec.Vec3Sum(position, brWheelRelativePosition)).
-		Build(v.ecsScene, v.gfxScene, v.physicsScene)
+		Build(h.ecsScene, h.gfxScene, h.physicsScene)
 	brWheelPhysics := ecscomp.GetPhysics(brWheel)
-	v.physicsScene.CreateDoubleBodyConstraint(chasisPhysics.Body, brWheelPhysics.Body,
+	h.physicsScene.CreateDoubleBodyConstraint(chasisPhysics.Body, brWheelPhysics.Body,
 		solver.NewMatchTranslation().
 			SetPrimaryAnchor(brWheelRelativePosition).
 			SetIgnoreY(suspensionEnabled),
 	)
-	v.physicsScene.CreateDoubleBodyConstraint(chasisPhysics.Body, brWheelPhysics.Body, &solver.LimitTranslation{
+	h.physicsScene.CreateDoubleBodyConstraint(chasisPhysics.Body, brWheelPhysics.Body, &solver.LimitTranslation{
 		MaxY: suspensionStart,
 		MinY: suspensionEnd,
 	})
-	v.physicsScene.CreateDoubleBodyConstraint(chasisPhysics.Body, brWheelPhysics.Body, solver.NewMatchAxis().
+	h.physicsScene.CreateDoubleBodyConstraint(chasisPhysics.Body, brWheelPhysics.Body, solver.NewMatchAxis().
 		SetPrimaryAxis(sprec.BasisXVec3()).
 		SetSecondaryAxis(sprec.BasisXVec3()),
 	)
-	v.physicsScene.CreateDoubleBodyConstraint(chasisPhysics.Body, brWheelPhysics.Body, &solver.Coilover{
+	h.physicsScene.CreateDoubleBodyConstraint(chasisPhysics.Body, brWheelPhysics.Body, &solver.Coilover{
 		PrimaryAnchor: brWheelRelativePosition,
 		FrequencyHz:   suspensionFrequencyHz,
 		DampingRatio:  suspensionDampingRatio,
 	})
 
-	car := v.ecsScene.CreateEntity()
+	car := h.ecsScene.CreateEntity()
 	ecscomp.SetVehicle(car, &ecscomp.Vehicle{
 		MaxSteeringAngle: sprec.Degrees(carMaxSteeringAngle),
 		SteeringAngle:    sprec.Degrees(0.0),
@@ -308,48 +312,4 @@ func (v *View) setupCarDemo(model *resource.Model, position sprec.Vec3) *ecs.Ent
 	ecscomp.SetPlayerControl(car, &ecscomp.PlayerControl{})
 
 	return chasis
-}
-
-func (v *View) Close(window app.Window) {
-	v.renderSystem = nil
-	v.vehicleSystem = nil
-	v.cameraStandSystem = nil
-
-	v.ecsScene.Delete()
-	v.physicsScene.Delete()
-	v.gfxScene.Delete()
-}
-
-func (v *View) OnKeyboardEvent(window app.Window, event app.KeyboardEvent) bool {
-	if event.Code == app.KeyCodeF {
-		switch event.Type {
-		case app.KeyboardEventTypeKeyDown:
-			v.freezeFrame = true
-			return true
-		case app.KeyboardEventTypeKeyUp:
-			v.freezeFrame = false
-			return true
-		}
-	}
-	return v.vehicleSystem.OnKeyboardEvent(event)
-}
-
-func (v *View) Update(window app.Window, elapsedSeconds float32) {
-	if v.freezeFrame {
-		return
-	}
-
-	var gamepad *app.GamepadState
-	if state, ok := window.GamepadState(0); ok {
-		gamepad = &state
-	}
-
-	v.physicsScene.Update(elapsedSeconds)
-	v.vehicleSystem.Update(elapsedSeconds, gamepad)
-	v.renderSystem.Update()
-	v.cameraStandSystem.Update(elapsedSeconds, gamepad)
-}
-
-func (v *View) Render(window app.Window, width, height int) {
-	v.gfxScene.Render(graphics.NewViewport(0, 0, width, height), v.camera)
 }

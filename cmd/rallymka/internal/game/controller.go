@@ -9,38 +9,18 @@ import (
 	"github.com/mokiat/lacking/game/graphics"
 	"github.com/mokiat/lacking/game/physics"
 	"github.com/mokiat/lacking/resource"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/game/loading"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/game/simulation"
+	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecssys"
 )
-
-type View interface {
-	Load(window app.Window, cb func())
-	Unload(window app.Window)
-
-	Open(window app.Window)
-	Close(window app.Window)
-
-	OnKeyboardEvent(window app.Window, event app.KeyboardEvent) bool
-
-	Update(window app.Window, elapsedSeconds float32)
-	Render(window app.Window, width, height int)
-}
 
 func NewController(gfxEngine graphics.Engine) *Controller {
 	gfxWorker := async.NewWorker(1024)
-	physicsEngine := physics.NewEngine()
-	ecsEngine := ecs.NewEngine()
-
-	locator := resource.FileLocator{}
-	registry := resource.NewRegistry(locator, gfxEngine, gfxWorker)
-
+	registry := resource.NewRegistry(resource.FileLocator{}, gfxEngine, gfxWorker)
 	return &Controller{
-		gfxEngine: gfxEngine,
-		gfxWorker: gfxWorker,
-		registry:  registry,
-
-		loadingView:    loading.NewView(gfxEngine),
-		simulationView: simulation.NewView(gfxEngine, physicsEngine, ecsEngine, registry, gfxWorker),
+		gfxEngine:     gfxEngine,
+		physicsEngine: physics.NewEngine(),
+		ecsEngine:     ecs.NewEngine(),
+		gfxWorker:     gfxWorker,
+		registry:      registry,
 
 		lastFrameTime: time.Now(),
 	}
@@ -49,18 +29,68 @@ func NewController(gfxEngine graphics.Engine) *Controller {
 type Controller struct {
 	app.NopController
 
-	window    app.Window
-	gfxEngine graphics.Engine
-	gfxWorker *async.Worker
-	registry  *resource.Registry
-
-	activeView     View
-	loadingView    View
-	simulationView View
+	window        app.Window
+	gfxEngine     graphics.Engine
+	physicsEngine *physics.Engine
+	ecsEngine     *ecs.Engine
+	gfxWorker     *async.Worker
+	registry      *resource.Registry
 
 	lastFrameTime time.Time
-	width         int
-	height        int
+	freezeFrame   bool
+
+	width  int
+	height int
+
+	gfxScene     graphics.Scene
+	physicsScene *physics.Scene
+	ecsScene     *ecs.Scene
+
+	renderSystem      *ecssys.Renderer
+	vehicleSystem     *ecssys.VehicleSystem
+	cameraStandSystem *ecssys.CameraStandSystem
+
+	camera graphics.Camera
+}
+
+func (c *Controller) Registry() *resource.Registry {
+	return c.registry
+}
+
+func (c *Controller) GFXWorker() *async.Worker {
+	return c.gfxWorker
+}
+
+func (c *Controller) GFXEngine() graphics.Engine {
+	return c.gfxEngine
+}
+
+func (c *Controller) GFXScene() graphics.Scene {
+	return c.gfxScene
+}
+
+func (c *Controller) PhysicsScene() *physics.Scene {
+	return c.physicsScene
+}
+
+func (c *Controller) ECSScene() *ecs.Scene {
+	return c.ecsScene
+}
+
+func (c *Controller) RenderSystem() *ecssys.Renderer {
+	return c.renderSystem
+}
+
+func (c *Controller) VehicleSystem() *ecssys.VehicleSystem {
+	return c.vehicleSystem
+}
+
+func (c *Controller) CameraStandSystem() *ecssys.CameraStandSystem {
+	return c.cameraStandSystem
+}
+
+func (c *Controller) Camera() graphics.Camera {
+	return c.camera
 }
 
 func (c *Controller) OnCreate(window app.Window) {
@@ -69,8 +99,15 @@ func (c *Controller) OnCreate(window app.Window) {
 
 	c.gfxEngine.Create()
 
-	c.loadingView.Load(window, c.onLoadingAvailable)
-	c.simulationView.Load(window, c.onSimulationAvailable)
+	c.gfxScene = c.gfxEngine.CreateScene()
+	c.physicsScene = c.physicsEngine.CreateScene(0.015)
+	c.ecsScene = c.ecsEngine.CreateScene()
+
+	c.camera = c.gfxScene.CreateCamera()
+
+	c.renderSystem = ecssys.NewRenderer(c.ecsScene)
+	c.vehicleSystem = ecssys.NewVehicleSystem(c.ecsScene)
+	c.cameraStandSystem = ecssys.NewCameraStandSystem(c.ecsScene)
 }
 
 func (c *Controller) OnResize(window app.Window, width, height int) {
@@ -86,50 +123,51 @@ func (c *Controller) OnKeyboardEvent(window app.Window, event app.KeyboardEvent)
 		window.Close()
 		return true
 	}
-	if c.activeView != nil {
-		return c.activeView.OnKeyboardEvent(window, event)
+	if event.Code == app.KeyCodeF {
+		switch event.Type {
+		case app.KeyboardEventTypeKeyDown:
+			c.freezeFrame = true
+			return true
+		case app.KeyboardEventTypeKeyUp:
+			c.freezeFrame = false
+			return true
+		}
 	}
-	return false
+	return c.vehicleSystem.OnKeyboardEvent(event)
 }
 
 func (c *Controller) OnRender(window app.Window) {
 	c.gfxWorker.ProcessTryMultiple(10)
 
 	currentTime := time.Now()
-	elapsedTime := currentTime.Sub(c.lastFrameTime)
+	elapsedSeconds := float32(currentTime.Sub(c.lastFrameTime).Seconds())
 	c.lastFrameTime = currentTime
 
-	if c.activeView != nil {
-		c.activeView.Update(window, float32(elapsedTime.Seconds()))
-		c.activeView.Render(window, c.width, c.height)
+	if !c.freezeFrame {
+		var gamepad *app.GamepadState
+		if state, ok := window.GamepadState(0); ok {
+			gamepad = &state
+		}
+
+		c.physicsScene.Update(elapsedSeconds)
+		c.vehicleSystem.Update(elapsedSeconds, gamepad)
+		c.renderSystem.Update()
+		c.cameraStandSystem.Update(elapsedSeconds, gamepad)
+
+		c.gfxScene.Render(graphics.NewViewport(0, 0, c.width, c.height), c.camera)
 	}
 
 	window.Invalidate() // force redraw
 }
 
 func (c *Controller) OnDestroy(window app.Window) {
-	c.changeView(nil)
+	c.renderSystem = nil
+	c.vehicleSystem = nil
+	c.cameraStandSystem = nil
 
-	c.loadingView.Unload(window)
-	c.simulationView.Unload(window)
+	c.ecsScene.Delete()
+	c.physicsScene.Delete()
+	c.gfxScene.Delete()
 
 	c.gfxEngine.Destroy()
-}
-
-func (c *Controller) onLoadingAvailable() {
-	c.changeView(c.loadingView)
-}
-
-func (c *Controller) onSimulationAvailable() {
-	c.changeView(c.simulationView)
-}
-
-func (c *Controller) changeView(view View) {
-	if c.activeView != nil {
-		c.activeView.Close(c.window)
-	}
-	c.activeView = view
-	if c.activeView != nil {
-		c.activeView.Open(c.window)
-	}
 }
