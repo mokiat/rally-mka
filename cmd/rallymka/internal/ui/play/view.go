@@ -1,20 +1,20 @@
 package play
 
 import (
-	"fmt"
-
 	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/lacking/game/ecs"
 	"github.com/mokiat/lacking/game/graphics"
 	"github.com/mokiat/lacking/game/physics"
 	"github.com/mokiat/lacking/game/physics/solver"
 	"github.com/mokiat/lacking/resource"
-	"github.com/mokiat/lacking/ui"
+	"github.com/mokiat/lacking/ui/mat"
+	t "github.com/mokiat/lacking/ui/template"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecscomp"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecssys"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/game"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/scene"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/scene/car"
+	"github.com/mokiat/rally-mka/cmd/rallymka/internal/store"
 )
 
 const (
@@ -41,29 +41,49 @@ const (
 	suspensionDampingRatio = float32(1.0)
 )
 
-type Config struct {
+type ViewData struct {
 	GameController *game.Controller
 	GameData       *scene.Data
 }
 
-func (c Config) SetupView(view *ui.View) error {
-	template, err := view.Context().OpenTemplate("resources/ui/play/view.xml")
-	if err != nil {
-		return fmt.Errorf("failed to open template: %w", err)
-	}
-	rootControl, err := view.Context().InstantiateTemplate(template, nil)
-	if err != nil {
-		return fmt.Errorf("failed to instantiate template: %w", err)
-	}
-	view.SetRoot(rootControl)
-	view.SetHandler(&Handler{
-		gameController: c.GameController,
-		gameData:       c.GameData,
-	})
-	return nil
-}
+var View = t.Connect(t.ShallowCached(t.Plain(func(props t.Properties) t.Instance {
+	var (
+		data      ViewData
+		lifecycle *playLifecycle
+	)
+	props.InjectData(&data)
 
-type Handler struct {
+	t.UseState(func() interface{} {
+		return &playLifecycle{
+			gameController: data.GameController,
+			gameData:       data.GameData,
+		}
+	}).Inject(&lifecycle)
+
+	t.Once(func() {
+		lifecycle.init()
+	})
+
+	t.Defer(func() {
+		lifecycle.destroy()
+	})
+
+	return t.New(mat.Container, func() {
+		t.WithData(mat.ContainerData{
+			Layout: mat.NewAnchorLayout(mat.AnchorLayoutSettings{}),
+		})
+	})
+})), func(props t.Properties, state *t.ReducedState) (interface{}, interface{}) {
+	var appState store.Application
+	state.Inject(&appState)
+
+	return ViewData{
+		GameController: appState.GameController,
+		GameData:       appState.GameData,
+	}, nil
+})
+
+type playLifecycle struct {
 	gameController *game.Controller
 	gameData       *scene.Data
 
@@ -78,7 +98,7 @@ type Handler struct {
 	camera graphics.Camera
 }
 
-func (h *Handler) OnCreate(view *ui.View) {
+func (h *playLifecycle) init() {
 	h.gfxScene = h.gameController.GFXScene()
 	h.physicsScene = h.gameController.PhysicsScene()
 	h.ecsScene = h.gameController.ECSScene()
@@ -98,15 +118,11 @@ func (h *Handler) OnCreate(view *ui.View) {
 	h.setupLevel(h.gameData.Level)
 }
 
-func (h *Handler) OnShow(view *ui.View) {}
-
-func (h *Handler) OnHide(view *ui.View) {}
-
-func (h *Handler) OnDestroy(view *ui.View) {
+func (h *playLifecycle) destroy() {
 	h.gameData.Dismiss()
 }
 
-func (h *Handler) setupLevel(level *resource.Level) {
+func (h *playLifecycle) setupLevel(level *resource.Level) {
 	h.gfxScene.Sky().SetBackgroundColor(sprec.NewVec3(0.0, 0.3, 0.8))
 	h.gfxScene.Sky().SetSkybox(level.SkyboxTexture.GFXTexture)
 
@@ -167,7 +183,7 @@ func (h *Handler) setupLevel(level *resource.Level) {
 	})
 }
 
-func (h *Handler) setupCarDemo(model *resource.Model, position sprec.Vec3) *ecs.Entity {
+func (h *playLifecycle) setupCarDemo(model *resource.Model, position sprec.Vec3) *ecs.Entity {
 	chasis := car.Chassis(model).
 		WithName("chasis").
 		WithPosition(position).

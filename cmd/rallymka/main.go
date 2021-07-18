@@ -8,9 +8,8 @@ import (
 	glgraphics "github.com/mokiat/lacking/framework/opengl/game/graphics"
 	glui "github.com/mokiat/lacking/framework/opengl/ui"
 	"github.com/mokiat/lacking/ui"
-	_ "github.com/mokiat/lacking/ui/standard"
+	"github.com/mokiat/rally-mka/cmd/rallymka/internal"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/game"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ui/intro"
 )
 
 func main() {
@@ -23,8 +22,8 @@ func main() {
 	gameController := game.NewController(graphicsEngine)
 
 	uiGLGraphics := glui.NewGraphics()
-	uiController := ui.NewController(ui.FileResourceLocator{}, uiGLGraphics, intro.Config{
-		GameController: gameController,
+	uiController := ui.NewController(ui.FileResourceLocator{}, uiGLGraphics, func(w *ui.Window) {
+		internal.BootstrapApplication(w, graphicsEngine, gameController)
 	})
 
 	controller := app.NewLayeredController(gameController, uiController)
