@@ -1,8 +1,5 @@
 # MacOS
 .DS_Store
 
-# Build
-/target
-
 # Assets
 /assets
