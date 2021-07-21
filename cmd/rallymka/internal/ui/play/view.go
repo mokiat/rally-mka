@@ -7,11 +7,12 @@ import (
 	"github.com/mokiat/lacking/game/physics"
 	"github.com/mokiat/lacking/game/physics/solver"
 	"github.com/mokiat/lacking/resource"
+	co "github.com/mokiat/lacking/ui/component"
 	"github.com/mokiat/lacking/ui/mat"
-	t "github.com/mokiat/lacking/ui/template"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecscomp"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecssys"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/game"
+	"github.com/mokiat/rally-mka/cmd/rallymka/internal/global"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/scene"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/scene/car"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/store"
@@ -42,45 +43,50 @@ const (
 )
 
 type ViewData struct {
-	GameController *game.Controller
-	GameData       *scene.Data
+	GameData *scene.Data
 }
 
-var View = t.Connect(t.ShallowCached(t.Plain(func(props t.Properties) t.Instance {
+var View = co.Connect(co.ShallowCached(co.Define(func(props co.Properties) co.Instance {
+	var context global.Context
+	co.InjectContext(&context)
+
 	var (
 		data      ViewData
 		lifecycle *playLifecycle
 	)
 	props.InjectData(&data)
 
-	t.UseState(func() interface{} {
+	co.UseState(func() interface{} {
 		return &playLifecycle{
-			gameController: data.GameController,
+			gameController: context.GameController,
 			gameData:       data.GameData,
 		}
 	}).Inject(&lifecycle)
 
-	t.Once(func() {
+	co.Once(func() {
 		lifecycle.init()
 	})
 
-	t.Defer(func() {
+	co.Defer(func() {
 		lifecycle.destroy()
 	})
 
-	return t.New(mat.Container, func() {
-		t.WithData(mat.ContainerData{
+	return co.New(mat.Container, func() {
+		co.WithData(mat.ContainerData{
 			Layout: mat.NewAnchorLayout(mat.AnchorLayoutSettings{}),
 		})
 	})
-})), func(props t.Properties, state *t.ReducedState) (interface{}, interface{}) {
-	var appState store.Application
-	state.Inject(&appState)
 
-	return ViewData{
-		GameController: appState.GameController,
-		GameData:       appState.GameData,
-	}, nil
+})), co.ConnectMapping{
+
+	Data: func(props co.Properties) interface{} {
+		var appStore store.Application
+		co.InjectStore(&appStore)
+
+		return ViewData{
+			GameData: appStore.GameData,
+		}
+	},
 })
 
 type playLifecycle struct {

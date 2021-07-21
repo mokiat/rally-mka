@@ -3,31 +3,49 @@ package internal
 import (
 	"github.com/mokiat/lacking/game/graphics"
 	"github.com/mokiat/lacking/ui"
+	co "github.com/mokiat/lacking/ui/component"
 	"github.com/mokiat/lacking/ui/mat"
-	t "github.com/mokiat/lacking/ui/template"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/game"
+	"github.com/mokiat/rally-mka/cmd/rallymka/internal/global"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/store"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ui/intro"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ui/play"
 )
 
 func BootstrapApplication(window *ui.Window, gfxEngine graphics.Engine, gameController *game.Controller) {
-	t.InitGlobalState(store.CreateApplicationState(gfxEngine, gameController))
-	t.Initialize(window, t.New(Application, func() {}))
+	co.Initialize(window, co.New(co.StoreProvider, func() {
+		co.WithData(co.StoreProviderData{
+			Entries: []co.StoreProviderEntry{
+				co.NewStoreProviderEntry(store.ApplicationReducer()),
+			},
+		})
+
+		co.WithChild("app", co.New(Application, func() {
+			co.WithContext(global.Context{
+				GFXEngine:      gfxEngine,
+				GameController: gameController,
+			})
+		}))
+	}))
 }
 
-var Application = t.Connect(t.ShallowCached(t.Plain(func(props t.Properties) t.Instance {
-	return t.New(mat.Switch, func() {
-		t.WithData(props.Data())
+type ApplicationData = mat.SwitchData
 
-		t.WithChild("intro", t.New(intro.View, func() {}))
-		t.WithChild("play", t.New(play.View, func() {}))
+var Application = co.Connect(co.ShallowCached(co.Define(func(props co.Properties) co.Instance {
+	return co.New(mat.Switch, func() {
+		co.WithData(props.Data())
+
+		co.WithChild("intro", co.New(intro.View, func() {}))
+		co.WithChild("play", co.New(play.View, func() {}))
 	})
-})), func(props t.Properties, state *t.ReducedState) (interface{}, interface{}) {
-	var appState store.Application
-	state.Inject(&appState)
 
-	return mat.SwitchData{
-		VisibleChildIndex: appState.MainViewIndex,
-	}, nil
+})), co.ConnectMapping{
+	Data: func(props co.Properties) interface{} {
+		var appStore store.Application
+		co.InjectStore(&appStore)
+
+		return ApplicationData{
+			VisibleChildIndex: appStore.MainViewIndex,
+		}
+	},
 })

@@ -1,60 +1,54 @@
 package intro
 
 import (
-	"github.com/mokiat/lacking/game/graphics"
 	"github.com/mokiat/lacking/ui"
+	co "github.com/mokiat/lacking/ui/component"
 	"github.com/mokiat/lacking/ui/mat"
 	"github.com/mokiat/lacking/ui/optional"
-	t "github.com/mokiat/lacking/ui/template"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/game"
+	"github.com/mokiat/rally-mka/cmd/rallymka/internal/global"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/scene"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/store"
 )
 
-type ViewData struct {
-	GFXEngine      graphics.Engine
-	GameController *game.Controller
-}
+var View = co.ShallowCached(co.Define(func(props co.Properties) co.Instance {
+	var context global.Context
+	co.InjectContext(&context)
 
-var View = t.Connect(t.ShallowCached(t.Plain(func(props t.Properties) t.Instance {
-	var (
-		data    ViewData
-		logoImg ui.Image
-	)
-	props.InjectData(&data)
-
-	t.UseState(func() interface{} {
-		return t.OpenImage("resources/ui/intro/logo.png")
+	var logoImg ui.Image
+	co.UseState(func() interface{} {
+		return co.OpenImage("resources/ui/intro/logo.png")
 	}).Inject(&logoImg)
 
-	t.Once(func() {
-		gameData := scene.NewData(data.GameController.Registry(), data.GameController.GFXWorker())
+	co.Once(func() {
+		gameData := scene.NewData(
+			context.GameController.Registry(),
+			context.GameController.GFXWorker(),
+		)
 		gameData.Request().OnSuccess(func(interface{}) {
-			t.Window().Schedule(func() error {
-				t.Dispatch(store.SetGameDataAction{
+			co.Schedule(func() {
+				co.Dispatch(store.SetGameDataAction{
 					GameData: gameData,
 				})
-				t.Dispatch(store.ChangeViewAction{
+				co.Dispatch(store.ChangeViewAction{
 					ViewIndex: store.ViewPlay,
 				})
-				return nil
 			})
 		})
 	})
 
-	return t.New(mat.Container, func() {
-		t.WithData(mat.ContainerData{
+	return co.New(mat.Container, func() {
+		co.WithData(mat.ContainerData{
 			BackgroundColor: optional.NewColor(ui.Black()),
 			Layout:          mat.NewAnchorLayout(mat.AnchorLayoutSettings{}),
 		})
 
-		t.WithChild("logo-picture", t.New(mat.Picture, func() {
-			t.WithData(mat.PictureData{
+		co.WithChild("logo-picture", co.New(mat.Picture, func() {
+			co.WithData(mat.PictureData{
 				BackgroundColor: ui.Transparent(),
 				Image:           logoImg,
 				Mode:            mat.ImageModeFit,
 			})
-			t.WithLayoutData(mat.AnchorLayoutData{
+			co.WithLayoutData(mat.AnchorLayoutData{
 				Width:                    optional.NewInt(512),
 				Height:                   optional.NewInt(128),
 				HorizontalCenter:         optional.NewInt(0),
@@ -64,12 +58,4 @@ var View = t.Connect(t.ShallowCached(t.Plain(func(props t.Properties) t.Instance
 			})
 		}))
 	})
-})), func(props t.Properties, state *t.ReducedState) (interface{}, interface{}) {
-	var appState store.Application
-	state.Inject(&appState)
-
-	return ViewData{
-		GFXEngine:      appState.GFXEngine,
-		GameController: appState.GameController,
-	}, nil
-})
+}))
