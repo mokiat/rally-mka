@@ -15,7 +15,6 @@ import (
 func main() {
 	cfg := glfwapp.NewConfig("Rally MKA", 1024, 576)
 	cfg.SetVSync(true)
-	cfg.SetCursorVisible(false)
 	cfg.SetIcon("resources/icon.png")
 
 	graphicsEngine := glgraphics.NewEngine()

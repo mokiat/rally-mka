@@ -7,6 +7,7 @@ import (
 
 const (
 	ViewIntro int = iota
+	ViewHome
 	ViewPlay
 )
 

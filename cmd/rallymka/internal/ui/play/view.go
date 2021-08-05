@@ -47,21 +47,27 @@ type ViewData struct {
 }
 
 var View = co.Connect(co.ShallowCached(co.Define(func(props co.Properties) co.Instance {
-	var context global.Context
-	co.InjectContext(&context)
-
 	var (
 		data      ViewData
+		context   global.Context
 		lifecycle *playLifecycle
 	)
 	props.InjectData(&data)
-
+	co.InjectContext(&context)
 	co.UseState(func() interface{} {
 		return &playLifecycle{
 			gameController: context.GameController,
 			gameData:       data.GameData,
 		}
 	}).Inject(&lifecycle)
+
+	co.Once(func() {
+		co.Window().SetCursorVisible(false)
+	})
+
+	co.Defer(func() {
+		co.Window().SetCursorVisible(true)
+	})
 
 	co.Once(func() {
 		lifecycle.init()
@@ -76,7 +82,6 @@ var View = co.Connect(co.ShallowCached(co.Define(func(props co.Properties) co.In
 			Layout: mat.NewAnchorLayout(mat.AnchorLayoutSettings{}),
 		})
 	})
-
 })), co.ConnectMapping{
 
 	Data: func(props co.Properties) interface{} {
