@@ -14,10 +14,13 @@ var View = co.ShallowCached(co.Define(func(props co.Properties) co.Instance {
 	var context global.Context
 	co.InjectContext(&context)
 
-	var logoImg ui.Image
-	co.UseState(func() interface{} {
-		return co.OpenImage("resources/ui/intro/logo.png")
-	}).Inject(&logoImg)
+	co.Once(func() {
+		co.Window().SetCursorVisible(false)
+	})
+
+	co.Defer(func() {
+		co.Window().SetCursorVisible(true)
+	})
 
 	co.Once(func() {
 		gameData := scene.NewData(
@@ -30,7 +33,7 @@ var View = co.ShallowCached(co.Define(func(props co.Properties) co.Instance {
 					GameData: gameData,
 				})
 				co.Dispatch(store.ChangeViewAction{
-					ViewIndex: store.ViewPlay,
+					ViewIndex: store.ViewHome,
 				})
 			})
 		})
@@ -44,17 +47,15 @@ var View = co.ShallowCached(co.Define(func(props co.Properties) co.Instance {
 
 		co.WithChild("logo-picture", co.New(mat.Picture, func() {
 			co.WithData(mat.PictureData{
-				BackgroundColor: ui.Transparent(),
-				Image:           logoImg,
+				BackgroundColor: optional.NewColor(ui.Transparent()),
+				Image:           co.OpenImage("resources/ui/images/logo.png"),
 				Mode:            mat.ImageModeFit,
 			})
-			co.WithLayoutData(mat.AnchorLayoutData{
-				Width:                    optional.NewInt(512),
-				Height:                   optional.NewInt(128),
-				HorizontalCenter:         optional.NewInt(0),
-				HorizontalCenterRelation: mat.RelationCenter,
-				VerticalCenter:           optional.NewInt(0),
-				VerticalCenterRelation:   mat.RelationCenter,
+			co.WithLayoutData(mat.LayoutData{
+				Width:            optional.NewInt(512),
+				Height:           optional.NewInt(128),
+				HorizontalCenter: optional.NewInt(0),
+				VerticalCenter:   optional.NewInt(0),
 			})
 		}))
 	})

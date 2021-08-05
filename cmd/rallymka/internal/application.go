@@ -8,6 +8,7 @@ import (
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/game"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/global"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/store"
+	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ui/home"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ui/intro"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ui/play"
 )
@@ -36,6 +37,7 @@ var Application = co.Connect(co.ShallowCached(co.Define(func(props co.Properties
 		co.WithData(props.Data())
 
 		co.WithChild("intro", co.New(intro.View, func() {}))
+		co.WithChild("home", co.New(home.View, func() {}))
 		co.WithChild("play", co.New(play.View, func() {}))
 	})
 
