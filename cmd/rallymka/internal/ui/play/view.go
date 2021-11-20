@@ -1,14 +1,18 @@
 package play
 
 import (
+	"fmt"
+
 	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/lacking/game/ecs"
 	"github.com/mokiat/lacking/game/graphics"
 	"github.com/mokiat/lacking/game/physics"
 	"github.com/mokiat/lacking/game/physics/solver"
 	"github.com/mokiat/lacking/resource"
+	"github.com/mokiat/lacking/ui"
 	co "github.com/mokiat/lacking/ui/component"
 	"github.com/mokiat/lacking/ui/mat"
+	"github.com/mokiat/lacking/ui/optional"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecscomp"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecssys"
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/game"
@@ -47,10 +51,13 @@ type ViewData struct {
 }
 
 var View = co.Connect(co.ShallowCached(co.Define(func(props co.Properties) co.Instance {
+	co.OpenFontCollection("resources/ui/fonts/roboto.ttc")
+
 	var (
 		data      ViewData
 		context   global.Context
 		lifecycle *playLifecycle
+		speed     float32
 	)
 	props.InjectData(&data)
 	co.InjectContext(&context)
@@ -61,8 +68,19 @@ var View = co.Connect(co.ShallowCached(co.Define(func(props co.Properties) co.In
 		}
 	}).Inject(&lifecycle)
 
+	speedState := co.UseState(func() interface{} {
+		return float32(0.0)
+	}).Inject(&speed)
+
 	co.Once(func() {
 		co.Window().SetCursorVisible(false)
+	})
+
+	co.Once(func() {
+		context.GameController.OnUpdate = func() {
+			carSpeed := ecscomp.GetPhysics(lifecycle.car).Body.Velocity().Length() * 3.6
+			speedState.Set(carSpeed)
+		}
 	})
 
 	co.Defer(func() {
@@ -81,6 +99,21 @@ var View = co.Connect(co.ShallowCached(co.Define(func(props co.Properties) co.In
 		co.WithData(mat.ContainerData{
 			Layout: mat.NewAnchorLayout(mat.AnchorLayoutSettings{}),
 		})
+
+		co.WithChild("speed-label", co.New(mat.Label, func() {
+			co.WithData(mat.LabelData{
+				Font:      co.GetFont("roboto", "bold"),
+				FontSize:  optional.NewInt(24),
+				FontColor: optional.NewColor(ui.White()),
+				Text:      fmt.Sprintf("speed: %.4f", speed),
+			})
+			co.WithLayoutData(mat.LayoutData{
+				Left:   optional.NewInt(0),
+				Top:    optional.NewInt(0),
+				Width:  optional.NewInt(200),
+				Height: optional.NewInt(24),
+			})
+		}))
 	})
 })), co.ConnectMapping{
 
@@ -107,6 +140,7 @@ type playLifecycle struct {
 	cameraStandSystem *ecssys.CameraStandSystem
 
 	camera graphics.Camera
+	car    *ecs.Entity
 }
 
 func (h *playLifecycle) init() {
@@ -192,6 +226,7 @@ func (h *playLifecycle) setupLevel(level *resource.Level) {
 		AnchorDistance: anchorDistance,
 		CameraDistance: cameraDistance,
 	})
+	h.car = targetEntity
 }
 
 func (h *playLifecycle) setupCarDemo(model *resource.Model, position sprec.Vec3) *ecs.Entity {

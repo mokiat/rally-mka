@@ -5,6 +5,7 @@ import (
 
 	"github.com/mokiat/lacking/app"
 	"github.com/mokiat/lacking/async"
+	"github.com/mokiat/lacking/game/asset"
 	"github.com/mokiat/lacking/game/ecs"
 	"github.com/mokiat/lacking/game/graphics"
 	"github.com/mokiat/lacking/game/physics"
@@ -12,9 +13,9 @@ import (
 	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecssys"
 )
 
-func NewController(gfxEngine graphics.Engine) *Controller {
+func NewController(reg asset.Registry, gfxEngine graphics.Engine) *Controller {
 	gfxWorker := async.NewWorker(1024)
-	registry := resource.NewRegistry(resource.FileLocator{}, gfxEngine, gfxWorker)
+	registry := resource.NewRegistry(reg, gfxEngine, gfxWorker)
 	return &Controller{
 		gfxEngine:     gfxEngine,
 		physicsEngine: physics.NewEngine(),
@@ -51,6 +52,8 @@ type Controller struct {
 	cameraStandSystem *ecssys.CameraStandSystem
 
 	camera graphics.Camera
+
+	OnUpdate func()
 }
 
 func (c *Controller) Registry() *resource.Registry {
@@ -153,6 +156,10 @@ func (c *Controller) OnRender(window app.Window) {
 		c.vehicleSystem.Update(elapsedSeconds, gamepad)
 		c.renderSystem.Update()
 		c.cameraStandSystem.Update(elapsedSeconds, gamepad)
+
+		if c.OnUpdate != nil {
+			c.OnUpdate()
+		}
 
 		c.gfxScene.Render(graphics.NewViewport(0, 0, c.width, c.height), c.camera)
 	}

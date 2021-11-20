@@ -1,6 +1,8 @@
 package intro
 
 import (
+	"fmt"
+
 	"github.com/mokiat/lacking/ui"
 	co "github.com/mokiat/lacking/ui/component"
 	"github.com/mokiat/lacking/ui/mat"
@@ -36,6 +38,8 @@ var View = co.ShallowCached(co.Define(func(props co.Properties) co.Instance {
 					ViewIndex: store.ViewHome,
 				})
 			})
+		}).OnError(func(err error) {
+			panic(fmt.Errorf("failed to load assets: %w", err))
 		})
 	})
 
