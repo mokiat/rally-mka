@@ -10,11 +10,13 @@ import (
 func NewCameraStandSystem(ecsScene *ecs.Scene) *CameraStandSystem {
 	return &CameraStandSystem{
 		ecsScene: ecsScene,
+		zoom:     1.0,
 	}
 }
 
 type CameraStandSystem struct {
 	ecsScene *ecs.Scene
+	zoom     float32
 }
 
 func (s *CameraStandSystem) Update(elapsedSeconds float32, gamepad *app.GamepadState) {
@@ -51,6 +53,13 @@ func (s *CameraStandSystem) updateCameraStand(cameraStand *ecscomp.CameraStand, 
 	cameraVectorY := sprec.Vec3Cross(cameraVectorZ, cameraVectorX)
 
 	if gamepad != nil {
+		if gamepad.RightBumper {
+			s.zoom = s.zoom - 0.3*elapsedSeconds*s.zoom
+		}
+		if gamepad.LeftBumper {
+			s.zoom = s.zoom + 0.3*elapsedSeconds*s.zoom
+		}
+
 		rotationAmount := 200 * elapsedSeconds
 		if sprec.Abs(gamepad.RightStickY) > 0.2 {
 			rotation := sprec.RotationQuat(sprec.Degrees(gamepad.RightStickY*rotationAmount), cameraVectorX)
@@ -79,7 +88,7 @@ func (s *CameraStandSystem) updateCameraStand(cameraStand *ecscomp.CameraStand, 
 			sprec.ZeroVec3(),
 		),
 		sprec.RotationMat4(sprec.Degrees(-25.0), 1.0, 0.0, 0.0),
-		sprec.TranslationMat4(0.0, 0.0, cameraStand.CameraDistance),
+		sprec.TranslationMat4(0.0, 0.0, cameraStand.CameraDistance*s.zoom),
 	)
 
 	cameraStand.Camera.SetPosition(matrix.Translation())

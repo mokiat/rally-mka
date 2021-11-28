@@ -73,7 +73,7 @@ func (s *VehicleSystem) updateVehicleControlGamepad(vehicle *ecscomp.Vehicle, el
 	vehicle.SteeringAngle = -sprec.Degrees(steeringAmount * vehicle.MaxSteeringAngle.Degrees())
 	vehicle.Acceleration = gamepad.RightTrigger
 	vehicle.Deceleration = gamepad.LeftTrigger
-	vehicle.Recover = gamepad.LeftBumper
+	vehicle.Recover = gamepad.CrossButton
 }
 
 func (s *VehicleSystem) updateVehicleControlKeyboard(vehicle *ecscomp.Vehicle, elapsedSeconds float32) {
