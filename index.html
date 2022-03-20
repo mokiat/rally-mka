@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+    <meta name="author" content="Momchil Atanasov" />
+    <meta name="description" content="Rally MKA 3D Game written in Go" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Rally MKA</title>
+
+    <link rel="icon" type="image/png" sizes="32x32" href="web/favicon.png" />
+    <link rel="stylesheet" href="web/main.css" />
+
+    <script type="text/javascript" src="web/wasm_exec.js"></script>
+    <script type="text/javascript" src="web/main.js"></script>
+  </head>
+
+  <body id="game">
+    <article>
+      <div id="loading">
+        <h2>Loading...</h2>
+        <h3>(give it a few seconds)</h3>
+      </div>
+      <div id="finished">
+        <h2>Thanks for playing!</h2>
+      </div>
+      <canvas id="screen" tabindex="1" width="1024" height="576"></canvas>
+    </article>
+  </body>
+</html>
