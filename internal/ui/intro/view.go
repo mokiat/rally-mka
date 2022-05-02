@@ -6,15 +6,14 @@ import (
 	"github.com/mokiat/lacking/ui"
 	co "github.com/mokiat/lacking/ui/component"
 	"github.com/mokiat/lacking/ui/mat"
-	"github.com/mokiat/lacking/ui/optional"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/global"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/scene"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/store"
+	"github.com/mokiat/lacking/util/optional"
+	"github.com/mokiat/rally-mka/internal/global"
+	"github.com/mokiat/rally-mka/internal/scene"
+	"github.com/mokiat/rally-mka/internal/store"
 )
 
 var View = co.ShallowCached(co.Define(func(props co.Properties) co.Instance {
-	var context global.Context
-	co.InjectContext(&context)
+	context := co.GetContext[global.Context]()
 
 	co.Once(func() {
 		co.Window().SetCursorVisible(false)
@@ -27,7 +26,6 @@ var View = co.ShallowCached(co.Define(func(props co.Properties) co.Instance {
 	co.Once(func() {
 		gameData := scene.NewData(
 			context.GameController.Registry(),
-			context.GameController.GFXWorker(),
 		)
 		gameData.Request().OnSuccess(func(interface{}) {
 			co.Schedule(func() {
@@ -45,21 +43,21 @@ var View = co.ShallowCached(co.Define(func(props co.Properties) co.Instance {
 
 	return co.New(mat.Container, func() {
 		co.WithData(mat.ContainerData{
-			BackgroundColor: optional.NewColor(ui.Black()),
+			BackgroundColor: optional.Value(ui.Black()),
 			Layout:          mat.NewAnchorLayout(mat.AnchorLayoutSettings{}),
 		})
 
 		co.WithChild("logo-picture", co.New(mat.Picture, func() {
 			co.WithData(mat.PictureData{
-				BackgroundColor: optional.NewColor(ui.Transparent()),
+				BackgroundColor: optional.Value(ui.Transparent()),
 				Image:           co.OpenImage("resources/ui/images/logo.png"),
 				Mode:            mat.ImageModeFit,
 			})
 			co.WithLayoutData(mat.LayoutData{
-				Width:            optional.NewInt(512),
-				Height:           optional.NewInt(128),
-				HorizontalCenter: optional.NewInt(0),
-				VerticalCenter:   optional.NewInt(0),
+				Width:            optional.Value(512),
+				Height:           optional.Value(128),
+				HorizontalCenter: optional.Value(0),
+				VerticalCenter:   optional.Value(0),
 			})
 		}))
 	})

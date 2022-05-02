@@ -2,7 +2,7 @@ package store
 
 import (
 	co "github.com/mokiat/lacking/ui/component"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/scene"
+	"github.com/mokiat/rally-mka/internal/scene"
 )
 
 const (

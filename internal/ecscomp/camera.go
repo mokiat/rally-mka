@@ -23,5 +23,5 @@ type CameraStand struct {
 	AnchorPosition sprec.Vec3
 	AnchorDistance float32
 	CameraDistance float32
-	Camera         graphics.Camera
+	Camera         *graphics.Camera
 }

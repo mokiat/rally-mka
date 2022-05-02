@@ -4,37 +4,33 @@ import (
 	"time"
 
 	"github.com/mokiat/lacking/app"
-	"github.com/mokiat/lacking/async"
 	"github.com/mokiat/lacking/game/asset"
 	"github.com/mokiat/lacking/game/ecs"
 	"github.com/mokiat/lacking/game/graphics"
 	"github.com/mokiat/lacking/game/physics"
 	"github.com/mokiat/lacking/resource"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecssys"
+	"github.com/mokiat/rally-mka/internal/ecssys"
 )
 
-func NewController(reg asset.Registry, gfxEngine graphics.Engine) *Controller {
-	gfxWorker := async.NewWorker(1024)
-	registry := resource.NewRegistry(reg, gfxEngine, gfxWorker)
-	return &Controller{
+func NewController(reg asset.Registry, gfxEngine *graphics.Engine) *Controller {
+	controller := &Controller{
 		gfxEngine:     gfxEngine,
 		physicsEngine: physics.NewEngine(),
 		ecsEngine:     ecs.NewEngine(),
-		gfxWorker:     gfxWorker,
-		registry:      registry,
 
 		lastFrameTime: time.Now(),
 	}
+	controller.registry = resource.NewRegistry(reg, gfxEngine, controller)
+	return controller
 }
 
 type Controller struct {
 	app.NopController
 
 	window        app.Window
-	gfxEngine     graphics.Engine
+	gfxEngine     *graphics.Engine
 	physicsEngine *physics.Engine
 	ecsEngine     *ecs.Engine
-	gfxWorker     *async.Worker
 	registry      *resource.Registry
 
 	lastFrameTime time.Time
@@ -43,7 +39,7 @@ type Controller struct {
 	width  int
 	height int
 
-	gfxScene     graphics.Scene
+	gfxScene     *graphics.Scene
 	physicsScene *physics.Scene
 	ecsScene     *ecs.Scene
 
@@ -51,24 +47,24 @@ type Controller struct {
 	vehicleSystem     *ecssys.VehicleSystem
 	cameraStandSystem *ecssys.CameraStandSystem
 
-	camera graphics.Camera
+	camera *graphics.Camera
 
 	OnUpdate func()
+}
+
+func (c *Controller) Schedule(fn func() error) {
+	c.window.Schedule(fn)
 }
 
 func (c *Controller) Registry() *resource.Registry {
 	return c.registry
 }
 
-func (c *Controller) GFXWorker() *async.Worker {
-	return c.gfxWorker
-}
-
-func (c *Controller) GFXEngine() graphics.Engine {
+func (c *Controller) GFXEngine() *graphics.Engine {
 	return c.gfxEngine
 }
 
-func (c *Controller) GFXScene() graphics.Scene {
+func (c *Controller) GFXScene() *graphics.Scene {
 	return c.gfxScene
 }
 
@@ -92,7 +88,7 @@ func (c *Controller) CameraStandSystem() *ecssys.CameraStandSystem {
 	return c.cameraStandSystem
 }
 
-func (c *Controller) Camera() graphics.Camera {
+func (c *Controller) Camera() *graphics.Camera {
 	return c.camera
 }
 
@@ -140,8 +136,6 @@ func (c *Controller) OnKeyboardEvent(window app.Window, event app.KeyboardEvent)
 }
 
 func (c *Controller) OnRender(window app.Window) {
-	c.gfxWorker.ProcessTryMultiple(10)
-
 	currentTime := time.Now()
 	elapsedSeconds := float32(currentTime.Sub(c.lastFrameTime).Seconds())
 	c.lastFrameTime = currentTime

@@ -18,5 +18,5 @@ func GetRender(entity *ecs.Entity) *Render {
 }
 
 type Render struct {
-	Mesh graphics.Mesh
+	Mesh *graphics.Mesh
 }

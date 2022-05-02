@@ -5,9 +5,8 @@ import (
 	"github.com/mokiat/lacking/ui"
 	co "github.com/mokiat/lacking/ui/component"
 	"github.com/mokiat/lacking/ui/mat"
-	"github.com/mokiat/lacking/ui/optional"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/global"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/store"
+	"github.com/mokiat/lacking/util/optional"
+	"github.com/mokiat/rally-mka/internal/store"
 )
 
 var View = co.ShallowCached(co.Define(func(props co.Properties) co.Instance {
@@ -32,12 +31,9 @@ var View = co.ShallowCached(co.Define(func(props co.Properties) co.Instance {
 		log.Info("Options")
 	}
 
-	var context global.Context
-	co.InjectContext(&context)
-
 	return co.New(mat.Container, func() {
 		co.WithData(mat.ContainerData{
-			BackgroundColor: optional.NewColor(ui.Black()),
+			BackgroundColor: optional.Value(ui.Black()),
 			Layout:          mat.NewAnchorLayout(mat.AnchorLayoutSettings{}),
 		})
 
@@ -47,10 +43,10 @@ var View = co.ShallowCached(co.Define(func(props co.Properties) co.Instance {
 				Mode:  mat.ImageModeCover,
 			})
 			co.WithLayoutData(mat.LayoutData{
-				Top:    optional.NewInt(0),
-				Bottom: optional.NewInt(0),
-				Left:   optional.NewInt(300),
-				Right:  optional.NewInt(0),
+				Top:    optional.Value(0),
+				Bottom: optional.Value(0),
+				Left:   optional.Value(300),
+				Right:  optional.Value(0),
 			})
 		}))
 
@@ -59,10 +55,10 @@ var View = co.ShallowCached(co.Define(func(props co.Properties) co.Instance {
 				Layout: mat.NewAnchorLayout(mat.AnchorLayoutSettings{}),
 			})
 			co.WithLayoutData(mat.LayoutData{
-				Left:           optional.NewInt(100),
-				VerticalCenter: optional.NewInt(0),
-				Width:          optional.NewInt(300),
-				Height:         optional.NewInt(200),
+				Left:           optional.Value(100),
+				VerticalCenter: optional.Value(0),
+				Width:          optional.Value(300),
+				Height:         optional.Value(200),
 			})
 
 			buttonPadding := ui.Spacing{
@@ -71,22 +67,22 @@ var View = co.ShallowCached(co.Define(func(props co.Properties) co.Instance {
 				Top:    2,
 				Bottom: 2,
 			}
-			buttonWidth := optional.NewInt(130)
+			buttonWidth := optional.Value(130)
 
 			co.WithChild("continue-button", co.New(mat.Button, func() {
 				co.WithData(mat.ButtonData{
 					Padding:       buttonPadding,
 					Font:          co.GetFont("roboto", "bold"),
-					FontSize:      optional.NewInt(26),
-					FontColor:     optional.NewColor(ui.White()),
+					FontSize:      optional.Value(float32(26)),
+					FontColor:     optional.Value(ui.White()),
 					FontAlignment: mat.AlignmentLeft,
 					Text:          "Continue",
 				})
 				co.WithLayoutData(mat.LayoutData{
-					Top:    optional.NewInt(0),
-					Left:   optional.NewInt(0),
+					Top:    optional.Value(0),
+					Left:   optional.Value(0),
 					Width:  buttonWidth,
-					Height: optional.NewInt(30),
+					Height: optional.Value(30),
 				})
 				co.WithCallbackData(mat.ButtonCallbackData{
 					ClickListener: onContinueClicked,
@@ -97,16 +93,16 @@ var View = co.ShallowCached(co.Define(func(props co.Properties) co.Instance {
 				co.WithData(mat.ButtonData{
 					Padding:       buttonPadding,
 					Font:          co.GetFont("roboto", "bold"),
-					FontSize:      optional.NewInt(26),
-					FontColor:     optional.NewColor(ui.White()),
+					FontSize:      optional.Value(float32(26)),
+					FontColor:     optional.Value(ui.White()),
 					FontAlignment: mat.AlignmentLeft,
 					Text:          "New Game",
 				})
 				co.WithLayoutData(mat.LayoutData{
-					Top:    optional.NewInt(50),
-					Left:   optional.NewInt(0),
+					Top:    optional.Value(50),
+					Left:   optional.Value(0),
 					Width:  buttonWidth,
-					Height: optional.NewInt(30),
+					Height: optional.Value(30),
 				})
 				co.WithCallbackData(mat.ButtonCallbackData{
 					ClickListener: onNewGameClicked,
@@ -117,16 +113,16 @@ var View = co.ShallowCached(co.Define(func(props co.Properties) co.Instance {
 				co.WithData(mat.ButtonData{
 					Padding:       buttonPadding,
 					Font:          co.GetFont("roboto", "bold"),
-					FontSize:      optional.NewInt(26),
-					FontColor:     optional.NewColor(ui.White()),
+					FontSize:      optional.Value(float32(26)),
+					FontColor:     optional.Value(ui.White()),
 					FontAlignment: mat.AlignmentLeft,
 					Text:          "Load Game",
 				})
 				co.WithLayoutData(mat.LayoutData{
-					Top:    optional.NewInt(100),
-					Left:   optional.NewInt(0),
+					Top:    optional.Value(100),
+					Left:   optional.Value(0),
 					Width:  buttonWidth,
-					Height: optional.NewInt(30),
+					Height: optional.Value(30),
 				})
 				co.WithCallbackData(mat.ButtonCallbackData{
 					ClickListener: onLoadGameClicked,
@@ -137,16 +133,16 @@ var View = co.ShallowCached(co.Define(func(props co.Properties) co.Instance {
 				co.WithData(mat.ButtonData{
 					Padding:       buttonPadding,
 					Font:          co.GetFont("roboto", "bold"),
-					FontSize:      optional.NewInt(26),
-					FontColor:     optional.NewColor(ui.White()),
+					FontSize:      optional.Value(float32(26)),
+					FontColor:     optional.Value(ui.White()),
 					FontAlignment: mat.AlignmentLeft,
 					Text:          "Options",
 				})
 				co.WithLayoutData(mat.LayoutData{
-					Top:    optional.NewInt(150),
-					Left:   optional.NewInt(0),
+					Top:    optional.Value(150),
+					Left:   optional.Value(0),
 					Width:  buttonWidth,
-					Height: optional.NewInt(30),
+					Height: optional.Value(30),
 				})
 				co.WithCallbackData(mat.ButtonCallbackData{
 					ClickListener: onOptionsClicked,

@@ -2,7 +2,7 @@ package ecssys
 
 import (
 	"github.com/mokiat/lacking/game/ecs"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecscomp"
+	"github.com/mokiat/rally-mka/internal/ecscomp"
 )
 
 func NewRenderer(ecsScene *ecs.Scene) *Renderer {

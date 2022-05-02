@@ -4,7 +4,7 @@ import (
 	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/lacking/app"
 	"github.com/mokiat/lacking/game/ecs"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecscomp"
+	"github.com/mokiat/rally-mka/internal/ecscomp"
 )
 
 func NewCameraStandSystem(ecsScene *ecs.Scene) *CameraStandSystem {
@@ -72,6 +72,7 @@ func (s *CameraStandSystem) updateCameraStand(cameraStand *ecscomp.CameraStand, 
 	}
 
 	cameraStand.AnchorPosition = sprec.Vec3Sum(targetPosition, anchorVector)
+	// cameraStand.AnchorPosition = sprec.NewVec3(10.0, 60.0, 40.0)
 
 	// the following approach of creating the view matrix coordinates will fail
 	// if the camera is pointing directly up or down
@@ -92,36 +93,5 @@ func (s *CameraStandSystem) updateCameraStand(cameraStand *ecscomp.CameraStand, 
 	)
 
 	cameraStand.Camera.SetPosition(matrix.Translation())
-	cameraStand.Camera.SetRotation(matrixToQuat(matrix))
-}
-
-// TODO: Move to gomath library.
-// This is calculated by inversing the formulas for
-// quat.OrientationX, quat.OrientationY and quat.OrientationZ.
-func matrixToQuat(matrix sprec.Mat4) sprec.Quat {
-	sqrX := (1.0 + matrix.M11 - matrix.M22 - matrix.M33) / 4.0
-	sqrY := (1.0 - matrix.M11 + matrix.M22 - matrix.M33) / 4.0
-	sqrZ := (1.0 - matrix.M11 - matrix.M22 + matrix.M33) / 4.0
-
-	var x, y, z, w float32
-	if sqrZ > sqrX && sqrZ > sqrY {
-		// Z is largest
-		z = sprec.Sqrt(sqrZ)
-		x = (matrix.M31 + matrix.M13) / (4 * z)
-		y = (matrix.M32 + matrix.M23) / (4 * z)
-		w = (matrix.M21 - matrix.M12) / (4 * z)
-	} else if sqrY > sqrX {
-		// Y is largest
-		y = sprec.Sqrt(sqrY)
-		x = (matrix.M21 + matrix.M12) / (4 * y)
-		z = (matrix.M32 + matrix.M23) / (4 * y)
-		w = (matrix.M13 - matrix.M31) / (4 * y)
-	} else {
-		// X is largest
-		x = sprec.Sqrt(sqrX)
-		y = (matrix.M21 + matrix.M12) / (4 * x)
-		z = (matrix.M31 + matrix.M13) / (4 * x)
-		w = (matrix.M32 - matrix.M23) / (4 * x)
-	}
-	return sprec.UnitQuat(sprec.NewQuat(w, x, y, z))
+	cameraStand.Camera.SetRotation(matrix.RotationQuat())
 }

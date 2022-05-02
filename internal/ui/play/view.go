@@ -12,23 +12,25 @@ import (
 	"github.com/mokiat/lacking/ui"
 	co "github.com/mokiat/lacking/ui/component"
 	"github.com/mokiat/lacking/ui/mat"
-	"github.com/mokiat/lacking/ui/optional"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecscomp"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecssys"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/game"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/global"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/scene"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/scene/car"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/store"
+	"github.com/mokiat/lacking/util/optional"
+	"github.com/mokiat/rally-mka/internal/ecscomp"
+	"github.com/mokiat/rally-mka/internal/ecssys"
+	"github.com/mokiat/rally-mka/internal/game"
+	"github.com/mokiat/rally-mka/internal/global"
+	"github.com/mokiat/rally-mka/internal/scene"
+	"github.com/mokiat/rally-mka/internal/scene/car"
+	"github.com/mokiat/rally-mka/internal/store"
 )
 
 const (
+	correction = float32(0.9)
+
 	anchorDistance = 6.0
-	cameraDistance = 12.0
+	cameraDistance = 12.0 * correction
 
 	carMaxSteeringAngle  = 30
-	carFrontAcceleration = 155
-	carRearAcceleration  = 160
+	carFrontAcceleration = 145 * 1
+	carRearAcceleration  = 160 * 1
 
 	// FIXME: Currently, too much front brakes cause the car
 	// to straighten. This is due to there being more pressure
@@ -38,12 +40,12 @@ const (
 	carRearDeceleration  = 180
 
 	suspensionEnabled      = true
-	suspensionStart        = float32(-0.25)
-	suspensionEnd          = float32(-0.6)
-	suspensionWidth        = float32(1.0)
-	suspensionLength       = float32(0.25)
-	suspensionFrequencyHz  = float32(3.0)
-	suspensionDampingRatio = float32(1.0)
+	suspensionStart        = float32(-0.25) * correction
+	suspensionEnd          = float32(-0.6) * correction
+	suspensionWidth        = float32(1.0) * correction
+	suspensionLength       = float32(0.15) * correction
+	suspensionFrequencyHz  = float32(4.0)
+	suspensionDampingRatio = float32(1.2)
 )
 
 type ViewData struct {
@@ -53,24 +55,24 @@ type ViewData struct {
 var View = co.Connect(co.ShallowCached(co.Define(func(props co.Properties) co.Instance {
 	co.OpenFontCollection("resources/ui/fonts/roboto.ttc")
 
+	context := co.GetContext[global.Context]()
+
 	var (
-		data      ViewData
-		context   global.Context
-		lifecycle *playLifecycle
-		speed     float32
+		data ViewData
 	)
 	props.InjectData(&data)
-	co.InjectContext(&context)
-	co.UseState(func() interface{} {
+
+	lifecycle := co.UseState(func() *playLifecycle {
 		return &playLifecycle{
 			gameController: context.GameController,
 			gameData:       data.GameData,
 		}
-	}).Inject(&lifecycle)
+	}).Get()
 
-	speedState := co.UseState(func() interface{} {
+	speedState := co.UseState(func() float32 {
 		return float32(0.0)
-	}).Inject(&speed)
+	})
+	speed := speedState.Get()
 
 	co.Once(func() {
 		co.Window().SetCursorVisible(false)
@@ -103,15 +105,15 @@ var View = co.Connect(co.ShallowCached(co.Define(func(props co.Properties) co.In
 		co.WithChild("speed-label", co.New(mat.Label, func() {
 			co.WithData(mat.LabelData{
 				Font:      co.GetFont("roboto", "bold"),
-				FontSize:  optional.NewInt(24),
-				FontColor: optional.NewColor(ui.White()),
+				FontSize:  optional.Value(float32(24.0)),
+				FontColor: optional.Value(ui.White()),
 				Text:      fmt.Sprintf("speed: %.4f", speed),
 			})
 			co.WithLayoutData(mat.LayoutData{
-				Left:   optional.NewInt(0),
-				Top:    optional.NewInt(0),
-				Width:  optional.NewInt(200),
-				Height: optional.NewInt(24),
+				Left:   optional.Value(0),
+				Top:    optional.Value(0),
+				Width:  optional.Value(200),
+				Height: optional.Value(24),
 			})
 		}))
 	})
@@ -131,7 +133,7 @@ type playLifecycle struct {
 	gameController *game.Controller
 	gameData       *scene.Data
 
-	gfxScene     graphics.Scene
+	gfxScene     *graphics.Scene
 	physicsScene *physics.Scene
 	ecsScene     *ecs.Scene
 
@@ -139,7 +141,7 @@ type playLifecycle struct {
 	vehicleSystem     *ecssys.VehicleSystem
 	cameraStandSystem *ecssys.CameraStandSystem
 
-	camera graphics.Camera
+	camera *graphics.Camera
 	car    *ecs.Entity
 }
 
@@ -199,10 +201,12 @@ func (h *playLifecycle) setupLevel(level *resource.Level) {
 	createModelMesh = func(matrix sprec.Mat4, node *resource.Node) {
 		modelMatrix := sprec.Mat4Prod(matrix, node.Matrix)
 
-		gfxMesh := h.gfxScene.CreateMesh(node.Mesh.GFXMeshTemplate)
-		gfxMesh.SetPosition(modelMatrix.Translation())
-		// TODO: SetRotation
-		// TODO: SetScale
+		if node.Mesh != nil {
+			gfxMesh := h.gfxScene.CreateMesh(node.Mesh.GFXMeshTemplate)
+			gfxMesh.SetPosition(modelMatrix.Translation())
+			// TODO: SetRotation
+			// TODO: SetScale
+		}
 
 		for _, child := range node.Children {
 			createModelMesh(modelMatrix, child)
@@ -236,7 +240,7 @@ func (h *playLifecycle) setupCarDemo(model *resource.Model, position sprec.Vec3)
 		Build(h.ecsScene, h.gfxScene, h.physicsScene)
 	chasisPhysics := ecscomp.GetPhysics(chasis)
 
-	flWheelRelativePosition := sprec.NewVec3(suspensionWidth, suspensionStart-suspensionLength, 1.07)
+	flWheelRelativePosition := sprec.NewVec3(suspensionWidth, suspensionStart-suspensionLength, 1.07*correction)
 	flWheel := car.Wheel(model, car.FrontLeftWheelLocation).
 		WithName("front-left-wheel").
 		WithPosition(sprec.Vec3Sum(position, flWheelRelativePosition)).
@@ -261,7 +265,7 @@ func (h *playLifecycle) setupCarDemo(model *resource.Model, position sprec.Vec3)
 		DampingRatio:  suspensionDampingRatio,
 	})
 
-	frWheelRelativePosition := sprec.NewVec3(-suspensionWidth, suspensionStart-suspensionLength, 1.07)
+	frWheelRelativePosition := sprec.NewVec3(-suspensionWidth, suspensionStart-suspensionLength, 1.07*correction)
 	frWheel := car.Wheel(model, car.FrontRightWheelLocation).
 		WithName("front-right-wheel").
 		WithPosition(sprec.Vec3Sum(position, frWheelRelativePosition)).
@@ -286,7 +290,9 @@ func (h *playLifecycle) setupCarDemo(model *resource.Model, position sprec.Vec3)
 		DampingRatio:  suspensionDampingRatio,
 	})
 
-	blWheelRelativePosition := sprec.NewVec3(suspensionWidth, suspensionStart-suspensionLength, -1.56)
+	h.physicsScene.CreateDoubleBodyConstraint(flWheelPhysics.Body, frWheelPhysics.Body, &Differential{})
+
+	blWheelRelativePosition := sprec.NewVec3(suspensionWidth, suspensionStart-suspensionLength, -1.56*correction)
 	blWheel := car.Wheel(model, car.BackLeftWheelLocation).
 		WithName("back-left-wheel").
 		WithPosition(sprec.Vec3Sum(position, blWheelRelativePosition)).
@@ -312,7 +318,7 @@ func (h *playLifecycle) setupCarDemo(model *resource.Model, position sprec.Vec3)
 		DampingRatio:  suspensionDampingRatio,
 	})
 
-	brWheelRelativePosition := sprec.NewVec3(-suspensionWidth, suspensionStart-suspensionLength, -1.56)
+	brWheelRelativePosition := sprec.NewVec3(-suspensionWidth, suspensionStart-suspensionLength, -1.56*correction)
 	brWheel := car.Wheel(model, car.BackRightWheelLocation).
 		WithName("back-right-wheel").
 		WithPosition(sprec.Vec3Sum(position, brWheelRelativePosition)).
@@ -336,6 +342,8 @@ func (h *playLifecycle) setupCarDemo(model *resource.Model, position sprec.Vec3)
 		FrequencyHz:   suspensionFrequencyHz,
 		DampingRatio:  suspensionDampingRatio,
 	})
+
+	h.physicsScene.CreateDoubleBodyConstraint(blWheelPhysics.Body, brWheelPhysics.Body, &Differential{})
 
 	car := h.ecsScene.CreateEntity()
 	ecscomp.SetVehicle(car, &ecscomp.Vehicle{
@@ -374,4 +382,38 @@ func (h *playLifecycle) setupCarDemo(model *resource.Model, position sprec.Vec3)
 	ecscomp.SetPlayerControl(car, &ecscomp.PlayerControl{})
 
 	return chasis
+}
+
+var _ physics.DBConstraintSolver = (*Differential)(nil)
+
+type Differential struct {
+	physics.NilDBConstraintSolver
+}
+
+func (d *Differential) CalculateImpulses(ctx physics.DBSolverContext) physics.DBImpulseSolution {
+	firstRotation := sprec.Vec3Dot(ctx.Primary.Orientation().OrientationX(), ctx.Primary.AngularVelocity())
+	secondRotation := sprec.Vec3Dot(ctx.Secondary.Orientation().OrientationX(), ctx.Secondary.AngularVelocity())
+
+	const maxDelta = float32(100.0)
+
+	var firstCorrection sprec.Vec3
+	if firstRotation > secondRotation+maxDelta {
+		firstCorrection = sprec.Vec3Prod(ctx.Primary.Orientation().OrientationX(), secondRotation+maxDelta-firstRotation)
+	}
+
+	var secondCorrection sprec.Vec3
+	if secondRotation > firstRotation+maxDelta {
+		secondCorrection = sprec.Vec3Prod(ctx.Secondary.Orientation().OrientationX(), firstRotation+maxDelta-secondRotation)
+	}
+
+	return physics.DBImpulseSolution{
+		Primary: physics.SBImpulseSolution{
+			Impulse:        sprec.ZeroVec3(),
+			AngularImpulse: firstCorrection,
+		},
+		Secondary: physics.SBImpulseSolution{
+			Impulse:        sprec.ZeroVec3(),
+			AngularImpulse: secondCorrection,
+		},
+	}
 }

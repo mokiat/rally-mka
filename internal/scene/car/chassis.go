@@ -7,7 +7,7 @@ import (
 	"github.com/mokiat/lacking/game/physics"
 	"github.com/mokiat/lacking/resource"
 	"github.com/mokiat/lacking/shape"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecscomp"
+	"github.com/mokiat/rally-mka/internal/ecscomp"
 )
 
 const (
@@ -46,7 +46,7 @@ func (b *ChassisBuilder) WithPosition(position sprec.Vec3) *ChassisBuilder {
 	return b
 }
 
-func (b *ChassisBuilder) Build(ecsScene *ecs.Scene, gfxScene graphics.Scene, physicsScene *physics.Scene) *ecs.Entity {
+func (b *ChassisBuilder) Build(ecsScene *ecs.Scene, gfxScene *graphics.Scene, physicsScene *physics.Scene) *ecs.Entity {
 	bodyNode, _ := b.model.FindNode("Chassis")
 
 	physicsBody := physicsScene.CreateBody()

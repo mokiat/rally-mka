@@ -4,7 +4,7 @@ import (
 	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/lacking/app"
 	"github.com/mokiat/lacking/game/ecs"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ecscomp"
+	"github.com/mokiat/rally-mka/internal/ecscomp"
 )
 
 const (

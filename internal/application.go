@@ -1,19 +1,18 @@
 package internal
 
 import (
-	"github.com/mokiat/lacking/game/graphics"
 	"github.com/mokiat/lacking/ui"
 	co "github.com/mokiat/lacking/ui/component"
 	"github.com/mokiat/lacking/ui/mat"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/game"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/global"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/store"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ui/home"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ui/intro"
-	"github.com/mokiat/rally-mka/cmd/rallymka/internal/ui/play"
+	"github.com/mokiat/rally-mka/internal/game"
+	"github.com/mokiat/rally-mka/internal/global"
+	"github.com/mokiat/rally-mka/internal/store"
+	"github.com/mokiat/rally-mka/internal/ui/home"
+	"github.com/mokiat/rally-mka/internal/ui/intro"
+	"github.com/mokiat/rally-mka/internal/ui/play"
 )
 
-func BootstrapApplication(window *ui.Window, gfxEngine graphics.Engine, gameController *game.Controller) {
+func BootstrapApplication(window *ui.Window, gameController *game.Controller) {
 	co.Initialize(window, co.New(co.StoreProvider, func() {
 		co.WithData(co.StoreProviderData{
 			Entries: []co.StoreProviderEntry{
@@ -23,7 +22,6 @@ func BootstrapApplication(window *ui.Window, gfxEngine graphics.Engine, gameCont
 
 		co.WithChild("app", co.New(Application, func() {
 			co.WithContext(global.Context{
-				GFXEngine:      gfxEngine,
 				GameController: gameController,
 			})
 		}))
