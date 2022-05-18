@@ -3,3 +3,6 @@
 
 # Assets
 /assets
+
+# VSCode
+.vscode/
