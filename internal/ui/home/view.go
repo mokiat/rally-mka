@@ -45,7 +45,7 @@ var View = co.ShallowCached(co.Define(func(props co.Properties) co.Instance {
 			co.WithLayoutData(mat.LayoutData{
 				Top:    optional.Value(0),
 				Bottom: optional.Value(0),
-				Left:   optional.Value(300),
+				Left:   optional.Value(250),
 				Right:  optional.Value(0),
 			})
 		}))
