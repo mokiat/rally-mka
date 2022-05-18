@@ -53,8 +53,6 @@ type ViewData struct {
 }
 
 var View = co.Connect(co.ShallowCached(co.Define(func(props co.Properties) co.Instance {
-	co.OpenFontCollection("ui/fonts/roboto.ttc")
-
 	context := co.GetContext[global.Context]()
 
 	var (
@@ -104,7 +102,7 @@ var View = co.Connect(co.ShallowCached(co.Define(func(props co.Properties) co.In
 
 		co.WithChild("speed-label", co.New(mat.Label, func() {
 			co.WithData(mat.LabelData{
-				Font:      co.GetFont("roboto", "bold"),
+				Font:      co.OpenFont("mat:///roboto-bold.ttf"),
 				FontSize:  optional.Value(float32(24.0)),
 				FontColor: optional.Value(ui.White()),
 				Text:      fmt.Sprintf("speed: %.4f", speed),

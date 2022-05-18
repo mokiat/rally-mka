@@ -13,6 +13,7 @@ import (
 	"github.com/mokiat/lacking/game/graphics"
 	"github.com/mokiat/lacking/log"
 	"github.com/mokiat/lacking/ui"
+	"github.com/mokiat/lacking/ui/mat"
 	"github.com/mokiat/rally-mka/internal"
 	"github.com/mokiat/rally-mka/internal/game"
 )
@@ -39,7 +40,7 @@ func runApplication() error {
 	renderAPI := glrender.NewAPI()
 	graphicsEngine := graphics.NewEngine(renderAPI, glgame.NewShaderCollection())
 	gameController := game.NewController(registry, graphicsEngine)
-	resourceLocator := ui.NewFileResourceLocator("./resources")
+	resourceLocator := mat.WrappedResourceLocator(ui.NewFileResourceLocator("./resources"))
 	uiCfg := ui.NewConfig(resourceLocator, renderAPI, glui.NewShaderCollection())
 	uiController := ui.NewController(uiCfg, func(w *ui.Window) {
 		internal.BootstrapApplication(w, gameController)

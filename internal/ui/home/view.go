@@ -10,8 +10,6 @@ import (
 )
 
 var View = co.ShallowCached(co.Define(func(props co.Properties) co.Instance {
-	co.OpenFontCollection("ui/fonts/roboto.ttc")
-
 	onContinueClicked := func() {
 		log.Info("Continue")
 	}
@@ -72,7 +70,7 @@ var View = co.ShallowCached(co.Define(func(props co.Properties) co.Instance {
 			co.WithChild("continue-button", co.New(mat.Button, func() {
 				co.WithData(mat.ButtonData{
 					Padding:       buttonPadding,
-					Font:          co.GetFont("roboto", "bold"),
+					Font:          co.OpenFont("mat:///roboto-bold.ttf"),
 					FontSize:      optional.Value(float32(26)),
 					FontColor:     optional.Value(ui.White()),
 					FontAlignment: mat.AlignmentLeft,
@@ -92,7 +90,7 @@ var View = co.ShallowCached(co.Define(func(props co.Properties) co.Instance {
 			co.WithChild("new-game-button", co.New(mat.Button, func() {
 				co.WithData(mat.ButtonData{
 					Padding:       buttonPadding,
-					Font:          co.GetFont("roboto", "bold"),
+					Font:          co.OpenFont("mat:///roboto-bold.ttf"),
 					FontSize:      optional.Value(float32(26)),
 					FontColor:     optional.Value(ui.White()),
 					FontAlignment: mat.AlignmentLeft,
@@ -112,7 +110,7 @@ var View = co.ShallowCached(co.Define(func(props co.Properties) co.Instance {
 			co.WithChild("load-game-button", co.New(mat.Button, func() {
 				co.WithData(mat.ButtonData{
 					Padding:       buttonPadding,
-					Font:          co.GetFont("roboto", "bold"),
+					Font:          co.OpenFont("mat:///roboto-bold.ttf"),
 					FontSize:      optional.Value(float32(26)),
 					FontColor:     optional.Value(ui.White()),
 					FontAlignment: mat.AlignmentLeft,
@@ -132,7 +130,7 @@ var View = co.ShallowCached(co.Define(func(props co.Properties) co.Instance {
 			co.WithChild("options-button", co.New(mat.Button, func() {
 				co.WithData(mat.ButtonData{
 					Padding:       buttonPadding,
-					Font:          co.GetFont("roboto", "bold"),
+					Font:          co.OpenFont("mat:///roboto-bold.ttf"),
 					FontSize:      optional.Value(float32(26)),
 					FontColor:     optional.Value(ui.White()),
 					FontAlignment: mat.AlignmentLeft,
