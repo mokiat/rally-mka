@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"log"
+	"os"
 
 	glapp "github.com/mokiat/lacking-gl/app"
 	glgame "github.com/mokiat/lacking-gl/game"
@@ -11,17 +11,19 @@ import (
 	"github.com/mokiat/lacking/app"
 	"github.com/mokiat/lacking/game/asset"
 	"github.com/mokiat/lacking/game/graphics"
+	"github.com/mokiat/lacking/log"
 	"github.com/mokiat/lacking/ui"
 	"github.com/mokiat/rally-mka/internal"
 	"github.com/mokiat/rally-mka/internal/game"
 )
 
 func main() {
-	log.Println("running application")
+	log.Info("Started")
 	if err := runApplication(); err != nil {
-		log.Fatalf("application error: %v", err)
+		log.Error("Crashed: %v", err)
+		os.Exit(1)
 	}
-	log.Println("application closed")
+	log.Info("Stopped")
 }
 
 func runApplication() error {
@@ -43,6 +45,9 @@ func runApplication() error {
 		internal.BootstrapApplication(w, gameController)
 	})
 
-	controller := app.NewLayeredController(gameController, uiController)
+	controller := app.NewLayeredController(
+		gameController,
+		uiController,
+	)
 	return glapp.Run(cfg, controller)
 }

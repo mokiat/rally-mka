@@ -132,7 +132,8 @@ func (c *Controller) OnKeyboardEvent(window app.Window, event app.KeyboardEvent)
 			return true
 		}
 	}
-	return c.vehicleSystem.OnKeyboardEvent(event)
+	return c.vehicleSystem.OnKeyboardEvent(event) ||
+		c.cameraStandSystem.OnKeyboardEvent(event)
 }
 
 func (c *Controller) OnRender(window app.Window) {

@@ -17,6 +17,41 @@ func NewCameraStandSystem(ecsScene *ecs.Scene) *CameraStandSystem {
 type CameraStandSystem struct {
 	ecsScene *ecs.Scene
 	zoom     float32
+
+	isRotateLeft  bool
+	isRotateRight bool
+	isRotateUp    bool
+	isRotateDown  bool
+	isZoomIn      bool
+	isZoomOut     bool
+
+	rotationX sprec.Angle
+	rotationY sprec.Angle
+}
+
+func (s *CameraStandSystem) OnKeyboardEvent(event app.KeyboardEvent) bool {
+	active := event.Type != app.KeyboardEventTypeKeyUp
+	switch event.Code {
+	case app.KeyCodeA:
+		s.isRotateLeft = active
+		return true
+	case app.KeyCodeD:
+		s.isRotateRight = active
+		return true
+	case app.KeyCodeW:
+		s.isRotateUp = active
+		return true
+	case app.KeyCodeS:
+		s.isRotateDown = active
+		return true
+	case app.KeyCodeE:
+		s.isZoomIn = active
+		return true
+	case app.KeyCodeQ:
+		s.isZoomOut = active
+		return true
+	}
+	return false
 }
 
 func (s *CameraStandSystem) Update(elapsedSeconds float32, gamepad *app.GamepadState) {
@@ -51,6 +86,25 @@ func (s *CameraStandSystem) updateCameraStand(cameraStand *ecscomp.CameraStand, 
 	cameraVectorZ := anchorVector
 	cameraVectorX := sprec.Vec3Cross(sprec.BasisYVec3(), cameraVectorZ)
 	cameraVectorY := sprec.Vec3Cross(cameraVectorZ, cameraVectorX)
+
+	if s.isRotateLeft {
+		s.rotationY -= sprec.Degrees(elapsedSeconds * 100)
+	}
+	if s.isRotateRight {
+		s.rotationY += sprec.Degrees(elapsedSeconds * 100)
+	}
+	if s.isRotateUp {
+		s.rotationX -= sprec.Degrees(elapsedSeconds * 100)
+	}
+	if s.isRotateDown {
+		s.rotationX += sprec.Degrees(elapsedSeconds * 100)
+	}
+	if s.isZoomIn {
+		s.zoom -= 0.3 * elapsedSeconds * s.zoom
+	}
+	if s.isZoomOut {
+		s.zoom += 0.3 * elapsedSeconds * s.zoom
+	}
 
 	if gamepad != nil {
 		if gamepad.RightBumper {
@@ -88,7 +142,9 @@ func (s *CameraStandSystem) updateCameraStand(cameraStand *ecscomp.CameraStand, 
 			sprec.UnitVec3(cameraVectorZ),
 			sprec.ZeroVec3(),
 		),
+		sprec.RotationMat4(s.rotationY, 0.0, 1.0, 0.0),
 		sprec.RotationMat4(sprec.Degrees(-25.0), 1.0, 0.0, 0.0),
+		sprec.RotationMat4(s.rotationX, 1.0, 0.0, 0.0),
 		sprec.TranslationMat4(0.0, 0.0, cameraStand.CameraDistance*s.zoom),
 	)
 
