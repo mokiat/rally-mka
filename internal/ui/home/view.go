@@ -10,7 +10,7 @@ import (
 )
 
 var View = co.ShallowCached(co.Define(func(props co.Properties) co.Instance {
-	co.OpenFontCollection("resources/ui/fonts/roboto.ttc")
+	co.OpenFontCollection("ui/fonts/roboto.ttc")
 
 	onContinueClicked := func() {
 		log.Info("Continue")
@@ -39,7 +39,7 @@ var View = co.ShallowCached(co.Define(func(props co.Properties) co.Instance {
 
 		co.WithChild("background-picture", co.New(mat.Picture, func() {
 			co.WithData(mat.PictureData{
-				Image: co.OpenImage("resources/ui/images/background.png"),
+				Image: co.OpenImage("ui/images/background.png"),
 				Mode:  mat.ImageModeCover,
 			})
 			co.WithLayoutData(mat.LayoutData{

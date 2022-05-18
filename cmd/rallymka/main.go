@@ -39,7 +39,7 @@ func runApplication() error {
 	renderAPI := glrender.NewAPI()
 	graphicsEngine := graphics.NewEngine(renderAPI, glgame.NewShaderCollection())
 	gameController := game.NewController(registry, graphicsEngine)
-	resourceLocator := ui.NewFileResourceLocator(".")
+	resourceLocator := ui.NewFileResourceLocator("./resources")
 	uiCfg := ui.NewConfig(resourceLocator, renderAPI, glui.NewShaderCollection())
 	uiController := ui.NewController(uiCfg, func(w *ui.Window) {
 		internal.BootstrapApplication(w, gameController)

@@ -50,7 +50,7 @@ var View = co.ShallowCached(co.Define(func(props co.Properties) co.Instance {
 		co.WithChild("logo-picture", co.New(mat.Picture, func() {
 			co.WithData(mat.PictureData{
 				BackgroundColor: optional.Value(ui.Transparent()),
-				Image:           co.OpenImage("resources/ui/images/logo.png"),
+				Image:           co.OpenImage("ui/images/logo.png"),
 				Mode:            mat.ImageModeFit,
 			})
 			co.WithLayoutData(mat.LayoutData{

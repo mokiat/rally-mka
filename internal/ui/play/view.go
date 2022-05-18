@@ -53,7 +53,7 @@ type ViewData struct {
 }
 
 var View = co.Connect(co.ShallowCached(co.Define(func(props co.Properties) co.Instance {
-	co.OpenFontCollection("resources/ui/fonts/roboto.ttc")
+	co.OpenFontCollection("ui/fonts/roboto.ttc")
 
 	context := co.GetContext[global.Context]()
 
