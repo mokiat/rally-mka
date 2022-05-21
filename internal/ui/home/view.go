@@ -9,7 +9,7 @@ import (
 	"github.com/mokiat/rally-mka/internal/store"
 )
 
-var View = co.ShallowCached(co.Define(func(props co.Properties) co.Instance {
+var View = co.Define(func(props co.Properties) co.Instance {
 	onContinueClicked := func() {
 		log.Info("Continue")
 	}
@@ -148,4 +148,4 @@ var View = co.ShallowCached(co.Define(func(props co.Properties) co.Instance {
 			}))
 		}))
 	})
-}))
+})

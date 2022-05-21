@@ -30,7 +30,7 @@ func BootstrapApplication(window *ui.Window, gameController *game.Controller) {
 
 type ApplicationData = mat.SwitchData
 
-var Application = co.Connect(co.ShallowCached(co.Define(func(props co.Properties) co.Instance {
+var Application = co.Connect(co.Define(func(props co.Properties) co.Instance {
 	return co.New(mat.Switch, func() {
 		co.WithData(props.Data())
 
@@ -39,7 +39,7 @@ var Application = co.Connect(co.ShallowCached(co.Define(func(props co.Properties
 		co.WithChild("play", co.New(play.View, func() {}))
 	})
 
-})), co.ConnectMapping{
+}), co.ConnectMapping{
 	Data: func(props co.Properties) interface{} {
 		var appStore store.Application
 		co.InjectStore(&appStore)

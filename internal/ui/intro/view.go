@@ -12,7 +12,7 @@ import (
 	"github.com/mokiat/rally-mka/internal/store"
 )
 
-var View = co.ShallowCached(co.Define(func(props co.Properties) co.Instance {
+var View = co.Define(func(props co.Properties) co.Instance {
 	context := co.GetContext[global.Context]()
 
 	co.Once(func() {
@@ -61,4 +61,4 @@ var View = co.ShallowCached(co.Define(func(props co.Properties) co.Instance {
 			})
 		}))
 	})
-}))
+})

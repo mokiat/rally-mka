@@ -52,7 +52,7 @@ type ViewData struct {
 	GameData *scene.Data
 }
 
-var View = co.Connect(co.ShallowCached(co.Define(func(props co.Properties) co.Instance {
+var View = co.Connect(co.Define(func(props co.Properties) co.Instance {
 	context := co.GetContext[global.Context]()
 
 	var (
@@ -115,7 +115,7 @@ var View = co.Connect(co.ShallowCached(co.Define(func(props co.Properties) co.In
 			})
 		}))
 	})
-})), co.ConnectMapping{
+}), co.ConnectMapping{
 
 	Data: func(props co.Properties) interface{} {
 		var appStore store.Application
