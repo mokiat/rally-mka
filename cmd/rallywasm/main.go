@@ -15,6 +15,7 @@ import (
 	"github.com/mokiat/lacking/log"
 	"github.com/mokiat/lacking/ui"
 	"github.com/mokiat/lacking/ui/mat"
+	"github.com/mokiat/lacking/util/resource"
 	"github.com/mokiat/rally-mka/internal"
 	"github.com/mokiat/rally-mka/internal/game"
 	"github.com/mokiat/rally-mka/resources"
@@ -31,7 +32,7 @@ func main() {
 
 func runApplication() error {
 	registry := asset.NewWebRegistry(".")
-	resourceLocator := mat.WrappedResourceLocator(ui.NewFSResourceLocator(resources.UI))
+	resourceLocator := mat.WrappedResourceLocator(resource.NewFSLocator(resources.UI))
 	renderAPI := jsrender.NewAPI()
 	graphicsEngine := graphics.NewEngine(renderAPI, jsgame.NewShaderCollection())
 	gameController := game.NewController(registry, graphicsEngine)
