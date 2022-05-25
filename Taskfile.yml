@@ -1,0 +1,42 @@
+version: '3'
+
+tasks:
+
+  webpack:
+    cmds:
+      - mkdir -p 'assets/web'
+      - cp 'resources/icon.png' 'assets/web/favicon.png'
+      - cp 'resources/web/main.css' 'assets/web/main.css'
+      - cp 'resources/web/main.js' 'assets/web/main.js'
+      - cp 'resources/web/index.html' 'assets/index.html'
+      - cp "$(go env GOROOT)/misc/wasm/wasm_exec.js" 'assets/web'
+
+  pack:
+    cmds:
+      - go run './cmd/rallypack'
+
+  assets:
+    deps: [webpack, pack]
+
+  run:
+    cmds:
+      - go run './cmd/rallymka'
+
+  debug:
+    cmds:
+      - go run -tags debug './cmd/rallymka'
+
+  install:
+    cmds:
+      - go install github.com/mokiat/lacking-studio/cmd/lacking
+
+  wasm:
+    env:
+      GOOS: js
+      GOARCH: wasm
+    cmds:
+      - go build -o './assets/web/main.wasm' './cmd/rallywasm'
+
+  web:
+    cmds:
+      - go run 'github.com/mokiat/httpserv@master' -dir './assets' -host '127.0.0.1'
