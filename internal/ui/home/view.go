@@ -5,19 +5,21 @@ import (
 	"github.com/mokiat/lacking/ui"
 	co "github.com/mokiat/lacking/ui/component"
 	"github.com/mokiat/lacking/ui/mat"
+	"github.com/mokiat/lacking/ui/mvc"
 	"github.com/mokiat/lacking/util/optional"
-	"github.com/mokiat/rally-mka/internal/store"
+	"github.com/mokiat/rally-mka/internal/ui/action"
+	"github.com/mokiat/rally-mka/internal/ui/model"
 )
 
-var View = co.Define(func(props co.Properties) co.Instance {
+var View = co.Define(func(props co.Properties, scope co.Scope) co.Instance {
 	onContinueClicked := func() {
 		log.Info("Continue")
 	}
 
 	onNewGameClicked := func() {
 		log.Info("New Game")
-		co.Dispatch(store.ChangeViewAction{
-			ViewIndex: store.ViewPlay,
+		mvc.Dispatch(scope, action.ChangeView{
+			ViewName: model.ViewNamePlay,
 		})
 	}
 
@@ -37,7 +39,7 @@ var View = co.Define(func(props co.Properties) co.Instance {
 
 		co.WithChild("background-picture", co.New(mat.Picture, func() {
 			co.WithData(mat.PictureData{
-				Image: co.OpenImage("ui/images/background.png"),
+				Image: co.OpenImage(scope, "ui/images/background.png"),
 				Mode:  mat.ImageModeCover,
 			})
 			co.WithLayoutData(mat.LayoutData{

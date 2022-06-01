@@ -6,21 +6,23 @@ import (
 	"github.com/mokiat/lacking/ui"
 	co "github.com/mokiat/lacking/ui/component"
 	"github.com/mokiat/lacking/ui/mat"
+	"github.com/mokiat/lacking/ui/mvc"
 	"github.com/mokiat/lacking/util/optional"
 	"github.com/mokiat/rally-mka/internal/global"
 	"github.com/mokiat/rally-mka/internal/scene"
-	"github.com/mokiat/rally-mka/internal/store"
+	"github.com/mokiat/rally-mka/internal/ui/action"
+	"github.com/mokiat/rally-mka/internal/ui/model"
 )
 
-var View = co.Define(func(props co.Properties) co.Instance {
+var View = co.Define(func(props co.Properties, scope co.Scope) co.Instance {
 	context := co.GetContext[global.Context]()
 
 	co.Once(func() {
-		co.Window().SetCursorVisible(false)
+		co.Window(scope).SetCursorVisible(false)
 	})
 
 	co.Defer(func() {
-		co.Window().SetCursorVisible(true)
+		co.Window(scope).SetCursorVisible(true)
 	})
 
 	co.Once(func() {
@@ -29,11 +31,11 @@ var View = co.Define(func(props co.Properties) co.Instance {
 		)
 		gameData.Request().OnSuccess(func(interface{}) {
 			co.Schedule(func() {
-				co.Dispatch(store.SetGameDataAction{
+				mvc.Dispatch(scope, action.SetGameData{
 					GameData: gameData,
 				})
-				co.Dispatch(store.ChangeViewAction{
-					ViewIndex: store.ViewHome,
+				mvc.Dispatch(scope, action.ChangeView{
+					ViewName: model.ViewNameHome,
 				})
 			})
 		}).OnError(func(err error) {
@@ -50,7 +52,7 @@ var View = co.Define(func(props co.Properties) co.Instance {
 		co.WithChild("logo-picture", co.New(mat.Picture, func() {
 			co.WithData(mat.PictureData{
 				BackgroundColor: optional.Value(ui.Transparent()),
-				Image:           co.OpenImage("ui/images/logo.png"),
+				Image:           co.OpenImage(scope, "ui/images/logo.png"),
 				Mode:            mat.ImageModeFit,
 			})
 			co.WithLayoutData(mat.LayoutData{

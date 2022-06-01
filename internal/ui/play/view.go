@@ -19,7 +19,6 @@ import (
 	"github.com/mokiat/rally-mka/internal/global"
 	"github.com/mokiat/rally-mka/internal/scene"
 	"github.com/mokiat/rally-mka/internal/scene/car"
-	"github.com/mokiat/rally-mka/internal/store"
 )
 
 const (
@@ -52,13 +51,11 @@ type ViewData struct {
 	GameData *scene.Data
 }
 
-var View = co.Connect(co.Define(func(props co.Properties) co.Instance {
-	context := co.GetContext[global.Context]()
-
+var View = co.Define(func(props co.Properties, scope co.Scope) co.Instance {
 	var (
-		data ViewData
+		context = co.GetContext[global.Context]()
+		data    = co.GetData[ViewData](props)
 	)
-	props.InjectData(&data)
 
 	lifecycle := co.UseState(func() *playLifecycle {
 		return &playLifecycle{
@@ -73,7 +70,7 @@ var View = co.Connect(co.Define(func(props co.Properties) co.Instance {
 	speed := speedState.Get()
 
 	co.Once(func() {
-		co.Window().SetCursorVisible(false)
+		co.Window(scope).SetCursorVisible(false)
 	})
 
 	co.Once(func() {
@@ -84,7 +81,7 @@ var View = co.Connect(co.Define(func(props co.Properties) co.Instance {
 	})
 
 	co.Defer(func() {
-		co.Window().SetCursorVisible(true)
+		co.Window(scope).SetCursorVisible(true)
 	})
 
 	co.Once(func() {
@@ -102,7 +99,7 @@ var View = co.Connect(co.Define(func(props co.Properties) co.Instance {
 
 		co.WithChild("speed-label", co.New(mat.Label, func() {
 			co.WithData(mat.LabelData{
-				Font:      co.OpenFont("mat:///roboto-bold.ttf"),
+				Font:      co.OpenFont(scope, "mat:///roboto-bold.ttf"),
 				FontSize:  optional.Value(float32(24.0)),
 				FontColor: optional.Value(ui.White()),
 				Text:      fmt.Sprintf("speed: %.4f", speed),
@@ -115,16 +112,6 @@ var View = co.Connect(co.Define(func(props co.Properties) co.Instance {
 			})
 		}))
 	})
-}), co.ConnectMapping{
-
-	Data: func(props co.Properties) interface{} {
-		var appStore store.Application
-		co.InjectStore(&appStore)
-
-		return ViewData{
-			GameData: appStore.GameData,
-		}
-	},
 })
 
 type playLifecycle struct {
