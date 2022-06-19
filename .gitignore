@@ -3,3 +3,9 @@
 
 # Assets
 /assets
+
+# VSCode
+.vscode/
+
+# Distribution
+/dist
