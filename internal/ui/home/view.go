@@ -9,6 +9,7 @@ import (
 	"github.com/mokiat/lacking/util/optional"
 	"github.com/mokiat/rally-mka/internal/ui/action"
 	"github.com/mokiat/rally-mka/internal/ui/model"
+	"github.com/mokiat/rally-mka/internal/ui/widget"
 )
 
 var View = co.Define(func(props co.Properties, scope co.Scope) co.Instance {
@@ -61,22 +62,11 @@ var View = co.Define(func(props co.Properties, scope co.Scope) co.Instance {
 				Height:         optional.Value(200),
 			})
 
-			buttonPadding := ui.Spacing{
-				Left:   5,
-				Right:  5,
-				Top:    2,
-				Bottom: 2,
-			}
 			buttonWidth := optional.Value(130)
 
-			co.WithChild("continue-button", co.New(mat.Button, func() {
-				co.WithData(mat.ButtonData{
-					Padding:       buttonPadding,
-					Font:          co.OpenFont("mat:///roboto-bold.ttf"),
-					FontSize:      optional.Value(float32(26)),
-					FontColor:     optional.Value(ui.White()),
-					FontAlignment: mat.AlignmentLeft,
-					Text:          "Continue",
+			co.WithChild("continue-button", co.New(widget.HomeButton, func() {
+				co.WithData(widget.HomeButtonData{
+					Text: "Continue",
 				})
 				co.WithLayoutData(mat.LayoutData{
 					Top:    optional.Value(0),
@@ -84,19 +74,14 @@ var View = co.Define(func(props co.Properties, scope co.Scope) co.Instance {
 					Width:  buttonWidth,
 					Height: optional.Value(30),
 				})
-				co.WithCallbackData(mat.ButtonCallbackData{
+				co.WithCallbackData(widget.HomeButtonCallbackData{
 					ClickListener: onContinueClicked,
 				})
 			}))
 
-			co.WithChild("new-game-button", co.New(mat.Button, func() {
-				co.WithData(mat.ButtonData{
-					Padding:       buttonPadding,
-					Font:          co.OpenFont("mat:///roboto-bold.ttf"),
-					FontSize:      optional.Value(float32(26)),
-					FontColor:     optional.Value(ui.White()),
-					FontAlignment: mat.AlignmentLeft,
-					Text:          "New Game",
+			co.WithChild("new-game-button", co.New(widget.HomeButton, func() {
+				co.WithData(widget.HomeButtonData{
+					Text: "New Game",
 				})
 				co.WithLayoutData(mat.LayoutData{
 					Top:    optional.Value(50),
@@ -104,19 +89,14 @@ var View = co.Define(func(props co.Properties, scope co.Scope) co.Instance {
 					Width:  buttonWidth,
 					Height: optional.Value(30),
 				})
-				co.WithCallbackData(mat.ButtonCallbackData{
+				co.WithCallbackData(widget.HomeButtonCallbackData{
 					ClickListener: onNewGameClicked,
 				})
 			}))
 
-			co.WithChild("load-game-button", co.New(mat.Button, func() {
-				co.WithData(mat.ButtonData{
-					Padding:       buttonPadding,
-					Font:          co.OpenFont("mat:///roboto-bold.ttf"),
-					FontSize:      optional.Value(float32(26)),
-					FontColor:     optional.Value(ui.White()),
-					FontAlignment: mat.AlignmentLeft,
-					Text:          "Load Game",
+			co.WithChild("load-game-button", co.New(widget.HomeButton, func() {
+				co.WithData(widget.HomeButtonData{
+					Text: "Load Game",
 				})
 				co.WithLayoutData(mat.LayoutData{
 					Top:    optional.Value(100),
@@ -124,19 +104,14 @@ var View = co.Define(func(props co.Properties, scope co.Scope) co.Instance {
 					Width:  buttonWidth,
 					Height: optional.Value(30),
 				})
-				co.WithCallbackData(mat.ButtonCallbackData{
+				co.WithCallbackData(widget.HomeButtonCallbackData{
 					ClickListener: onLoadGameClicked,
 				})
 			}))
 
-			co.WithChild("options-button", co.New(mat.Button, func() {
-				co.WithData(mat.ButtonData{
-					Padding:       buttonPadding,
-					Font:          co.OpenFont("mat:///roboto-bold.ttf"),
-					FontSize:      optional.Value(float32(26)),
-					FontColor:     optional.Value(ui.White()),
-					FontAlignment: mat.AlignmentLeft,
-					Text:          "Options",
+			co.WithChild("options-button", co.New(widget.HomeButton, func() {
+				co.WithData(widget.HomeButtonData{
+					Text: "Options",
 				})
 				co.WithLayoutData(mat.LayoutData{
 					Top:    optional.Value(150),
@@ -144,7 +119,7 @@ var View = co.Define(func(props co.Properties, scope co.Scope) co.Instance {
 					Width:  buttonWidth,
 					Height: optional.Value(30),
 				})
-				co.WithCallbackData(mat.ButtonCallbackData{
+				co.WithCallbackData(widget.HomeButtonCallbackData{
 					ClickListener: onOptionsClicked,
 				})
 			}))

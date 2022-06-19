@@ -15,8 +15,8 @@ import (
 	"github.com/mokiat/lacking/ui"
 	"github.com/mokiat/lacking/ui/mat"
 	"github.com/mokiat/lacking/util/resource"
-	"github.com/mokiat/rally-mka/internal"
 	"github.com/mokiat/rally-mka/internal/game"
+	gameui "github.com/mokiat/rally-mka/internal/ui"
 )
 
 func main() {
@@ -44,7 +44,7 @@ func runApplication() error {
 	resourceLocator := mat.WrappedResourceLocator(resource.NewFileLocator("./resources"))
 	uiCfg := ui.NewConfig(resourceLocator, renderAPI, glui.NewShaderCollection())
 	uiController := ui.NewController(uiCfg, func(w *ui.Window) {
-		internal.BootstrapApplication(w, gameController)
+		gameui.BootstrapApplication(w, gameController)
 	})
 
 	controller := app.NewLayeredController(

@@ -3,6 +3,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	jsapp "github.com/mokiat/lacking-js/app"
@@ -16,8 +17,8 @@ import (
 	"github.com/mokiat/lacking/ui"
 	"github.com/mokiat/lacking/ui/mat"
 	"github.com/mokiat/lacking/util/resource"
-	"github.com/mokiat/rally-mka/internal"
 	"github.com/mokiat/rally-mka/internal/game"
+	gameui "github.com/mokiat/rally-mka/internal/ui"
 	"github.com/mokiat/rally-mka/resources"
 )
 
@@ -31,19 +32,21 @@ func main() {
 }
 
 func runApplication() error {
-	registry := asset.NewWebRegistry(".")
+	registry, err := asset.NewWebRegistry(".")
+	if err != nil {
+		return fmt.Errorf("failed to initialize registry: %w", err)
+	}
 	resourceLocator := mat.WrappedResourceLocator(resource.NewFSLocator(resources.UI))
 	renderAPI := jsrender.NewAPI()
 	graphicsEngine := graphics.NewEngine(renderAPI, jsgame.NewShaderCollection())
 	gameController := game.NewController(registry, graphicsEngine)
 	uiCfg := ui.NewConfig(resourceLocator, renderAPI, jsui.NewShaderCollection())
 	uiController := ui.NewController(uiCfg, func(w *ui.Window) {
-		internal.BootstrapApplication(w, gameController)
+		gameui.BootstrapApplication(w, gameController)
 	})
 
 	cfg := jsapp.NewConfig("screen")
 	cfg.AddGLExtension("EXT_color_buffer_float")
-	cfg.AddGLExtension("EXT_float_blend")
 
 	controller := app.NewLayeredController(
 		gameController,
