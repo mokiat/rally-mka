@@ -26,10 +26,6 @@ tasks:
     cmds:
       - go run -tags debug './cmd/rallymka'
 
-  install:
-    cmds:
-      - go install github.com/mokiat/lacking-studio/cmd/lacking
-
   wasm:
     env:
       GOOS: js
