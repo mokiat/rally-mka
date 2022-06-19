@@ -21,7 +21,6 @@ func runTool() error {
 	}
 
 	var (
-		tex2DLoading    = ensureResource(registry, "c80a8260-4e6d-479b-add9-cb93a86ca0ee", "twod_texture", "Loading")
 		tex2DConcrete   = ensureResource(registry, "e89d3c68-12ba-42ca-bc04-ccefefcf5720", "twod_texture", "Concrete")
 		tex2DRoad       = ensureResource(registry, "b2c7a46f-f2a2-4601-bd10-493a68fc094c", "twod_texture", "Road")
 		tex2DBarrier    = ensureResource(registry, "3800657a-4407-4bda-bdff-b57748c002ab", "twod_texture", "Barrier")
@@ -40,7 +39,6 @@ func runTool() error {
 	)
 
 	var (
-		modelQuad       = ensureResource(registry, "5323c8e7-9eb6-471f-b14b-585d6ad260f4", "model", "Quad")
 		modelStreetLamp = ensureResource(registry, "31cb3900-760d-4179-b5d9-79f8e69be8f6", "model", "Street Lamp")
 		modelSUV        = ensureResource(registry, "eaeb7483-7271-441f-a470-c0a8fa225161", "model", "SUV")
 		modelLeafyTree  = ensureResource(registry, "2c6e3211-68f8-4b31-beaf-e52af5d3be31", "model", "Leafy Tree")
@@ -87,10 +85,6 @@ func runTool() error {
 
 	// TwoD Textures
 	packer.Pipeline(func(p *pack.Pipeline) {
-		p.SaveTwoDTextureAsset(tex2DLoading.ID(),
-			p.OpenImageResource("resources/images/loading.png"),
-		)
-
 		p.SaveTwoDTextureAsset(tex2DConcrete.ID(),
 			p.OpenImageResource("resources/images/concrete.png"),
 		)
@@ -160,10 +154,6 @@ func runTool() error {
 
 	// Models
 	packer.Pipeline(func(p *pack.Pipeline) {
-		p.SaveModelAsset(modelQuad.ID(),
-			p.OpenGLTFResource("resources/models/quad.gltf"),
-		)
-
 		p.SaveModelAsset(modelStreetLamp.ID(),
 			p.OpenGLTFResource("resources/models/street_lamp.gltf"),
 		)
