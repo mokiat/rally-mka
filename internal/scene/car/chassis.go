@@ -1,6 +1,8 @@
 package car
 
 import (
+	"fmt"
+
 	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/lacking/game/ecs"
 	"github.com/mokiat/lacking/game/graphics"
@@ -47,7 +49,14 @@ func (b *ChassisBuilder) WithPosition(position sprec.Vec3) *ChassisBuilder {
 }
 
 func (b *ChassisBuilder) Build(ecsScene *ecs.Scene, gfxScene *graphics.Scene, physicsScene *physics.Scene) *ecs.Entity {
-	bodyNode, _ := b.model.FindNode("Chassis")
+	instance, found := b.model.FindMeshInstance("Chassis")
+	if !found {
+		panic(fmt.Errorf("mesh instance %q not found", "Chassis"))
+	}
+	definition := instance.MeshDefinition
+	bodyNode := instance.Node
+
+	// bodyNode, _ := b.model.FindNode("Chassis")
 
 	physicsBody := physicsScene.CreateBody()
 	physicsBody.SetPosition(sprec.ZeroVec3())
@@ -70,7 +79,7 @@ func (b *ChassisBuilder) Build(ecsScene *ecs.Scene, gfxScene *graphics.Scene, ph
 		Body: physicsBody,
 	})
 
-	gfxMesh := gfxScene.CreateMesh(bodyNode.Mesh.GFXMeshTemplate)
+	gfxMesh := gfxScene.CreateMesh(definition.GFXMeshTemplate)
 	gfxMesh.SetPosition(bodyNode.Matrix.Translation())
 	// TODO: Set Rotation
 	// TODO: Set Scale

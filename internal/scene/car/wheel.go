@@ -60,7 +60,13 @@ func (b *WheelBuilder) WithPosition(position sprec.Vec3) *WheelBuilder {
 }
 
 func (b *WheelBuilder) Build(ecsScene *ecs.Scene, gfxScene *graphics.Scene, physicsScene *physics.Scene) *ecs.Entity {
-	modelNode, _ := b.model.FindNode(fmt.Sprintf("%sWheel", b.location))
+	instance, found := b.model.FindMeshInstance(fmt.Sprintf("%sWheel", b.location))
+	if !found {
+		panic(fmt.Errorf("mesh instance %q not found", fmt.Sprintf("%sWheel", b.location)))
+	}
+	definition := instance.MeshDefinition
+	modelNode := instance.Node
+	// modelNode, _ := b.model.FindNode(fmt.Sprintf("%sWheel", b.location))
 
 	physicsBody := physicsScene.CreateBody()
 	physicsBody.SetPosition(sprec.ZeroVec3())
@@ -84,7 +90,7 @@ func (b *WheelBuilder) Build(ecsScene *ecs.Scene, gfxScene *graphics.Scene, phys
 		Body: physicsBody,
 	})
 
-	gfxMesh := gfxScene.CreateMesh(modelNode.Mesh.GFXMeshTemplate)
+	gfxMesh := gfxScene.CreateMesh(definition.GFXMeshTemplate)
 	gfxMesh.SetPosition(modelNode.Matrix.Translation())
 	// TODO: Set Rotation
 	// TODO: Set Scale

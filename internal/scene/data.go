@@ -43,6 +43,7 @@ func (d *Data) Request() async.Outcome {
 	default:
 		levelID = levelIDPlayground
 	}
+	levelID = levelIDPlayground
 	d.loadOutcome = async.NewCompositeOutcome(
 		d.registry.LoadModel(modelIDSUV).OnSuccess(resource.InjectModel(&d.CarModel)),
 		d.registry.LoadLevel(levelID).OnSuccess(resource.InjectLevel(&d.Level)), // Forest
