@@ -186,23 +186,15 @@ func (h *playLifecycle) setupLevel(level *resource.Level) {
 		body.SetCollisionShapes([]physics.CollisionShape{collisionMesh})
 	}
 
-	// var createModelMesh func(matrix sprec.Mat4, node *resource.Node)
-	// createModelMesh = func(matrix sprec.Mat4, node *resource.Node) {
-
-	// 	for _, child := range node.Children {
-	// 		createModelMesh(modelMatrix, child)
-	// 	}
-	// }
-
 	for _, staticEntity := range level.StaticEntities {
 		for _, instance := range staticEntity.Model.MeshInstances {
 			node := instance.Node
-			modelMatrix := node.AbsoluteMatrix()
+			modelMatrix := sprec.Mat4Prod(staticEntity.Matrix, node.AbsoluteMatrix())
 
 			gfxMesh := h.gfxScene.CreateMesh(instance.MeshDefinition.GFXMeshTemplate)
 			gfxMesh.SetPosition(modelMatrix.Translation())
-			// TODO: SetRotation
-			// TODO: SetScale
+			gfxMesh.SetRotation(modelMatrix.RotationQuat())
+			gfxMesh.SetScale(modelMatrix.Scale())
 		}
 	}
 
