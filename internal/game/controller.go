@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/mokiat/lacking/app"
+	"github.com/mokiat/lacking/game"
 	"github.com/mokiat/lacking/game/asset"
 	"github.com/mokiat/lacking/game/ecs"
 	"github.com/mokiat/lacking/game/graphics"
@@ -13,10 +14,14 @@ import (
 )
 
 func NewController(reg asset.Registry, gfxEngine *graphics.Engine) *Controller {
+	engine := game.NewEngine(
+		game.WithPhysics(physics.NewEngine()),
+		game.WithGraphics(gfxEngine),
+		game.WithECS(ecs.NewEngine()),
+	)
+
 	controller := &Controller{
-		gfxEngine:     gfxEngine,
-		physicsEngine: physics.NewEngine(),
-		ecsEngine:     ecs.NewEngine(),
+		engine: engine,
 
 		lastFrameTime: time.Now(),
 	}
@@ -27,11 +32,10 @@ func NewController(reg asset.Registry, gfxEngine *graphics.Engine) *Controller {
 type Controller struct {
 	app.NopController
 
-	window        app.Window
-	gfxEngine     *graphics.Engine
-	physicsEngine *physics.Engine
-	ecsEngine     *ecs.Engine
-	registry      *resource.Registry
+	window   app.Window
+	engine   *game.Engine
+	scene    *game.Scene
+	registry *resource.Registry
 
 	lastFrameTime time.Time
 	freezeFrame   bool
@@ -39,11 +43,6 @@ type Controller struct {
 	width  int
 	height int
 
-	gfxScene     *graphics.Scene
-	physicsScene *physics.Scene
-	ecsScene     *ecs.Scene
-
-	renderSystem      *ecssys.Renderer
 	vehicleSystem     *ecssys.VehicleSystem
 	cameraStandSystem *ecssys.CameraStandSystem
 
@@ -60,24 +59,12 @@ func (c *Controller) Registry() *resource.Registry {
 	return c.registry
 }
 
-func (c *Controller) GFXEngine() *graphics.Engine {
-	return c.gfxEngine
+func (c *Controller) Engine() *game.Engine {
+	return c.engine
 }
 
-func (c *Controller) GFXScene() *graphics.Scene {
-	return c.gfxScene
-}
-
-func (c *Controller) PhysicsScene() *physics.Scene {
-	return c.physicsScene
-}
-
-func (c *Controller) ECSScene() *ecs.Scene {
-	return c.ecsScene
-}
-
-func (c *Controller) RenderSystem() *ecssys.Renderer {
-	return c.renderSystem
+func (c *Controller) Scene() *game.Scene {
+	return c.scene
 }
 
 func (c *Controller) VehicleSystem() *ecssys.VehicleSystem {
@@ -96,17 +83,20 @@ func (c *Controller) OnCreate(window app.Window) {
 	c.window = window
 	c.width, c.height = window.Size()
 
-	c.gfxEngine.Create()
+	c.engine.Graphics().Create()
+	c.scene = c.engine.CreateScene()
+	c.camera = c.scene.Graphics().CreateCamera()
 
-	c.gfxScene = c.gfxEngine.CreateScene()
-	c.physicsScene = c.physicsEngine.CreateScene(0.015)
-	c.ecsScene = c.ecsEngine.CreateScene()
+	c.vehicleSystem = ecssys.NewVehicleSystem(c.scene.ECS())
+	c.cameraStandSystem = ecssys.NewCameraStandSystem(c.scene.ECS())
+}
 
-	c.camera = c.gfxScene.CreateCamera()
+func (c *Controller) OnDestroy(window app.Window) {
+	c.vehicleSystem = nil
+	c.cameraStandSystem = nil
 
-	c.renderSystem = ecssys.NewRenderer(c.ecsScene)
-	c.vehicleSystem = ecssys.NewVehicleSystem(c.ecsScene)
-	c.cameraStandSystem = ecssys.NewCameraStandSystem(c.ecsScene)
+	c.scene.Delete()
+	c.engine.Graphics().Destroy()
 }
 
 func (c *Controller) OnResize(window app.Window, width, height int) {
@@ -147,29 +137,15 @@ func (c *Controller) OnRender(window app.Window) {
 			gamepad = &state
 		}
 
-		c.physicsScene.Update(elapsedSeconds)
 		c.vehicleSystem.Update(elapsedSeconds, gamepad)
-		c.renderSystem.Update()
+		c.scene.Update(elapsedSeconds)
 		c.cameraStandSystem.Update(elapsedSeconds, gamepad)
-
 		if c.OnUpdate != nil {
 			c.OnUpdate()
 		}
 
-		c.gfxScene.Render(graphics.NewViewport(0, 0, c.width, c.height), c.camera)
+		c.scene.Graphics().Render(graphics.NewViewport(0, 0, c.width, c.height), c.camera)
 	}
 
 	window.Invalidate() // force redraw
-}
-
-func (c *Controller) OnDestroy(window app.Window) {
-	c.renderSystem = nil
-	c.vehicleSystem = nil
-	c.cameraStandSystem = nil
-
-	c.ecsScene.Delete()
-	c.physicsScene.Delete()
-	c.gfxScene.Delete()
-
-	c.gfxEngine.Destroy()
 }

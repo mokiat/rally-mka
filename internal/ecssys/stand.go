@@ -67,17 +67,16 @@ func (s *CameraStandSystem) Update(elapsedSeconds float32, gamepad *app.GamepadS
 
 func (s *CameraStandSystem) updateCameraStand(cameraStand *ecscomp.CameraStand, elapsedSeconds float32, gamepad *app.GamepadState) {
 	var (
-		targetPhysicsComp = ecscomp.GetPhysics(cameraStand.Target)
-		targetRenderComp  = ecscomp.GetRender(cameraStand.Target)
+		target = cameraStand.Target
 	)
-
 	var targetPosition sprec.Vec3
 	switch {
-	case targetPhysicsComp != nil:
-		targetPosition = targetPhysicsComp.Body.Position()
-	case targetRenderComp != nil:
-		targetPosition = targetRenderComp.Mesh.Position()
+	case target.Body() != nil:
+		targetPosition = target.Body().Position()
+	default:
+		targetPosition = target.AbsoluteMatrix().Translation()
 	}
+
 	// we use a camera anchor to achieve the smooth effect of a
 	// camera following the target
 	anchorVector := sprec.Vec3Diff(cameraStand.AnchorPosition, targetPosition)
@@ -147,7 +146,5 @@ func (s *CameraStandSystem) updateCameraStand(cameraStand *ecscomp.CameraStand, 
 		sprec.RotationMat4(s.rotationX, 1.0, 0.0, 0.0),
 		sprec.TranslationMat4(0.0, 0.0, cameraStand.CameraDistance*s.zoom),
 	)
-
-	cameraStand.Camera.SetPosition(matrix.Translation())
-	cameraStand.Camera.SetRotation(matrix.RotationQuat())
+	cameraStand.Camera.SetMatrix(matrix)
 }

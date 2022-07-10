@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/mokiat/gomath/sprec"
+	lackgame "github.com/mokiat/lacking/game"
 	"github.com/mokiat/lacking/game/ecs"
 	"github.com/mokiat/lacking/game/graphics"
 	"github.com/mokiat/lacking/game/physics"
@@ -75,7 +76,7 @@ var View = co.Define(func(props co.Properties, scope co.Scope) co.Instance {
 
 	co.Once(func() {
 		context.GameController.OnUpdate = func() {
-			carSpeed := ecscomp.GetPhysics(lifecycle.car).Body.Velocity().Length() * 3.6
+			carSpeed := lifecycle.car.Body().Velocity().Length() * 3.6
 			speedState.Set(carSpeed)
 		}
 	})
@@ -122,25 +123,24 @@ type playLifecycle struct {
 	physicsScene *physics.Scene
 	ecsScene     *ecs.Scene
 
-	renderSystem      *ecssys.Renderer
 	vehicleSystem     *ecssys.VehicleSystem
 	cameraStandSystem *ecssys.CameraStandSystem
 
 	camera *graphics.Camera
-	car    *ecs.Entity
+	car    *lackgame.Node
 }
 
 func (h *playLifecycle) init() {
-	h.gfxScene = h.gameController.GFXScene()
-	h.physicsScene = h.gameController.PhysicsScene()
-	h.ecsScene = h.gameController.ECSScene()
+	scene := h.gameController.Scene()
 
-	h.renderSystem = h.gameController.RenderSystem()
+	h.physicsScene = scene.Physics()
+	h.gfxScene = scene.Graphics()
+	h.ecsScene = scene.ECS()
+
 	h.vehicleSystem = h.gameController.VehicleSystem()
 	h.cameraStandSystem = h.gameController.CameraStandSystem()
 
 	h.camera = h.gameController.Camera()
-	h.camera.SetPosition(sprec.NewVec3(0.0, 0.0, 0.0))
 	h.camera.SetFoVMode(graphics.FoVModeHorizontalPlus)
 	h.camera.SetFoV(sprec.Degrees(66))
 	h.camera.SetAutoExposure(true)
@@ -163,9 +163,13 @@ func (h *playLifecycle) setupLevel(level *resource.Level) {
 	ambientLight.SetRefractionTexture(level.AmbientRefractionTexture.GFXTexture)
 
 	sunLight := h.gfxScene.CreateDirectionalLight()
-	sunLight.SetRotation(sprec.QuatProd(
-		sprec.RotationQuat(sprec.Degrees(-90), sprec.BasisYVec3()),
-		sprec.RotationQuat(sprec.Degrees(-24), sprec.BasisXVec3()),
+	sunLight.SetMatrix(sprec.TRSMat4(
+		sprec.ZeroVec3(),
+		sprec.QuatProd(
+			sprec.RotationQuat(sprec.Degrees(-90), sprec.BasisYVec3()),
+			sprec.RotationQuat(sprec.Degrees(-24), sprec.BasisXVec3()),
+		),
+		sprec.NewVec3(1.0, 1.0, 1.0),
 	))
 	// sunLight.SetRotation(sprec.QuatProd(
 	// 	sprec.RotationQuat(sprec.Degrees(225), sprec.BasisYVec3()),
@@ -192,53 +196,98 @@ func (h *playLifecycle) setupLevel(level *resource.Level) {
 			modelMatrix := sprec.Mat4Prod(staticEntity.Matrix, node.AbsoluteMatrix())
 
 			gfxMesh := h.gfxScene.CreateMesh(instance.MeshDefinition.GFXMeshTemplate)
-			gfxMesh.SetPosition(modelMatrix.Translation())
-			gfxMesh.SetRotation(modelMatrix.RotationQuat())
-			gfxMesh.SetScale(modelMatrix.Scale())
+			gfxMesh.SetMatrix(modelMatrix)
+
 		}
 	}
 
 	carModel := h.gameData.CarModel
-	targetEntity := h.setupCarDemo(carModel, sprec.NewVec3(0.0, 3.0, 0.0))
-	standTarget := targetEntity
-	standEntity := h.ecsScene.CreateEntity()
-	ecscomp.SetCameraStand(standEntity, &ecscomp.CameraStand{
-		Target:         standTarget,
+	targetNode := h.setupCarDemo(carModel, sprec.NewVec3(0.0, 3.0, 0.0))
+
+	cameraEntity := h.ecsScene.CreateEntity()
+
+	// cameraBody := h.physicsScene.CreateBody()
+	// cameraBody.SetPosition(sprec.NewVec3(0.0, 10.0, -5.0))
+	// cameraBody.SetOrientation(sprec.RotationQuat(sprec.Degrees(180), sprec.BasisYVec3()))
+	// cameraBody.SetMass(10.0)
+	// cameraBody.SetMomentOfInertia(physics.SymmetricMomentOfInertia(100 * 1 * 1 / 5.0))
+	// cameraBody.SetDragFactor(0.0)
+	// cameraBody.SetAngularDragFactor(0.0)
+	// cameraBody.SetRestitutionCoefficient(-0.5)
+	// cameraBody.SetCollisionShapes([]physics.CollisionShape{
+	// 	shape.Placement{
+	// 		Position:    sprec.ZeroVec3(),
+	// 		Orientation: sprec.IdentityQuat(),
+	// 		Shape:       shape.NewStaticSphere(1.0),
+	// 	},
+	// })
+
+	// ecscomp.SetPhysics(cameraEntity, &ecscomp.Physics{
+	// 	Body: cameraBody,
+	// })
+	// ecscomp.SetHierarchy(cameraEntity, &ecscomp.Hierarchy{
+	// 	Node: hierarchy.NewNode(nil),
+	// })
+	// ecscomp.SetCamera(cameraEntity, &ecscomp.Camera{
+	// 	Camera: h.camera,
+	// })
+
+	// carBody := ecscomp.GetPhysics(targetEntity).Body
+
+	// cameraRodConstraint := solver.NewHingedRod().
+	// 	SetLength(5.0).
+	// 	SetPrimaryAnchor(sprec.NewVec3(0.0, 0.0, -1)).
+	// 	SetSecondaryAnchor(sprec.NewVec3(0.0, 0.0, 0.0))
+	// h.physicsScene.CreateDoubleBodyConstraint(carBody, cameraBody, cameraRodConstraint)
+
+	// cameraAxisConstraint := solver.NewMatchAxis().
+	// 	SetPrimaryAxis(sprec.BasisYVec3()).
+	// 	SetSecondaryAxis(sprec.BasisYVec3())
+	// h.physicsScene.CreateDoubleBodyConstraint(carBody, cameraBody, cameraAxisConstraint)
+
+	// cameraAxis2Constraint := solver.NewMatchAxis().
+	// 	SetPrimaryAxis(sprec.BasisZVec3()).
+	// 	SetSecondaryAxis(sprec.InverseVec3(sprec.BasisZVec3()))
+	// h.physicsScene.CreateDoubleBodyConstraint(carBody, cameraBody, cameraAxis2Constraint)
+
+	ecscomp.SetCameraStand(cameraEntity, &ecscomp.CameraStand{
+		Target:         targetNode,
 		Camera:         h.camera,
-		AnchorPosition: sprec.Vec3Sum(ecscomp.GetPhysics(standTarget).Body.Position(), sprec.NewVec3(0.0, 0.0, -cameraDistance)),
+		AnchorPosition: sprec.Vec3Sum(targetNode.Body().Position(), sprec.NewVec3(0.0, 0.0, -cameraDistance)),
 		AnchorDistance: anchorDistance,
 		CameraDistance: cameraDistance,
 	})
-	h.car = targetEntity
+
+	h.car = targetNode
 }
 
-func (h *playLifecycle) setupCarDemo(model *resource.Model, position sprec.Vec3) *ecs.Entity {
+func (h *playLifecycle) setupCarDemo(model *resource.Model, position sprec.Vec3) *lackgame.Node {
 	chasis := car.Chassis(model).
 		WithName("chasis").
 		WithPosition(position).
-		Build(h.ecsScene, h.gfxScene, h.physicsScene)
-	chasisPhysics := ecscomp.GetPhysics(chasis)
+		Build(h.gameController.Scene())
+	chasisBody := chasis.Body()
 
 	flWheelRelativePosition := sprec.NewVec3(suspensionWidth, suspensionStart-suspensionLength, 1.07*correction)
 	flWheel := car.Wheel(model, car.FrontLeftWheelLocation).
 		WithName("front-left-wheel").
 		WithPosition(sprec.Vec3Sum(position, flWheelRelativePosition)).
-		Build(h.ecsScene, h.gfxScene, h.physicsScene)
-	flWheelPhysics := ecscomp.GetPhysics(flWheel)
-	h.physicsScene.CreateDoubleBodyConstraint(chasisPhysics.Body, flWheelPhysics.Body,
+		Build(h.gameController.Scene())
+	flWheelBody := flWheel.Body()
+	h.physicsScene.CreateDoubleBodyConstraint(chasisBody, flWheelBody,
 		solver.NewMatchTranslation().
 			SetPrimaryAnchor(flWheelRelativePosition).
 			SetIgnoreY(suspensionEnabled),
 	)
-	h.physicsScene.CreateDoubleBodyConstraint(chasisPhysics.Body, flWheelPhysics.Body, &solver.LimitTranslation{
+	h.physicsScene.CreateDoubleBodyConstraint(chasisBody, flWheelBody, &solver.LimitTranslation{
 		MaxY: suspensionStart,
 		MinY: suspensionEnd,
 	})
 	flRotation := solver.NewMatchAxis().
 		SetPrimaryAxis(sprec.BasisXVec3()).
 		SetSecondaryAxis(sprec.BasisXVec3())
-	h.physicsScene.CreateDoubleBodyConstraint(chasisPhysics.Body, flWheelPhysics.Body, flRotation)
-	h.physicsScene.CreateDoubleBodyConstraint(chasisPhysics.Body, flWheelPhysics.Body, &solver.Coilover{
+	h.physicsScene.CreateDoubleBodyConstraint(chasisBody, flWheelBody, flRotation)
+	h.physicsScene.CreateDoubleBodyConstraint(chasisBody, flWheelBody, &solver.Coilover{
 		PrimaryAnchor: flWheelRelativePosition,
 		FrequencyHz:   suspensionFrequencyHz,
 		DampingRatio:  suspensionDampingRatio,
@@ -248,50 +297,50 @@ func (h *playLifecycle) setupCarDemo(model *resource.Model, position sprec.Vec3)
 	frWheel := car.Wheel(model, car.FrontRightWheelLocation).
 		WithName("front-right-wheel").
 		WithPosition(sprec.Vec3Sum(position, frWheelRelativePosition)).
-		Build(h.ecsScene, h.gfxScene, h.physicsScene)
-	frWheelPhysics := ecscomp.GetPhysics(frWheel)
-	h.physicsScene.CreateDoubleBodyConstraint(chasisPhysics.Body, frWheelPhysics.Body,
+		Build(h.gameController.Scene())
+	frWheelBody := frWheel.Body()
+	h.physicsScene.CreateDoubleBodyConstraint(chasisBody, frWheelBody,
 		solver.NewMatchTranslation().
 			SetPrimaryAnchor(frWheelRelativePosition).
 			SetIgnoreY(suspensionEnabled),
 	)
-	h.physicsScene.CreateDoubleBodyConstraint(chasisPhysics.Body, frWheelPhysics.Body, &solver.LimitTranslation{
+	h.physicsScene.CreateDoubleBodyConstraint(chasisBody, frWheelBody, &solver.LimitTranslation{
 		MaxY: suspensionStart,
 		MinY: suspensionEnd,
 	})
 	frRotation := solver.NewMatchAxis().
 		SetPrimaryAxis(sprec.BasisXVec3()).
 		SetSecondaryAxis(sprec.BasisXVec3())
-	h.physicsScene.CreateDoubleBodyConstraint(chasisPhysics.Body, frWheelPhysics.Body, frRotation)
-	h.physicsScene.CreateDoubleBodyConstraint(chasisPhysics.Body, frWheelPhysics.Body, &solver.Coilover{
+	h.physicsScene.CreateDoubleBodyConstraint(chasisBody, frWheelBody, frRotation)
+	h.physicsScene.CreateDoubleBodyConstraint(chasisBody, frWheelBody, &solver.Coilover{
 		PrimaryAnchor: frWheelRelativePosition,
 		FrequencyHz:   suspensionFrequencyHz,
 		DampingRatio:  suspensionDampingRatio,
 	})
 
-	h.physicsScene.CreateDoubleBodyConstraint(flWheelPhysics.Body, frWheelPhysics.Body, &Differential{})
+	h.physicsScene.CreateDoubleBodyConstraint(flWheelBody, frWheelBody, &Differential{})
 
 	blWheelRelativePosition := sprec.NewVec3(suspensionWidth, suspensionStart-suspensionLength, -1.56*correction)
 	blWheel := car.Wheel(model, car.BackLeftWheelLocation).
 		WithName("back-left-wheel").
 		WithPosition(sprec.Vec3Sum(position, blWheelRelativePosition)).
-		Build(h.ecsScene, h.gfxScene, h.physicsScene)
-	blWheelPhysics := ecscomp.GetPhysics(blWheel)
-	h.physicsScene.CreateDoubleBodyConstraint(chasisPhysics.Body, blWheelPhysics.Body,
+		Build(h.gameController.Scene())
+	blWheelBody := blWheel.Body()
+	h.physicsScene.CreateDoubleBodyConstraint(chasisBody, blWheelBody,
 		solver.NewMatchTranslation().
 			SetPrimaryAnchor(blWheelRelativePosition).
 			SetIgnoreY(suspensionEnabled),
 	)
-	h.physicsScene.CreateDoubleBodyConstraint(chasisPhysics.Body, blWheelPhysics.Body, &solver.LimitTranslation{
+	h.physicsScene.CreateDoubleBodyConstraint(chasisBody, blWheelBody, &solver.LimitTranslation{
 		MaxY: suspensionStart,
 		MinY: suspensionEnd,
 	})
-	h.physicsScene.CreateDoubleBodyConstraint(chasisPhysics.Body, blWheelPhysics.Body,
+	h.physicsScene.CreateDoubleBodyConstraint(chasisBody, blWheelBody,
 		solver.NewMatchAxis().
 			SetPrimaryAxis(sprec.BasisXVec3()).
 			SetSecondaryAxis(sprec.BasisXVec3()),
 	)
-	h.physicsScene.CreateDoubleBodyConstraint(chasisPhysics.Body, blWheelPhysics.Body, &solver.Coilover{
+	h.physicsScene.CreateDoubleBodyConstraint(chasisBody, blWheelBody, &solver.Coilover{
 		PrimaryAnchor: blWheelRelativePosition,
 		FrequencyHz:   suspensionFrequencyHz,
 		DampingRatio:  suspensionDampingRatio,
@@ -301,28 +350,28 @@ func (h *playLifecycle) setupCarDemo(model *resource.Model, position sprec.Vec3)
 	brWheel := car.Wheel(model, car.BackRightWheelLocation).
 		WithName("back-right-wheel").
 		WithPosition(sprec.Vec3Sum(position, brWheelRelativePosition)).
-		Build(h.ecsScene, h.gfxScene, h.physicsScene)
-	brWheelPhysics := ecscomp.GetPhysics(brWheel)
-	h.physicsScene.CreateDoubleBodyConstraint(chasisPhysics.Body, brWheelPhysics.Body,
+		Build(h.gameController.Scene())
+	brWheelBody := brWheel.Body()
+	h.physicsScene.CreateDoubleBodyConstraint(chasisBody, brWheelBody,
 		solver.NewMatchTranslation().
 			SetPrimaryAnchor(brWheelRelativePosition).
 			SetIgnoreY(suspensionEnabled),
 	)
-	h.physicsScene.CreateDoubleBodyConstraint(chasisPhysics.Body, brWheelPhysics.Body, &solver.LimitTranslation{
+	h.physicsScene.CreateDoubleBodyConstraint(chasisBody, brWheelBody, &solver.LimitTranslation{
 		MaxY: suspensionStart,
 		MinY: suspensionEnd,
 	})
-	h.physicsScene.CreateDoubleBodyConstraint(chasisPhysics.Body, brWheelPhysics.Body, solver.NewMatchAxis().
+	h.physicsScene.CreateDoubleBodyConstraint(chasisBody, brWheelBody, solver.NewMatchAxis().
 		SetPrimaryAxis(sprec.BasisXVec3()).
 		SetSecondaryAxis(sprec.BasisXVec3()),
 	)
-	h.physicsScene.CreateDoubleBodyConstraint(chasisPhysics.Body, brWheelPhysics.Body, &solver.Coilover{
+	h.physicsScene.CreateDoubleBodyConstraint(chasisBody, brWheelBody, &solver.Coilover{
 		PrimaryAnchor: brWheelRelativePosition,
 		FrequencyHz:   suspensionFrequencyHz,
 		DampingRatio:  suspensionDampingRatio,
 	})
 
-	h.physicsScene.CreateDoubleBodyConstraint(blWheelPhysics.Body, brWheelPhysics.Body, &Differential{})
+	h.physicsScene.CreateDoubleBodyConstraint(blWheelBody, brWheelBody, &Differential{})
 
 	car := h.ecsScene.CreateEntity()
 	ecscomp.SetVehicle(car, &ecscomp.Vehicle{
@@ -331,28 +380,28 @@ func (h *playLifecycle) setupCarDemo(model *resource.Model, position sprec.Vec3)
 		Acceleration:     0.0,
 		Deceleration:     0.0,
 		Chassis: &ecscomp.Chassis{
-			Body: chasisPhysics.Body,
+			Body: chasisBody,
 		},
 		Wheels: []*ecscomp.Wheel{
 			{
-				Body:                 flWheelPhysics.Body,
+				Body:                 flWheelBody,
 				RotationConstraint:   flRotation,
 				AccelerationVelocity: carFrontAcceleration,
 				DecelerationVelocity: carFrontDeceleration,
 			},
 			{
-				Body:                 frWheelPhysics.Body,
+				Body:                 frWheelBody,
 				RotationConstraint:   frRotation,
 				AccelerationVelocity: carFrontAcceleration,
 				DecelerationVelocity: carFrontDeceleration,
 			},
 			{
-				Body:                 blWheelPhysics.Body,
+				Body:                 blWheelBody,
 				AccelerationVelocity: carRearAcceleration,
 				DecelerationVelocity: carRearDeceleration,
 			},
 			{
-				Body:                 brWheelPhysics.Body,
+				Body:                 brWheelBody,
 				AccelerationVelocity: carRearAcceleration,
 				DecelerationVelocity: carRearDeceleration,
 			},

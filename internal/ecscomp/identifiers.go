@@ -5,9 +5,7 @@ import (
 )
 
 const (
-	PhysicsComponentID ecs.ComponentTypeID = iota
-	RenderComponentID
-	VehicleComponentID
+	VehicleComponentID ecs.ComponentTypeID = iota
 	PlayerControlComponentID
 	CameraStandComponentID
 )

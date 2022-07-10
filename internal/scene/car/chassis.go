@@ -4,12 +4,10 @@ import (
 	"fmt"
 
 	"github.com/mokiat/gomath/sprec"
-	"github.com/mokiat/lacking/game/ecs"
-	"github.com/mokiat/lacking/game/graphics"
+	"github.com/mokiat/lacking/game"
 	"github.com/mokiat/lacking/game/physics"
 	"github.com/mokiat/lacking/resource"
 	"github.com/mokiat/lacking/shape"
-	"github.com/mokiat/rally-mka/internal/ecscomp"
 )
 
 const (
@@ -29,26 +27,26 @@ func Chassis(model *resource.Model) *ChassisBuilder {
 
 type ChassisBuilder struct {
 	model     *resource.Model
-	modifiers []func(entity *ecs.Entity)
+	modifiers []func(node *game.Node)
 }
 
 func (b *ChassisBuilder) WithName(name string) *ChassisBuilder {
-	b.modifiers = append(b.modifiers, func(entity *ecs.Entity) {
-		physicsComponent := ecscomp.GetPhysics(entity)
-		physicsComponent.Body.SetName(name)
+	b.modifiers = append(b.modifiers, func(node *game.Node) {
+		body := node.Body()
+		body.SetName(name)
 	})
 	return b
 }
 
 func (b *ChassisBuilder) WithPosition(position sprec.Vec3) *ChassisBuilder {
-	b.modifiers = append(b.modifiers, func(entity *ecs.Entity) {
-		physicsComponent := ecscomp.GetPhysics(entity)
-		physicsComponent.Body.SetPosition(position)
+	b.modifiers = append(b.modifiers, func(node *game.Node) {
+		body := node.Body()
+		body.SetPosition(position)
 	})
 	return b
 }
 
-func (b *ChassisBuilder) Build(ecsScene *ecs.Scene, gfxScene *graphics.Scene, physicsScene *physics.Scene) *ecs.Entity {
+func (b *ChassisBuilder) Build(scene *game.Scene) *game.Node {
 	instance, found := b.model.FindMeshInstance("Chassis")
 	if !found {
 		panic(fmt.Errorf("mesh instance %q not found", "Chassis"))
@@ -56,9 +54,7 @@ func (b *ChassisBuilder) Build(ecsScene *ecs.Scene, gfxScene *graphics.Scene, ph
 	definition := instance.MeshDefinition
 	bodyNode := instance.Node
 
-	// bodyNode, _ := b.model.FindNode("Chassis")
-
-	physicsBody := physicsScene.CreateBody()
+	physicsBody := scene.Physics().CreateBody()
 	physicsBody.SetPosition(sprec.ZeroVec3())
 	physicsBody.SetOrientation(sprec.IdentityQuat())
 	physicsBody.SetMass(chassisMass)
@@ -74,22 +70,15 @@ func (b *ChassisBuilder) Build(ecsScene *ecs.Scene, gfxScene *graphics.Scene, ph
 		},
 	})
 
-	entity := ecsScene.CreateEntity()
-	ecscomp.SetPhysics(entity, &ecscomp.Physics{
-		Body: physicsBody,
-	})
+	gfxMesh := scene.Graphics().CreateMesh(definition.GFXMeshTemplate)
+	gfxMesh.SetMatrix(bodyNode.Matrix)
 
-	gfxMesh := gfxScene.CreateMesh(definition.GFXMeshTemplate)
-	gfxMesh.SetPosition(bodyNode.Matrix.Translation())
-	// TODO: Set Rotation
-	// TODO: Set Scale
-
-	ecscomp.SetRender(entity, &ecscomp.Render{
-		Mesh: gfxMesh,
-	})
-
+	node := game.NewNode()
+	node.SetBody(physicsBody)
+	node.SetMesh(gfxMesh)
 	for _, modifier := range b.modifiers {
-		modifier(entity)
+		modifier(node)
 	}
-	return entity
+	scene.Root().AppendChild(node)
+	return node
 }

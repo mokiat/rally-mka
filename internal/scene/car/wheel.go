@@ -4,12 +4,10 @@ import (
 	"fmt"
 
 	"github.com/mokiat/gomath/sprec"
-	"github.com/mokiat/lacking/game/ecs"
-	"github.com/mokiat/lacking/game/graphics"
+	"github.com/mokiat/lacking/game"
 	"github.com/mokiat/lacking/game/physics"
 	"github.com/mokiat/lacking/resource"
 	"github.com/mokiat/lacking/shape"
-	"github.com/mokiat/rally-mka/internal/ecscomp"
 )
 
 const (
@@ -40,35 +38,34 @@ func Wheel(model *resource.Model, location WheelLocation) *WheelBuilder {
 type WheelBuilder struct {
 	model     *resource.Model
 	location  WheelLocation
-	modifiers []func(entity *ecs.Entity)
+	modifiers []func(node *game.Node)
 }
 
 func (b *WheelBuilder) WithName(name string) *WheelBuilder {
-	b.modifiers = append(b.modifiers, func(entity *ecs.Entity) {
-		physicsComponent := ecscomp.GetPhysics(entity)
-		physicsComponent.Body.SetName(name)
+	b.modifiers = append(b.modifiers, func(node *game.Node) {
+		body := node.Body()
+		body.SetName(name)
 	})
 	return b
 }
 
 func (b *WheelBuilder) WithPosition(position sprec.Vec3) *WheelBuilder {
-	b.modifiers = append(b.modifiers, func(entity *ecs.Entity) {
-		physicsComponent := ecscomp.GetPhysics(entity)
-		physicsComponent.Body.SetPosition(position)
+	b.modifiers = append(b.modifiers, func(node *game.Node) {
+		body := node.Body()
+		body.SetPosition(position)
 	})
 	return b
 }
 
-func (b *WheelBuilder) Build(ecsScene *ecs.Scene, gfxScene *graphics.Scene, physicsScene *physics.Scene) *ecs.Entity {
+func (b *WheelBuilder) Build(scene *game.Scene) *game.Node {
 	instance, found := b.model.FindMeshInstance(fmt.Sprintf("%sWheel", b.location))
 	if !found {
 		panic(fmt.Errorf("mesh instance %q not found", fmt.Sprintf("%sWheel", b.location)))
 	}
 	definition := instance.MeshDefinition
 	modelNode := instance.Node
-	// modelNode, _ := b.model.FindNode(fmt.Sprintf("%sWheel", b.location))
 
-	physicsBody := physicsScene.CreateBody()
+	physicsBody := scene.Physics().CreateBody()
 	physicsBody.SetPosition(sprec.ZeroVec3())
 	physicsBody.SetOrientation(sprec.IdentityQuat())
 	physicsBody.SetMass(wheelMass)
@@ -85,21 +82,15 @@ func (b *WheelBuilder) Build(ecsScene *ecs.Scene, gfxScene *graphics.Scene, phys
 		},
 	})
 
-	entity := ecsScene.CreateEntity()
-	ecscomp.SetPhysics(entity, &ecscomp.Physics{
-		Body: physicsBody,
-	})
+	gfxMesh := scene.Graphics().CreateMesh(definition.GFXMeshTemplate)
+	gfxMesh.SetMatrix(modelNode.Matrix)
 
-	gfxMesh := gfxScene.CreateMesh(definition.GFXMeshTemplate)
-	gfxMesh.SetPosition(modelNode.Matrix.Translation())
-	// TODO: Set Rotation
-	// TODO: Set Scale
-
-	ecscomp.SetRender(entity, &ecscomp.Render{
-		Mesh: gfxMesh,
-	})
+	node := game.NewNode()
+	node.SetBody(physicsBody)
+	node.SetMesh(gfxMesh)
 	for _, modifier := range b.modifiers {
-		modifier(entity)
+		modifier(node)
 	}
-	return entity
+	scene.Root().AppendChild(node)
+	return node
 }
