@@ -36,3 +36,12 @@ tasks:
   web:
     cmds:
       - go run 'github.com/mokiat/httpserv@master' -dir './assets' -host '127.0.0.1'
+
+  profile:
+    cmds:
+      - go tool pprof 'http://localhost:6060/debug/pprof/profile?seconds=30'
+
+  trace:
+    cmds:
+      - curl -o trace.out 'http://localhost:6060/debug/pprof/trace?seconds=30'
+      - go tool trace trace.out

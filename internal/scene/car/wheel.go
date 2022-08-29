@@ -3,11 +3,11 @@ package car
 import (
 	"fmt"
 
-	"github.com/mokiat/gomath/sprec"
+	"github.com/mokiat/gomath/dprec"
 	"github.com/mokiat/lacking/game"
 	"github.com/mokiat/lacking/game/physics"
 	"github.com/mokiat/lacking/resource"
-	"github.com/mokiat/lacking/shape"
+	"github.com/mokiat/lacking/util/shape"
 )
 
 const (
@@ -49,7 +49,7 @@ func (b *WheelBuilder) WithName(name string) *WheelBuilder {
 	return b
 }
 
-func (b *WheelBuilder) WithPosition(position sprec.Vec3) *WheelBuilder {
+func (b *WheelBuilder) WithPosition(position dprec.Vec3) *WheelBuilder {
 	b.modifiers = append(b.modifiers, func(node *game.Node) {
 		body := node.Body()
 		body.SetPosition(position)
@@ -63,27 +63,32 @@ func (b *WheelBuilder) Build(scene *game.Scene) *game.Node {
 		panic(fmt.Errorf("mesh instance %q not found", fmt.Sprintf("%sWheel", b.location)))
 	}
 	definition := instance.MeshDefinition
-	modelNode := instance.Node
 
-	physicsBody := scene.Physics().CreateBody()
-	physicsBody.SetPosition(sprec.ZeroVec3())
-	physicsBody.SetOrientation(sprec.IdentityQuat())
-	physicsBody.SetMass(wheelMass)
-	physicsBody.SetMomentOfInertia(physics.SymmetricMomentOfInertia(wheelMomentOfInertia))
-	physicsBody.SetDragFactor(wheelDragFactor)
-	physicsBody.SetAngularDragFactor(wheelAngularDragFactor)
-	physicsBody.SetRestitutionCoefficient(wheelRestitutionCoef)
-	physicsBody.SetCollisionShapes([]physics.CollisionShape{
-		// using sphere shape at is easier to do in physics engine at the moment
-		shape.Placement{
-			Position:    sprec.ZeroVec3(),
-			Orientation: sprec.IdentityQuat(),
-			Shape:       shape.NewStaticSphere(0.3),
+	physicsBodyDef := scene.Physics().Engine().CreateBodyDefinition(physics.BodyDefinitionInfo{
+		Mass:                   wheelMass,
+		MomentOfInertia:        physics.SymmetricMomentOfInertia(wheelMomentOfInertia),
+		DragFactor:             wheelDragFactor,
+		AngularDragFactor:      wheelAngularDragFactor,
+		RestitutionCoefficient: wheelRestitutionCoef,
+		CollisionShapes: []physics.CollisionShape{
+			// using sphere shape at is easier to do in physics engine at the moment
+			shape.NewPlacement(
+				shape.NewStaticSphere(0.3),
+				dprec.ZeroVec3(),
+				dprec.IdentityQuat(),
+			),
 		},
 	})
 
+	physicsBody := scene.Physics().CreateBody(physics.BodyInfo{
+		Name:       instance.Name,
+		Definition: physicsBodyDef,
+		Position:   dprec.ZeroVec3(),
+		Rotation:   dprec.IdentityQuat(),
+		IsDynamic:  true,
+	})
+
 	gfxMesh := scene.Graphics().CreateMesh(definition.GFXMeshTemplate)
-	gfxMesh.SetMatrix(modelNode.Matrix)
 
 	node := game.NewNode()
 	node.SetBody(physicsBody)
