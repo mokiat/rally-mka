@@ -1,7 +1,7 @@
 package ecscomp
 
 import (
-	"github.com/mokiat/gomath/sprec"
+	"github.com/mokiat/gomath/dprec"
 	"github.com/mokiat/lacking/game/ecs"
 	"github.com/mokiat/lacking/game/physics"
 	"github.com/mokiat/lacking/game/physics/solver"
@@ -20,10 +20,10 @@ func GetVehicle(entity *ecs.Entity) *Vehicle {
 }
 
 type Vehicle struct {
-	MaxSteeringAngle sprec.Angle
-	SteeringAngle    sprec.Angle
-	Acceleration     float32
-	Deceleration     float32
+	MaxSteeringAngle dprec.Angle
+	SteeringAngle    dprec.Angle
+	Acceleration     float64
+	Deceleration     float64
 	Recover          bool
 
 	Chassis *Chassis
@@ -37,6 +37,6 @@ type Chassis struct {
 type Wheel struct {
 	Body                 *physics.Body
 	RotationConstraint   *solver.MatchAxis
-	AccelerationVelocity float32
-	DecelerationVelocity float32
+	AccelerationVelocity float64
+	DecelerationVelocity float64
 }
