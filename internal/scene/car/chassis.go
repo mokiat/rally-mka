@@ -1,12 +1,9 @@
 package car
 
 import (
-	"fmt"
-
 	"github.com/mokiat/gomath/dprec"
 	"github.com/mokiat/lacking/game"
 	"github.com/mokiat/lacking/game/physics"
-	"github.com/mokiat/lacking/resource"
 	"github.com/mokiat/lacking/util/shape"
 )
 
@@ -19,14 +16,14 @@ const (
 	chassisRestitutionCoef   = 0.0
 )
 
-func Chassis(model *resource.Model) *ChassisBuilder {
+func Chassis(model *game.Model) *ChassisBuilder {
 	return &ChassisBuilder{
 		model: model,
 	}
 }
 
 type ChassisBuilder struct {
-	model     *resource.Model
+	model     *game.Model
 	modifiers []func(node *game.Node)
 }
 
@@ -47,11 +44,7 @@ func (b *ChassisBuilder) WithPosition(position dprec.Vec3) *ChassisBuilder {
 }
 
 func (b *ChassisBuilder) Build(scene *game.Scene) *game.Node {
-	instance, found := b.model.FindMeshInstance("Chassis")
-	if !found {
-		panic(fmt.Errorf("mesh instance %q not found", "Chassis"))
-	}
-	definition := instance.MeshDefinition
+	node := b.model.Root().FindNode("Chassis")
 
 	physicsBodyDef := scene.Physics().Engine().CreateBodyDefinition(physics.BodyDefinitionInfo{
 		Mass:                   chassisMass,
@@ -68,21 +61,16 @@ func (b *ChassisBuilder) Build(scene *game.Scene) *game.Node {
 		},
 	})
 	physicsBody := scene.Physics().CreateBody(physics.BodyInfo{
-		Name:       instance.Name,
+		Name:       node.Name(),
 		Definition: physicsBodyDef,
 		Position:   dprec.ZeroVec3(),
 		Rotation:   dprec.IdentityQuat(),
 		IsDynamic:  true,
 	})
 
-	gfxMesh := scene.Graphics().CreateMesh(definition.GFXMeshTemplate)
-
-	node := game.NewNode()
 	node.SetBody(physicsBody)
-	node.SetMesh(gfxMesh)
 	for _, modifier := range b.modifiers {
 		modifier(node)
 	}
-	scene.Root().AppendChild(node)
 	return node
 }

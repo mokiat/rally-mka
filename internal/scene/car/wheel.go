@@ -6,7 +6,6 @@ import (
 	"github.com/mokiat/gomath/dprec"
 	"github.com/mokiat/lacking/game"
 	"github.com/mokiat/lacking/game/physics"
-	"github.com/mokiat/lacking/resource"
 	"github.com/mokiat/lacking/util/shape"
 )
 
@@ -28,7 +27,7 @@ const (
 	BackRightWheelLocation  WheelLocation = "BR"
 )
 
-func Wheel(model *resource.Model, location WheelLocation) *WheelBuilder {
+func Wheel(model *game.Model, location WheelLocation) *WheelBuilder {
 	return &WheelBuilder{
 		model:    model,
 		location: location,
@@ -36,7 +35,7 @@ func Wheel(model *resource.Model, location WheelLocation) *WheelBuilder {
 }
 
 type WheelBuilder struct {
-	model     *resource.Model
+	model     *game.Model
 	location  WheelLocation
 	modifiers []func(node *game.Node)
 }
@@ -58,11 +57,7 @@ func (b *WheelBuilder) WithPosition(position dprec.Vec3) *WheelBuilder {
 }
 
 func (b *WheelBuilder) Build(scene *game.Scene) *game.Node {
-	instance, found := b.model.FindMeshInstance(fmt.Sprintf("%sWheel", b.location))
-	if !found {
-		panic(fmt.Errorf("mesh instance %q not found", fmt.Sprintf("%sWheel", b.location)))
-	}
-	definition := instance.MeshDefinition
+	node := b.model.Root().FindNode(fmt.Sprintf("%sWheel", b.location))
 
 	physicsBodyDef := scene.Physics().Engine().CreateBodyDefinition(physics.BodyDefinitionInfo{
 		Mass:                   wheelMass,
@@ -81,21 +76,16 @@ func (b *WheelBuilder) Build(scene *game.Scene) *game.Node {
 	})
 
 	physicsBody := scene.Physics().CreateBody(physics.BodyInfo{
-		Name:       instance.Name,
+		Name:       node.Name(),
 		Definition: physicsBodyDef,
 		Position:   dprec.ZeroVec3(),
 		Rotation:   dprec.IdentityQuat(),
 		IsDynamic:  true,
 	})
 
-	gfxMesh := scene.Graphics().CreateMesh(definition.GFXMeshTemplate)
-
-	node := game.NewNode()
 	node.SetBody(physicsBody)
-	node.SetMesh(gfxMesh)
 	for _, modifier := range b.modifiers {
 		modifier(node)
 	}
-	scene.Root().AppendChild(node)
 	return node
 }
