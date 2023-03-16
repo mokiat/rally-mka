@@ -4,12 +4,9 @@ import (
 	"github.com/mokiat/gomath/dprec"
 	"github.com/mokiat/lacking/game/ecs"
 	"github.com/mokiat/lacking/game/physics"
-	"github.com/mokiat/lacking/game/physics/solver"
 )
 
-func SetVehicle(entity *ecs.Entity, component *Vehicle) {
-	entity.SetComponent(VehicleComponentID, component)
-}
+var VehicleComponentID ecs.ComponentTypeID = ecs.NewComponentTypeID()
 
 func GetVehicle(entity *ecs.Entity) *Vehicle {
 	component := entity.Component(VehicleComponentID)
@@ -27,16 +24,8 @@ type Vehicle struct {
 	Recover          bool
 
 	Chassis *Chassis
-	Wheels  []*Wheel
 }
 
 type Chassis struct {
 	Body *physics.Body
-}
-
-type Wheel struct {
-	Body                 *physics.Body
-	RotationConstraint   *solver.MatchAxis
-	AccelerationVelocity float64
-	DecelerationVelocity float64
 }

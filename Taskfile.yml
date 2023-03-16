@@ -2,6 +2,10 @@ version: '3'
 
 tasks:
 
+  pack:
+    cmds:
+      - go run './cmd/rallypack'
+
   webpack:
     cmds:
       - mkdir -p 'assets/web'
@@ -11,12 +15,8 @@ tasks:
       - cp 'resources/web/index.html' 'assets/index.html'
       - cp "$(go env GOROOT)/misc/wasm/wasm_exec.js" 'assets/web'
 
-  pack:
-    cmds:
-      - go run './cmd/rallypack'
-
   assets:
-    deps: [webpack, pack]
+    deps: [pack, webpack]
 
   run:
     cmds:
@@ -31,11 +31,11 @@ tasks:
       GOOS: js
       GOARCH: wasm
     cmds:
-      - go build -o './assets/web/main.wasm' './cmd/rallywasm'
+      - go build -o './assets/web/main.wasm' './cmd/rallymka'
 
   web:
     cmds:
-      - go run 'github.com/mokiat/httpserv@master' -dir './assets' -host '127.0.0.1'
+      - go run 'github.com/mokiat/httpserv@v1.0.0' -dir './assets' -host '127.0.0.1'
 
   profile:
     cmds:

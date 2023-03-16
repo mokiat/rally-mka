@@ -1,12 +1,12 @@
 package home
 
 import (
+	"github.com/mokiat/gog/opt"
 	"github.com/mokiat/lacking/log"
 	"github.com/mokiat/lacking/ui"
 	co "github.com/mokiat/lacking/ui/component"
 	"github.com/mokiat/lacking/ui/mat"
 	"github.com/mokiat/lacking/ui/mvc"
-	"github.com/mokiat/lacking/util/optional"
 	"github.com/mokiat/rally-mka/internal/ui/action"
 	"github.com/mokiat/rally-mka/internal/ui/model"
 	"github.com/mokiat/rally-mka/internal/ui/widget"
@@ -34,7 +34,7 @@ var View = co.Define(func(props co.Properties, scope co.Scope) co.Instance {
 
 	return co.New(mat.Container, func() {
 		co.WithData(mat.ContainerData{
-			BackgroundColor: optional.Value(ui.Black()),
+			BackgroundColor: opt.V(ui.Black()),
 			Layout:          mat.NewAnchorLayout(mat.AnchorLayoutSettings{}),
 		})
 
@@ -44,10 +44,10 @@ var View = co.Define(func(props co.Properties, scope co.Scope) co.Instance {
 				Mode:  mat.ImageModeCover,
 			})
 			co.WithLayoutData(mat.LayoutData{
-				Top:    optional.Value(0),
-				Bottom: optional.Value(0),
-				Left:   optional.Value(250),
-				Right:  optional.Value(0),
+				Top:    opt.V(0),
+				Bottom: opt.V(0),
+				Left:   opt.V(250),
+				Right:  opt.V(0),
 			})
 		}))
 
@@ -56,23 +56,23 @@ var View = co.Define(func(props co.Properties, scope co.Scope) co.Instance {
 				Layout: mat.NewAnchorLayout(mat.AnchorLayoutSettings{}),
 			})
 			co.WithLayoutData(mat.LayoutData{
-				Left:           optional.Value(100),
-				VerticalCenter: optional.Value(0),
-				Width:          optional.Value(300),
-				Height:         optional.Value(200),
+				Left:           opt.V(100),
+				VerticalCenter: opt.V(0),
+				Width:          opt.V(300),
+				Height:         opt.V(200),
 			})
 
-			buttonWidth := optional.Value(130)
+			buttonWidth := opt.V(130)
 
 			co.WithChild("continue-button", co.New(widget.HomeButton, func() {
 				co.WithData(widget.HomeButtonData{
 					Text: "Continue",
 				})
 				co.WithLayoutData(mat.LayoutData{
-					Top:    optional.Value(0),
-					Left:   optional.Value(0),
+					Top:    opt.V(0),
+					Left:   opt.V(0),
 					Width:  buttonWidth,
-					Height: optional.Value(30),
+					Height: opt.V(30),
 				})
 				co.WithCallbackData(widget.HomeButtonCallbackData{
 					ClickListener: onContinueClicked,
@@ -84,10 +84,10 @@ var View = co.Define(func(props co.Properties, scope co.Scope) co.Instance {
 					Text: "New Game",
 				})
 				co.WithLayoutData(mat.LayoutData{
-					Top:    optional.Value(50),
-					Left:   optional.Value(0),
+					Top:    opt.V(50),
+					Left:   opt.V(0),
 					Width:  buttonWidth,
-					Height: optional.Value(30),
+					Height: opt.V(30),
 				})
 				co.WithCallbackData(widget.HomeButtonCallbackData{
 					ClickListener: onNewGameClicked,
@@ -99,10 +99,10 @@ var View = co.Define(func(props co.Properties, scope co.Scope) co.Instance {
 					Text: "Load Game",
 				})
 				co.WithLayoutData(mat.LayoutData{
-					Top:    optional.Value(100),
-					Left:   optional.Value(0),
+					Top:    opt.V(100),
+					Left:   opt.V(0),
 					Width:  buttonWidth,
-					Height: optional.Value(30),
+					Height: opt.V(30),
 				})
 				co.WithCallbackData(widget.HomeButtonCallbackData{
 					ClickListener: onLoadGameClicked,
@@ -114,10 +114,10 @@ var View = co.Define(func(props co.Properties, scope co.Scope) co.Instance {
 					Text: "Options",
 				})
 				co.WithLayoutData(mat.LayoutData{
-					Top:    optional.Value(150),
-					Left:   optional.Value(0),
+					Top:    opt.V(150),
+					Left:   opt.V(0),
 					Width:  buttonWidth,
-					Height: optional.Value(30),
+					Height: opt.V(30),
 				})
 				co.WithCallbackData(widget.HomeButtonCallbackData{
 					ClickListener: onOptionsClicked,

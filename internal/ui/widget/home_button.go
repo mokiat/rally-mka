@@ -1,11 +1,11 @@
 package widget
 
 import (
+	"github.com/mokiat/gog/opt"
 	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/lacking/ui"
 	co "github.com/mokiat/lacking/ui/component"
 	"github.com/mokiat/lacking/ui/mat"
-	"github.com/mokiat/lacking/util/optional"
 )
 
 type HomeButtonData struct {
@@ -54,7 +54,7 @@ var HomeButton = co.Define(func(props co.Properties, scope co.Scope) co.Instance
 		co.WithData(mat.ElementData{
 			Essence: essence,
 			Padding: padding,
-			IdealSize: optional.Value(
+			IdealSize: opt.V(
 				ui.NewSize(int(txtSize.X), int(txtSize.Y)).Grow(padding.Size()),
 			),
 		})

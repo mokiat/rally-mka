@@ -1,10 +1,7 @@
 package global
 
-import (
-	"github.com/mokiat/rally-mka/internal/game"
-)
+import "github.com/mokiat/lacking/game"
 
-// TODO: Get rid of this.
 type Context struct {
-	GameController *game.Controller
+	Engine *game.Engine
 }
