@@ -5,8 +5,8 @@ import (
 	"github.com/mokiat/lacking/ui"
 	co "github.com/mokiat/lacking/ui/component"
 	"github.com/mokiat/lacking/ui/mvc"
-	"github.com/mokiat/rally-mka/internal/global"
 	"github.com/mokiat/rally-mka/internal/ui/controller"
+	"github.com/mokiat/rally-mka/internal/ui/global"
 	"github.com/mokiat/rally-mka/internal/ui/model"
 	"github.com/mokiat/rally-mka/internal/ui/view"
 )

@@ -19,8 +19,8 @@ import (
 	"github.com/mokiat/lacking/ui/mat"
 	"github.com/mokiat/lacking/util/metrics"
 	"github.com/mokiat/lacking/util/shape"
-	"github.com/mokiat/rally-mka/internal/global"
 	"github.com/mokiat/rally-mka/internal/scene"
+	"github.com/mokiat/rally-mka/internal/ui/global"
 	"github.com/mokiat/rally-mka/internal/ui/widget"
 )
 

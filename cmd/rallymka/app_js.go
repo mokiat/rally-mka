@@ -34,10 +34,6 @@ func runApplication() error {
 
 	cfg := jsapp.NewConfig("screen")
 	cfg.AddGLExtension("EXT_color_buffer_float")
-
-	controller := app.NewLayeredController(
-		gameController,
-		uiController,
-	)
-	return jsapp.Run(cfg, controller)
+	cfg.SetFullscreen(false)
+	return jsapp.Run(cfg, app.NewLayeredController(gameController, uiController))
 }
