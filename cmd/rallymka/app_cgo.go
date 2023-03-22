@@ -37,7 +37,7 @@ func runApplication() error {
 	cfg.SetMaximized(true)   // TODO: Remove
 	cfg.SetMinSize(800, 400)
 	cfg.SetVSync(false) // FIXME: V-sync causes slow resource loading.
-	cfg.SetIcon("resources/icon.png")
+	cfg.SetIcon("resources/ui/images/icon.png")
 	cfg.SetMaximized(true)
 	return glapp.Run(cfg, app.NewLayeredController(gameController, uiController))
 }

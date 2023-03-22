@@ -44,12 +44,7 @@ var Application = co.Define(func(props co.Properties, scope co.Scope) co.Instanc
 				Play: data.Play(),
 			})
 		}))
-		// co.WithChild(model.ViewNamePlay, co.New(play.View, func() {
-		// 	co.WithData(play.ViewData{
-		// 		GameData: data.GameData(),
-		// 	})
-		// }))
-		// co.WithChild(model.ViewNameLicenses, co.New(LicensesScreen, nil))
-		// co.WithChild(model.ViewNameCredits, co.New(CreditsScreen, nil))
+		co.WithChild(model.ViewNameLicenses, co.New(LicensesScreen, nil))
+		co.WithChild(model.ViewNameCredits, co.New(CreditsScreen, nil))
 	})
 })

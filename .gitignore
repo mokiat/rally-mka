@@ -3,6 +3,7 @@
 
 # Assets
 /assets
+/resources/licenses.txt
 
 # VSCode
 .vscode/

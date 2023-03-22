@@ -36,14 +36,14 @@ type loadingEssence struct {
 	redAngle   sprec.Angle
 }
 
-const (
-	radius          = float32(140.0)
-	redAngleSpeed   = float32(210.0)
-	greenAngleSpeed = float32(90.0)
-	anglePrecision  = 2
-)
-
 func (e *loadingEssence) OnRender(element *ui.Element, canvas *ui.Canvas) {
+	const (
+		radius          = float32(140.0)
+		redAngleSpeed   = float32(210.0)
+		greenAngleSpeed = float32(90.0)
+		anglePrecision  = 2
+	)
+
 	currentTime := time.Now()
 	elapsedSeconds := float32(currentTime.Sub(e.lastTick).Seconds())
 	e.redAngle -= sprec.Degrees(elapsedSeconds * redAngleSpeed)

@@ -2,6 +2,10 @@ version: '3'
 
 tasks:
 
+  licenses:
+    cmds:
+      - go run github.com/google/go-licenses report --template ./resources/licenses.tmpl ./cmd/rallymka > ./resources/licenses.txt
+
   pack:
     cmds:
       - go run './cmd/rallypack'
@@ -9,7 +13,7 @@ tasks:
   webpack:
     cmds:
       - mkdir -p 'assets/web'
-      - cp 'resources/icon.png' 'assets/web/favicon.png'
+      - cp 'resources/ui/images/icon.png' 'assets/web/favicon.png'
       - cp 'resources/web/main.css' 'assets/web/main.css'
       - cp 'resources/web/main.js' 'assets/web/main.js'
       - cp 'resources/web/index.html' 'assets/index.html'
