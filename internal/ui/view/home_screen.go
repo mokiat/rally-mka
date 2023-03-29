@@ -1,9 +1,6 @@
 package view
 
 import (
-	"sync"
-	"time"
-
 	"github.com/mokiat/gog/opt"
 	"github.com/mokiat/gomath/dprec"
 	"github.com/mokiat/gomath/sprec"
@@ -21,148 +18,45 @@ import (
 	"github.com/mokiat/rally-mka/internal/ui/widget"
 )
 
+var HomeScreen = co.DefineType(&HomeScreenPresenter{})
+
 type HomeScreenData struct {
 	Loading *model.Loading
 	Home    *model.Home
 	Play    *model.Play
 }
 
-var HomeScreen = co.Define(func(props co.Properties, scope co.Scope) co.Instance {
-	var (
-		globalContext = co.GetContext[global.Context]()
-		screenData    = co.GetData[HomeScreenData](props)
+type HomeScreenPresenter struct {
+	Scope co.Scope       `co:"scope"`
+	Data  HomeScreenData `co:"data"`
 
-		engine       = globalContext.Engine
-		loadingModel = screenData.Loading
-		homeModel    = screenData.Home
-		playModel    = screenData.Play
-	)
+	engine       *game.Engine
+	loadingModel *model.Loading
+	homeModel    *model.Home
+	playModel    *model.Play
+}
 
-	co.Once(func() {
-		if scene := homeModel.Scene(); scene != nil {
-			engine.SetActiveScene(homeModel.Scene())
-			return
-		}
+func (p *HomeScreenPresenter) OnCreate() {
+	var globalContext global.Context
+	co.InjectContext(&globalContext)
 
-		promise := homeModel.Data()
-		sceneData, err := promise.Get()
-		if err != nil {
-			log.Error("ERROR: %v", err) // TODO: Go to error screen
-			return
-		}
+	p.engine = globalContext.Engine
+	p.loadingModel = p.Data.Loading
+	p.homeModel = p.Data.Home
+	p.playModel = p.Data.Play
 
-		scene := engine.CreateScene()
-		scene.Initialize(sceneData.Scene)
-
-		camera := scene.Graphics().CreateCamera()
-		camera.SetFoVMode(graphics.FoVModeHorizontalPlus)
-		camera.SetFoV(sprec.Degrees(66))
-		camera.SetAutoExposure(true)
-		camera.SetExposure(0.01)
-		camera.SetAutoFocus(false)
-		camera.SetAutoExposureSpeed(0.1)
-		scene.Graphics().SetActiveCamera(camera)
-
-		sunLight := scene.Graphics().CreateDirectionalLight(graphics.DirectionalLightInfo{
-			EmitColor: dprec.NewVec3(0.5, 0.5, 0.3),
-			EmitRange: 16000, // FIXME
-		})
-
-		lightNode := game.NewNode()
-		lightNode.SetPosition(dprec.NewVec3(-100.0, 100.0, 0.0))
-		lightNode.SetRotation(dprec.QuatProd(
-			dprec.RotationQuat(dprec.Degrees(-90), dprec.BasisYVec3()),
-			dprec.RotationQuat(dprec.Degrees(-45), dprec.BasisXVec3()),
-		))
-		// FIXME: This should work out of the box for directional lights
-		lightNode.UseTransformation(func(parent, current dprec.Mat4) dprec.Mat4 {
-			// Remove parent's rotation
-			parent.M11 = 1.0
-			parent.M12 = 0.0
-			parent.M13 = 0.0
-			parent.M21 = 0.0
-			parent.M22 = 1.0
-			parent.M23 = 0.0
-			parent.M31 = 0.0
-			parent.M32 = 0.0
-			parent.M33 = 1.0
-			return dprec.Mat4Prod(parent, current)
-		})
-		lightNode.SetDirectionalLight(sunLight)
-
-		sceneModel := scene.FindModel("Content")
-		// TODO: Remove manual attachment, once this is configurable from
-		// the packing.
-		scene.Root().AppendChild(sceneModel.Root())
-
-		if cameraNode := scene.Root().FindNode("Camera"); cameraNode != nil {
-			cameraNode.SetCamera(camera)
-			cameraNode.AppendChild(lightNode)
-		}
-
-		if animation := sceneModel.FindAnimation("Action"); animation != nil {
-			// playback := scene.PlayAnimation(animation) // TODO
-			startTime := animation.StartTime()
-			endTime := animation.EndTime()
-			go func() {
-				var animMU sync.Mutex
-				animTime := startTime
-				for range time.Tick(10 * time.Millisecond) {
-					animMU.Lock()
-					animTime += (10 * time.Millisecond).Seconds() * 0.3
-					if animTime >= endTime {
-						animTime -= (endTime - startTime)
-					}
-					animMU.Unlock()
-					co.Schedule(func() {
-						animMU.Lock()
-						animation.Apply(animTime)
-						animMU.Unlock()
-					})
-				}
-			}()
-		}
-
-		homeModel.SetScene(scene)
-	})
-
-	co.Defer(func() {
-		engine.SetActiveScene(nil)
-	})
-
-	onPlayClicked := func() {
-		// TODO: Show an intermediate configuration window, where the user
-		// can select controller type and assitance.
-
-		co.Once(func() {
-			resourceSet := engine.CreateResourceSet()
-			promise := data.LoadPlayData(engine, resourceSet)
-			playModel.SetData(promise)
-
-			loadingModel.SetPromise(promise)
-			loadingModel.SetNextViewName(model.ViewNamePlay)
-			mvc.Dispatch(scope, action.ChangeView{
-				ViewName: model.ViewNameLoading,
-			})
-		})
+	if p.homeModel.Scene() == nil {
+		p.homeModel.SetScene(p.createScene())
 	}
+	scene := p.homeModel.Scene()
+	p.engine.SetActiveScene(scene)
+}
 
-	onLicensesClicked := func() {
-		mvc.Dispatch(scope, action.ChangeView{
-			ViewName: model.ViewNameLicenses,
-		})
-	}
+func (p *HomeScreenPresenter) OnDelete() {
+	p.engine.SetActiveScene(nil)
+}
 
-	onCreditsClicked := func() {
-		mvc.Dispatch(scope, action.ChangeView{
-			ViewName: model.ViewNameCredits,
-		})
-	}
-
-	onExitClicked := func() {
-		co.Window(scope).Close()
-	}
-
+func (p *HomeScreenPresenter) Render() co.Instance {
 	return co.New(mat.Element, func() {
 		co.WithData(mat.ElementData{
 			Layout: mat.NewAnchorLayout(mat.AnchorLayoutSettings{}),
@@ -197,7 +91,7 @@ var HomeScreen = co.Define(func(props co.Properties, scope co.Scope) co.Instance
 						Text: "Play",
 					})
 					co.WithCallbackData(widget.HomeButtonCallbackData{
-						ClickListener: onPlayClicked,
+						ClickListener: p.onPlayClicked,
 					})
 				}))
 
@@ -206,7 +100,7 @@ var HomeScreen = co.Define(func(props co.Properties, scope co.Scope) co.Instance
 						Text: "Licenses",
 					})
 					co.WithCallbackData(widget.HomeButtonCallbackData{
-						ClickListener: onLicensesClicked,
+						ClickListener: p.onLicensesClicked,
 					})
 				}))
 
@@ -215,7 +109,7 @@ var HomeScreen = co.Define(func(props co.Properties, scope co.Scope) co.Instance
 						Text: "Credits",
 					})
 					co.WithCallbackData(widget.HomeButtonCallbackData{
-						ClickListener: onCreditsClicked,
+						ClickListener: p.onCreditsClicked,
 					})
 				}))
 
@@ -224,10 +118,109 @@ var HomeScreen = co.Define(func(props co.Properties, scope co.Scope) co.Instance
 						Text: "Exit",
 					})
 					co.WithCallbackData(widget.HomeButtonCallbackData{
-						ClickListener: onExitClicked,
+						ClickListener: p.onExitClicked,
 					})
 				}))
 			}))
 		}))
 	})
-})
+}
+
+func (p *HomeScreenPresenter) createScene() *game.Scene {
+	promise := p.homeModel.Data()
+	sceneData, err := promise.Get()
+	if err != nil {
+		log.Error("ERROR: %v", err) // TODO: Go to error screen
+		return nil
+	}
+
+	scene := p.engine.CreateScene()
+	scene.Initialize(sceneData.Scene)
+
+	camera := scene.Graphics().CreateCamera()
+	camera.SetFoVMode(graphics.FoVModeHorizontalPlus)
+	camera.SetFoV(sprec.Degrees(66))
+	camera.SetAutoExposure(true)
+	camera.SetExposure(0.01)
+	camera.SetAutoFocus(false)
+	camera.SetAutoExposureSpeed(0.1)
+	scene.Graphics().SetActiveCamera(camera)
+
+	sunLight := scene.Graphics().CreateDirectionalLight(graphics.DirectionalLightInfo{
+		EmitColor: dprec.NewVec3(0.5, 0.5, 0.3),
+		EmitRange: 16000, // FIXME
+	})
+
+	lightNode := game.NewNode()
+	lightNode.SetPosition(dprec.NewVec3(-100.0, 100.0, 0.0))
+	lightNode.SetRotation(dprec.QuatProd(
+		dprec.RotationQuat(dprec.Degrees(-90), dprec.BasisYVec3()),
+		dprec.RotationQuat(dprec.Degrees(-45), dprec.BasisXVec3()),
+	))
+	// FIXME: This should work out of the box for directional lights
+	lightNode.UseTransformation(func(parent, current dprec.Mat4) dprec.Mat4 {
+		// Remove parent's rotation
+		parent.M11 = 1.0
+		parent.M12 = 0.0
+		parent.M13 = 0.0
+		parent.M21 = 0.0
+		parent.M22 = 1.0
+		parent.M23 = 0.0
+		parent.M31 = 0.0
+		parent.M32 = 0.0
+		parent.M33 = 1.0
+		return dprec.Mat4Prod(parent, current)
+	})
+	lightNode.SetDirectionalLight(sunLight)
+
+	sceneModel := scene.FindModel("Content")
+	// TODO: Remove manual attachment, once this is configurable from
+	// the packing.
+	scene.Root().AppendChild(sceneModel.Root())
+
+	if cameraNode := scene.Root().FindNode("Camera"); cameraNode != nil {
+		cameraNode.SetCamera(camera)
+		cameraNode.AppendChild(lightNode)
+	}
+
+	const animationName = "Action"
+	// const animationName = "GroundAction"
+	if animation := sceneModel.FindAnimation(animationName); animation != nil {
+		playback := scene.PlayAnimation(animation)
+		playback.SetLoop(true)
+		playback.SetSpeed(0.3)
+	}
+
+	return scene
+}
+
+func (p *HomeScreenPresenter) onPlayClicked() {
+	// TODO: Show an intermediate configuration window, where the user
+	// can select controller type and assitance.
+
+	resourceSet := p.engine.CreateResourceSet()
+	promise := data.LoadPlayData(p.engine, resourceSet)
+	p.playModel.SetData(promise)
+
+	p.loadingModel.SetPromise(promise)
+	p.loadingModel.SetNextViewName(model.ViewNamePlay)
+	mvc.Dispatch(p.Scope, action.ChangeView{
+		ViewName: model.ViewNameLoading,
+	})
+}
+
+func (p *HomeScreenPresenter) onLicensesClicked() {
+	mvc.Dispatch(p.Scope, action.ChangeView{
+		ViewName: model.ViewNameLicenses,
+	})
+}
+
+func (p *HomeScreenPresenter) onCreditsClicked() {
+	mvc.Dispatch(p.Scope, action.ChangeView{
+		ViewName: model.ViewNameCredits,
+	})
+}
+
+func (p *HomeScreenPresenter) onExitClicked() {
+	co.Window(p.Scope).Close()
+}
