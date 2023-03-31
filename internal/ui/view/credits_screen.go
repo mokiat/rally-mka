@@ -23,15 +23,6 @@ func init() {
 	sections = append(sections, createSection("ART & PROGRAMMING",
 		"Momchil Atanasov",
 	))
-	// sections = append(sections, createSection("WRITING & DESIGN",
-	// 	"Momchil Atanasov",
-	// ))
-	// sections = append(sections, createSection("ART & MODELING",
-	// 	"Momchil Atanasov",
-	// ))
-	// sections = append(sections, createSection("PROGRAMMING",
-	// 	"Momchil Atanasov",
-	// ))
 	sections = append(sections, createSection("NOTABLE TOOLING",
 		"Visual Studio Code",
 		"Blender",
@@ -93,15 +84,15 @@ var CreditsScreen = co.Define(func(props co.Properties, scope co.Scope) co.Insta
 				Width:  opt.V(200),
 			})
 
-			co.WithChild("button", co.New(widget.HomeButton, func() {
-				co.WithData(widget.HomeButtonData{
+			co.WithChild("button", co.New(widget.Button, func() {
+				co.WithData(widget.ButtonData{
 					Text: "Back",
 				})
 				co.WithLayoutData(mat.LayoutData{
 					HorizontalCenter: opt.V(0),
 					Bottom:           opt.V(100),
 				})
-				co.WithCallbackData(widget.HomeButtonCallbackData{
+				co.WithCallbackData(widget.ButtonCallbackData{
 					ClickListener: onBackClicked,
 				})
 			}))

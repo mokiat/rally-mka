@@ -86,38 +86,38 @@ func (p *HomeScreenPresenter) Render() co.Instance {
 					VerticalCenter: opt.V(0),
 				})
 
-				co.WithChild("play-button", co.New(widget.HomeButton, func() {
-					co.WithData(widget.HomeButtonData{
+				co.WithChild("play-button", co.New(widget.Button, func() {
+					co.WithData(widget.ButtonData{
 						Text: "Play",
 					})
-					co.WithCallbackData(widget.HomeButtonCallbackData{
+					co.WithCallbackData(widget.ButtonCallbackData{
 						ClickListener: p.onPlayClicked,
 					})
 				}))
 
-				co.WithChild("licenses-button", co.New(widget.HomeButton, func() {
-					co.WithData(widget.HomeButtonData{
+				co.WithChild("licenses-button", co.New(widget.Button, func() {
+					co.WithData(widget.ButtonData{
 						Text: "Licenses",
 					})
-					co.WithCallbackData(widget.HomeButtonCallbackData{
+					co.WithCallbackData(widget.ButtonCallbackData{
 						ClickListener: p.onLicensesClicked,
 					})
 				}))
 
-				co.WithChild("credits-button", co.New(widget.HomeButton, func() {
-					co.WithData(widget.HomeButtonData{
+				co.WithChild("credits-button", co.New(widget.Button, func() {
+					co.WithData(widget.ButtonData{
 						Text: "Credits",
 					})
-					co.WithCallbackData(widget.HomeButtonCallbackData{
+					co.WithCallbackData(widget.ButtonCallbackData{
 						ClickListener: p.onCreditsClicked,
 					})
 				}))
 
-				co.WithChild("exit-button", co.New(widget.HomeButton, func() {
-					co.WithData(widget.HomeButtonData{
+				co.WithChild("exit-button", co.New(widget.Button, func() {
+					co.WithData(widget.ButtonData{
 						Text: "Exit",
 					})
-					co.WithCallbackData(widget.HomeButtonCallbackData{
+					co.WithCallbackData(widget.ButtonCallbackData{
 						ClickListener: p.onExitClicked,
 					})
 				}))

@@ -45,9 +45,11 @@ type PlayController struct {
 
 	carSystem         *preset.CarSystem
 	vehicleDefinition *preset.CarDefinition
+	vehicle           *preset.Car
 }
 
 func (c *PlayController) Start() {
+	// TODO: These subscriptions should be attached on the scene and/or the physics.
 	c.preUpdateSubscription = c.engine.SubscribePreUpdate(c.onPreUpdate)
 	c.postUpdateSubscription = c.engine.SubscribePostUpdate(c.onPostUpdate)
 
@@ -100,14 +102,14 @@ func (c *PlayController) Start() {
 		Scale:      dprec.NewVec3(1.0, 1.0, 1.0),
 		IsDynamic:  true,
 	})
-	vehicle := c.vehicleDefinition.ApplyToModel(c.scene, preset.CarApplyInfo{
+	c.vehicle = c.vehicleDefinition.ApplyToModel(c.scene, preset.CarApplyInfo{
 		Model:    carInstance,
 		Position: dprec.NewVec3(0.0, 0.5, 0.0),
 		Rotation: dprec.IdentityQuat(),
 		Inputs:   preset.ControlInputKeyboard | preset.ControlInputMouse | preset.ControlInputGamepad0,
 	})
 	var vehicleNodeComponent *preset.NodeComponent
-	ecs.FetchComponent(vehicle.Entity(), &vehicleNodeComponent)
+	ecs.FetchComponent(c.vehicle.Entity(), &vehicleNodeComponent)
 	vehicleNode := vehicleNodeComponent.Node
 	vehicleNode.AppendChild(lightNode) // FIXME
 
@@ -148,12 +150,41 @@ func (c *PlayController) Stop() {
 	c.scene.Delete()
 }
 
+func (c *PlayController) Pause() {
+	c.scene.Freeze()
+}
+
+func (c *PlayController) Resume() {
+	c.scene.Unfreeze()
+}
+
+func (c *PlayController) Velocity() float64 {
+	if c.vehicle == nil {
+		return 0.0
+	}
+	return c.vehicle.Velocity()
+}
+
+func (c *PlayController) Acceleration() float64 {
+	return 0.0
+}
+
+func (c *PlayController) Braking() float64 {
+	return 0.0
+}
+
 func (c *PlayController) onPreUpdate(engine *game.Engine, scene *game.Scene, elapsedSeconds float64) {
-	c.carSystem.Update(elapsedSeconds)
+	// TODO: This check will not be necessary if subscription is on Scene.
+	if !c.scene.IsFrozen() {
+		c.carSystem.Update(elapsedSeconds)
+	}
 }
 
 func (c *PlayController) onPostUpdate(engine *game.Engine, scene *game.Scene, elapsedSeconds float64) {
-	c.followCameraSystem.Update(elapsedSeconds)
+	// TODO: This check will not be necessary if subscription is on Scene.
+	if !c.scene.IsFrozen() {
+		c.followCameraSystem.Update(elapsedSeconds)
+	}
 }
 
 func (c *PlayController) createVehicleDefinition() *preset.CarDefinition {

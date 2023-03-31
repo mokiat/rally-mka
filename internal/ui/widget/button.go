@@ -8,26 +8,26 @@ import (
 	"github.com/mokiat/lacking/ui/mat"
 )
 
-type HomeButtonData struct {
+type ButtonData struct {
 	Text string
 }
 
-var defaultHomeButtonData = HomeButtonData{
+var defaultButtonData = ButtonData{
 	Text: "",
 }
 
-type HomeButtonCallbackData struct {
+type ButtonCallbackData struct {
 	ClickListener mat.ClickListener
 }
 
-var defaultHomeButtonCallbackData = HomeButtonCallbackData{
+var defaultButtonCallbackData = ButtonCallbackData{
 	ClickListener: func() {},
 }
 
-var HomeButton = co.Define(func(props co.Properties, scope co.Scope) co.Instance {
+var Button = co.Define(func(props co.Properties, scope co.Scope) co.Instance {
 	var (
-		data         = co.GetOptionalData(props, defaultHomeButtonData)
-		callbackData = co.GetOptionalCallbackData(props, defaultHomeButtonCallbackData)
+		data         = co.GetOptionalData(props, defaultButtonData)
+		callbackData = co.GetOptionalCallbackData(props, defaultButtonCallbackData)
 	)
 
 	essence := co.UseState(func() *homeButtonEssence {

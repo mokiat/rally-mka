@@ -37,15 +37,15 @@ var LicensesScreen = co.Define(func(props co.Properties, scope co.Scope) co.Inst
 				Width:  opt.V(200),
 			})
 
-			co.WithChild("button", co.New(widget.HomeButton, func() {
-				co.WithData(widget.HomeButtonData{ // FIXME: This is not HomeButton
+			co.WithChild("button", co.New(widget.Button, func() {
+				co.WithData(widget.ButtonData{
 					Text: "Back",
 				})
 				co.WithLayoutData(mat.LayoutData{
 					HorizontalCenter: opt.V(0),
 					Bottom:           opt.V(100),
 				})
-				co.WithCallbackData(widget.HomeButtonCallbackData{
+				co.WithCallbackData(widget.ButtonCallbackData{
 					ClickListener: onBackClicked,
 				})
 			}))
