@@ -27,13 +27,16 @@ type HomeScreenData struct {
 }
 
 type HomeScreenPresenter struct {
-	Scope co.Scope       `co:"scope"`
-	Data  HomeScreenData `co:"data"`
+	Scope      co.Scope       `co:"scope"`
+	Data       HomeScreenData `co:"data"`
+	Invalidate func()         `co:"invalidate"`
 
 	engine       *game.Engine
 	loadingModel *model.Loading
 	homeModel    *model.Home
 	playModel    *model.Play
+
+	showOptions bool
 }
 
 func (p *HomeScreenPresenter) OnCreate() {
@@ -44,6 +47,11 @@ func (p *HomeScreenPresenter) OnCreate() {
 	p.loadingModel = p.Data.Loading
 	p.homeModel = p.Data.Home
 	p.playModel = p.Data.Play
+
+	// TODO: Figure out an alternative way for TypeComponents
+	mvc.UseBinding(p.homeModel, func(ch mvc.Change) bool {
+		return mvc.IsChange(ch, model.HomeChange)
+	})
 
 	if p.homeModel.Scene() == nil {
 		p.homeModel.SetScene(p.createScene())
@@ -57,6 +65,9 @@ func (p *HomeScreenPresenter) OnDelete() {
 }
 
 func (p *HomeScreenPresenter) Render() co.Instance {
+	controller := p.homeModel.Controller()
+	environment := p.homeModel.Environment()
+
 	return co.New(mat.Element, func() {
 		co.WithData(mat.ElementData{
 			Layout: mat.NewAnchorLayout(mat.AnchorLayoutSettings{}),
@@ -86,43 +97,196 @@ func (p *HomeScreenPresenter) Render() co.Instance {
 					VerticalCenter: opt.V(0),
 				})
 
-				co.WithChild("play-button", co.New(widget.Button, func() {
-					co.WithData(widget.ButtonData{
-						Text: "Play",
-					})
-					co.WithCallbackData(widget.ButtonCallbackData{
-						ClickListener: p.onPlayClicked,
-					})
-				}))
+				if p.showOptions {
+					co.WithChild("start-button", co.New(widget.Button, func() {
+						co.WithData(widget.ButtonData{
+							Text: "Start",
+						})
+						co.WithCallbackData(widget.ButtonCallbackData{
+							ClickListener: p.onStartClicked,
+						})
+					}))
 
-				co.WithChild("licenses-button", co.New(widget.Button, func() {
-					co.WithData(widget.ButtonData{
-						Text: "Licenses",
-					})
-					co.WithCallbackData(widget.ButtonCallbackData{
-						ClickListener: p.onLicensesClicked,
-					})
-				}))
+					co.WithChild("back-button", co.New(widget.Button, func() {
+						co.WithData(widget.ButtonData{
+							Text: "Back",
+						})
+						co.WithCallbackData(widget.ButtonCallbackData{
+							ClickListener: p.onBackClicked,
+						})
+					}))
+				} else {
+					co.WithChild("play-button", co.New(widget.Button, func() {
+						co.WithData(widget.ButtonData{
+							Text: "Play",
+						})
+						co.WithCallbackData(widget.ButtonCallbackData{
+							ClickListener: p.onPlayClicked,
+						})
+					}))
 
-				co.WithChild("credits-button", co.New(widget.Button, func() {
-					co.WithData(widget.ButtonData{
-						Text: "Credits",
-					})
-					co.WithCallbackData(widget.ButtonCallbackData{
-						ClickListener: p.onCreditsClicked,
-					})
-				}))
+					co.WithChild("licenses-button", co.New(widget.Button, func() {
+						co.WithData(widget.ButtonData{
+							Text: "Licenses",
+						})
+						co.WithCallbackData(widget.ButtonCallbackData{
+							ClickListener: p.onLicensesClicked,
+						})
+					}))
 
-				co.WithChild("exit-button", co.New(widget.Button, func() {
-					co.WithData(widget.ButtonData{
-						Text: "Exit",
-					})
-					co.WithCallbackData(widget.ButtonCallbackData{
-						ClickListener: p.onExitClicked,
-					})
-				}))
+					co.WithChild("credits-button", co.New(widget.Button, func() {
+						co.WithData(widget.ButtonData{
+							Text: "Credits",
+						})
+						co.WithCallbackData(widget.ButtonCallbackData{
+							ClickListener: p.onCreditsClicked,
+						})
+					}))
+
+					co.WithChild("exit-button", co.New(widget.Button, func() {
+						co.WithData(widget.ButtonData{
+							Text: "Exit",
+						})
+						co.WithCallbackData(widget.ButtonCallbackData{
+							ClickListener: p.onExitClicked,
+						})
+					}))
+				}
 			}))
 		}))
+
+		if p.showOptions {
+			co.WithChild("options", co.New(mat.Container, func() {
+				co.WithData(mat.ContainerData{
+					BackgroundColor: opt.V(ui.RGBA(0, 0, 0, 128)),
+					Layout:          mat.NewAnchorLayout(mat.AnchorLayoutSettings{}),
+				})
+				co.WithLayoutData(mat.LayoutData{
+					Top:    opt.V(0),
+					Bottom: opt.V(0),
+					Left:   opt.V(320),
+					Right:  opt.V(0),
+				})
+
+				co.WithChild("options-pane", co.New(mat.Element, func() {
+					co.WithData(mat.ElementData{
+						Layout: mat.NewVerticalLayout(mat.VerticalLayoutSettings{
+							ContentAlignment: mat.AlignmentCenter,
+							ContentSpacing:   20,
+						}),
+					})
+					co.WithLayoutData(mat.LayoutData{
+						HorizontalCenter: opt.V(0),
+						VerticalCenter:   opt.V(0),
+					})
+
+					co.WithChild("controller-toggles", co.New(mat.Element, func() {
+						co.WithData(mat.ElementData{
+							Layout: mat.NewHorizontalLayout(mat.HorizontalLayoutSettings{
+								ContentAlignment: mat.AlignmentCenter,
+								ContentSpacing:   40,
+							}),
+						})
+
+						co.WithChild("keyboard", co.New(widget.Toggle, func() {
+							co.WithData(widget.ToggleData{
+								Text:     "Keyboard",
+								Selected: controller == model.ControllerKeyboard,
+							})
+							co.WithCallbackData(widget.ToggleCallbackData{
+								ClickListener: p.onKeyboardClicked,
+							})
+						}))
+
+						co.WithChild("mouse", co.New(widget.Toggle, func() {
+							co.WithData(widget.ToggleData{
+								Text:     "Mouse",
+								Selected: controller == model.ControllerMouse,
+							})
+							co.WithCallbackData(widget.ToggleCallbackData{
+								ClickListener: p.onMouseClicked,
+							})
+						}))
+
+						co.WithChild("gamepad", co.New(widget.Toggle, func() {
+							co.WithData(widget.ToggleData{
+								Text:     "Gamepad",
+								Selected: controller == model.ControllerGamepad,
+							})
+							co.WithCallbackData(widget.ToggleCallbackData{
+								ClickListener: p.onGamepadClicked,
+							})
+						}))
+					}))
+
+					co.WithChild("controller-image", co.New(mat.Container, func() {
+						co.WithData(mat.ContainerData{
+							BackgroundColor: opt.V(ui.Black()),
+						})
+						co.WithLayoutData(mat.LayoutData{
+							Width:  opt.V(600),
+							Height: opt.V(300),
+						})
+					}))
+
+					co.WithChild("controller-text", co.New(mat.Label, func() {
+						co.WithData(mat.LabelData{
+							Font:          co.OpenFont(p.Scope, "mat:///roboto-regular.ttf"),
+							FontSize:      opt.V(float32(28.0)),
+							FontColor:     opt.V(ui.White()),
+							TextAlignment: mat.AlignmentCenter,
+							Text:          p.controllerDescription(controller),
+						})
+					}))
+
+					co.WithChild("separator", co.New(widget.Separator, func() {
+						co.WithLayoutData(mat.LayoutData{
+							Width:  opt.V(600),
+							Height: opt.V(4),
+						})
+					}))
+
+					co.WithChild("environment-toggles", co.New(mat.Element, func() {
+						co.WithData(mat.ElementData{
+							Layout: mat.NewHorizontalLayout(mat.HorizontalLayoutSettings{
+								ContentAlignment: mat.AlignmentCenter,
+								ContentSpacing:   40,
+							}),
+						})
+
+						co.WithChild("day", co.New(widget.Toggle, func() {
+							co.WithData(widget.ToggleData{
+								Text:     "Day",
+								Selected: environment == model.EnvironmentDay,
+							})
+							co.WithCallbackData(widget.ToggleCallbackData{
+								ClickListener: p.onDayClicked,
+							})
+						}))
+
+						co.WithChild("night", co.New(widget.Toggle, func() {
+							co.WithData(widget.ToggleData{
+								Text:     "Night",
+								Selected: environment == model.EnvironmentNight,
+							})
+							co.WithCallbackData(widget.ToggleCallbackData{
+								ClickListener: p.onNightClicked,
+							})
+						}))
+					}))
+
+					co.WithChild("environment-text", co.New(mat.Label, func() {
+						co.WithData(mat.LabelData{
+							Font:          co.OpenFont(p.Scope, "mat:///roboto-regular.ttf"),
+							FontSize:      opt.V(float32(28.0)),
+							FontColor:     opt.V(ui.White()),
+							TextAlignment: mat.AlignmentCenter,
+							Text:          p.environmentDescription(environment),
+						})
+					}))
+				}))
+			}))
+		}
 	})
 }
 
@@ -194,10 +358,51 @@ func (p *HomeScreenPresenter) createScene() *game.Scene {
 	return scene
 }
 
-func (p *HomeScreenPresenter) onPlayClicked() {
-	// TODO: Show an intermediate configuration window, where the user
-	// can select controller type and assitance.
+func (p *HomeScreenPresenter) controllerDescription(controller model.Controller) string {
+	switch controller {
+	case model.ControllerKeyboard:
+		return "The day drive is a good starting point for new players."
+	case model.ControllerMouse:
+		return "The night drive is a bit more taxing on the computer."
+	case model.ControllerGamepad:
+		return "The night drive is a bit more taxing on the computer."
+	default:
+		return ""
+	}
+}
 
+func (p *HomeScreenPresenter) environmentDescription(environment model.Environment) string {
+	switch environment {
+	case model.EnvironmentDay:
+		return "The day drive is a good starting point for new players."
+	case model.EnvironmentNight:
+		return "The night drive is a bit more taxing on the computer."
+	default:
+		return ""
+	}
+}
+
+func (p *HomeScreenPresenter) onKeyboardClicked() {
+	p.homeModel.SetController(model.ControllerKeyboard)
+}
+
+func (p *HomeScreenPresenter) onMouseClicked() {
+	p.homeModel.SetController(model.ControllerMouse)
+}
+
+func (p *HomeScreenPresenter) onGamepadClicked() {
+	p.homeModel.SetController(model.ControllerGamepad)
+}
+
+func (p *HomeScreenPresenter) onDayClicked() {
+	p.homeModel.SetEnvironment(model.EnvironmentDay)
+}
+
+func (p *HomeScreenPresenter) onNightClicked() {
+	p.homeModel.SetEnvironment(model.EnvironmentNight)
+}
+
+func (p *HomeScreenPresenter) onStartClicked() {
 	resourceSet := p.engine.CreateResourceSet()
 	promise := data.LoadPlayData(p.engine, resourceSet)
 	p.playModel.SetData(promise)
@@ -207,6 +412,17 @@ func (p *HomeScreenPresenter) onPlayClicked() {
 	mvc.Dispatch(p.Scope, action.ChangeView{
 		ViewName: model.ViewNameLoading,
 	})
+}
+
+func (p *HomeScreenPresenter) onBackClicked() {
+	// TODO: Add a `Property` concept instead of manual Invalidate.
+	p.showOptions = false
+	p.Invalidate()
+}
+
+func (p *HomeScreenPresenter) onPlayClicked() {
+	p.showOptions = true
+	p.Invalidate()
 }
 
 func (p *HomeScreenPresenter) onLicensesClicked() {

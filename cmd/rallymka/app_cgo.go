@@ -35,7 +35,7 @@ func runApplication() error {
 	cfg := glapp.NewConfig("Rally MKA", 1024, 576)
 	cfg.SetFullscreen(false) // TODO: Enable
 	cfg.SetMaximized(true)   // TODO: Remove
-	cfg.SetMinSize(800, 400)
+	cfg.SetMinSize(1024, 576)
 	cfg.SetVSync(false) // FIXME: V-sync causes slow resource loading.
 	cfg.SetIcon("resources/ui/images/icon.png")
 	cfg.SetMaximized(true)

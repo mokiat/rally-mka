@@ -20,7 +20,6 @@ func newPlay() *Play {
 type Play struct {
 	mvc.Observable
 	sceneData game.Promise[*data.PlayData]
-	scene     *game.Scene
 }
 
 func (h *Play) Data() game.Promise[*data.PlayData] {

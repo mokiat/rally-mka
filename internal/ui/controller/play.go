@@ -42,6 +42,7 @@ type PlayController struct {
 
 	followCameraSystem *preset.FollowCameraSystem
 	followCamera       *graphics.Camera
+	bonnetCamera       *graphics.Camera
 
 	carSystem         *preset.CarSystem
 	vehicleDefinition *preset.CarDefinition
@@ -126,6 +127,19 @@ func (c *PlayController) Start() {
 	followCameraNode.SetAttachable(c.followCamera)
 	c.scene.Root().AppendChild(followCameraNode)
 
+	c.bonnetCamera = c.gfxScene.CreateCamera()
+	c.bonnetCamera.SetFoVMode(graphics.FoVModeHorizontalPlus)
+	c.bonnetCamera.SetFoV(sprec.Degrees(80))
+	c.bonnetCamera.SetAutoExposure(true)
+	c.bonnetCamera.SetExposure(1.0)
+	c.bonnetCamera.SetAutoFocus(false)
+
+	bonnetCameraNode := game.NewNode()
+	bonnetCameraNode.SetAttachable(c.bonnetCamera)
+	bonnetCameraNode.SetRotation(dprec.RotationQuat(dprec.Degrees(180), dprec.BasisYVec3()))
+	bonnetCameraNode.SetPosition(dprec.NewVec3(0.0, 1.0, 0.0))
+	vehicleNode.AppendChild(bonnetCameraNode)
+
 	followCameraEntity := c.ecsScene.CreateEntity()
 	ecs.AttachComponent(followCameraEntity, &preset.NodeComponent{
 		Node: followCameraNode,
@@ -142,6 +156,8 @@ func (c *PlayController) Start() {
 		YawAngle:       dprec.Degrees(0),
 		Zoom:           1.0,
 	})
+
+	c.engine.ResetDeltaTime()
 }
 
 func (c *PlayController) Stop() {
@@ -171,6 +187,23 @@ func (c *PlayController) Acceleration() float64 {
 
 func (c *PlayController) Braking() float64 {
 	return 0.0
+}
+
+func (c *PlayController) ToggleCamera() {
+	if c.scene.Graphics().ActiveCamera() == c.followCamera {
+		c.scene.Graphics().SetActiveCamera(c.bonnetCamera)
+	} else {
+		c.scene.Graphics().SetActiveCamera(c.followCamera)
+	}
+}
+
+func (c *PlayController) IsDrive() bool {
+	if c.vehicle == nil {
+		return true
+	}
+	var carComp *preset.CarComponent
+	ecs.FetchComponent(c.vehicle.Entity(), &carComp)
+	return carComp.Direction == preset.CarDirectionForward
 }
 
 func (c *PlayController) onPreUpdate(engine *game.Engine, scene *game.Scene, elapsedSeconds float64) {
@@ -278,3 +311,15 @@ func (c *PlayController) createVehicleDefinition() *preset.CarDefinition {
 
 	return carDef
 }
+
+// func (h *playLifecycle) OnKeyboardEvent(element *ui.Element, event ui.KeyboardEvent) bool {
+// 	return h.carSystem.OnKeyboardEvent(event) || h.cameraStandSystem.OnKeyboardEvent(event)
+// }
+
+// func (h *playLifecycle) OnMouseEvent(element *ui.Element, event ui.MouseEvent) bool {
+// 	// bounds := element.Bounds()
+// 	// viewport := graphics.NewViewport(bounds.X, bounds.Y, bounds.Width, bounds.Height)
+// 	// camera := h.gfxScene.ActiveCamera()
+// 	// return h.vehicleSystem.OnMouseEvent(event, viewport, camera, h.gfxScene)
+// 	return false
+// }

@@ -61,8 +61,7 @@ var _ ui.ElementMouseHandler = (*regionBlockEssence)(nil)
 var _ ui.ElementRenderHandler = (*regionBlockEssence)(nil)
 
 type regionBlockEssence struct {
-	font     *ui.Font
-	fontSize float32
+	font *ui.Font
 
 	selectedNodeID int
 	graph          map[int]regionNode
