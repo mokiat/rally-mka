@@ -40,7 +40,7 @@ func (p *gearShifterPresenter) Render() co.Instance {
 	return co.New(mat.Element, func() {
 		co.WithData(mat.ElementData{
 			Essence:   p,
-			IdealSize: opt.V(ui.NewSize(150, 150)),
+			IdealSize: opt.V(ui.NewSize(200, 150)),
 		})
 		co.WithLayoutData(p.LayoutData)
 	})

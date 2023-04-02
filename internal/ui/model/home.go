@@ -1,7 +1,9 @@
 package model
 
 import (
+	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/lacking/game"
+	"github.com/mokiat/lacking/game/graphics"
 	"github.com/mokiat/lacking/ui/mvc"
 	"github.com/mokiat/rally-mka/internal/game/data"
 )
@@ -29,6 +31,18 @@ const (
 	EnvironmentNight Environment = "night"
 )
 
+type HomeScene struct {
+	Scene *game.Scene
+
+	DaySkyColor         sprec.Vec3
+	DayAmbientLight     *graphics.AmbientLight
+	DayDirectionalLight *graphics.DirectionalLight
+
+	NightSkyColor     sprec.Vec3
+	NightAmbientLight *graphics.AmbientLight
+	NightSpotLight    *graphics.SpotLight
+}
+
 func newHome() *Home {
 	return &Home{
 		Observable:  mvc.NewObservable(),
@@ -40,7 +54,7 @@ func newHome() *Home {
 type Home struct {
 	mvc.Observable
 	sceneData   game.Promise[*data.HomeData]
-	scene       *game.Scene
+	scene       *HomeScene
 	controller  Controller
 	environment Environment
 }
@@ -54,11 +68,11 @@ func (h *Home) SetData(sceneData game.Promise[*data.HomeData]) {
 	h.SignalChange(HomeDataChange)
 }
 
-func (h *Home) Scene() *game.Scene {
+func (h *Home) Scene() *HomeScene {
 	return h.scene
 }
 
-func (h *Home) SetScene(scene *game.Scene) {
+func (h *Home) SetScene(scene *HomeScene) {
 	h.scene = scene
 	h.SignalChange(HomeSceneChange)
 }

@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	toggleFontSize = float32(26.0)
+	toggleFontSize = float32(24.0)
 )
 
 type ToggleData struct {

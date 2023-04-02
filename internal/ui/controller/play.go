@@ -93,7 +93,7 @@ func (c *PlayController) Start() {
 		parent.M33 = 1.0
 		return dprec.Mat4Prod(parent, current)
 	})
-	lightNode.SetDirectionalLight(sunLight)
+	lightNode.SetAttachable(sunLight)
 
 	carInstance := c.scene.CreateModel(game.ModelInfo{
 		Name:       "SUV",
