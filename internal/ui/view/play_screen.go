@@ -71,7 +71,7 @@ func (p *PlayScreenPresenter) OnCreate() {
 		panic(fmt.Errorf("failed to get data: %w", err))
 	}
 	p.controller = controller.NewPlayController(co.Window(p.Scope).Window, context.Engine, playData)
-	p.controller.Start()
+	p.controller.Start(playData.Environment, playData.Controller)
 
 	co.Window(p.Scope).SetCursorVisible(false)
 }

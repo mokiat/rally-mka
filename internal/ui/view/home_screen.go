@@ -197,7 +197,7 @@ func (p *HomeScreenPresenter) Render() co.Instance {
 						co.WithChild("keyboard", co.New(widget.Toggle, func() {
 							co.WithData(widget.ToggleData{
 								Text:     "Keyboard",
-								Selected: controller == model.ControllerKeyboard,
+								Selected: controller == data.ControllerKeyboard,
 							})
 							co.WithCallbackData(widget.ToggleCallbackData{
 								ClickListener: p.onKeyboardClicked,
@@ -207,7 +207,7 @@ func (p *HomeScreenPresenter) Render() co.Instance {
 						co.WithChild("mouse", co.New(widget.Toggle, func() {
 							co.WithData(widget.ToggleData{
 								Text:     "Mouse",
-								Selected: controller == model.ControllerMouse,
+								Selected: controller == data.ControllerMouse,
 							})
 							co.WithCallbackData(widget.ToggleCallbackData{
 								ClickListener: p.onMouseClicked,
@@ -217,7 +217,7 @@ func (p *HomeScreenPresenter) Render() co.Instance {
 						co.WithChild("gamepad", co.New(widget.Toggle, func() {
 							co.WithData(widget.ToggleData{
 								Text:     "Gamepad",
-								Selected: controller == model.ControllerGamepad,
+								Selected: controller == data.ControllerGamepad,
 							})
 							co.WithCallbackData(widget.ToggleCallbackData{
 								ClickListener: p.onGamepadClicked,
@@ -225,9 +225,22 @@ func (p *HomeScreenPresenter) Render() co.Instance {
 						}))
 					}))
 
-					co.WithChild("controller-image", co.New(mat.Container, func() {
-						co.WithData(mat.ContainerData{
-							BackgroundColor: opt.V(ui.Black()),
+					var imageURL string
+					switch controller {
+					case data.ControllerKeyboard:
+						imageURL = "ui/images/keyboard.png"
+					case data.ControllerMouse:
+						imageURL = "ui/images/mouse.png"
+					case data.ControllerGamepad:
+						imageURL = "ui/images/gamepad.png"
+					}
+
+					co.WithChild("controller-image", co.New(mat.Picture, func() {
+						co.WithData(mat.PictureData{
+							BackgroundColor: opt.V(ui.RGBA(0x00, 0x00, 0x00, 0x9A)),
+							Image:           co.OpenImage(p.Scope, imageURL),
+							ImageColor:      opt.V(ui.White()),
+							Mode:            mat.ImageModeStretch,
 						})
 						co.WithLayoutData(mat.LayoutData{
 							Width:  opt.V(600),
@@ -263,7 +276,7 @@ func (p *HomeScreenPresenter) Render() co.Instance {
 						co.WithChild("day", co.New(widget.Toggle, func() {
 							co.WithData(widget.ToggleData{
 								Text:     "Day",
-								Selected: environment == model.EnvironmentDay,
+								Selected: environment == data.EnvironmentDay,
 							})
 							co.WithCallbackData(widget.ToggleCallbackData{
 								ClickListener: p.onDayClicked,
@@ -273,7 +286,7 @@ func (p *HomeScreenPresenter) Render() co.Instance {
 						co.WithChild("night", co.New(widget.Toggle, func() {
 							co.WithData(widget.ToggleData{
 								Text:     "Night",
-								Selected: environment == model.EnvironmentNight,
+								Selected: environment == data.EnvironmentNight,
 							})
 							co.WithCallbackData(widget.ToggleCallbackData{
 								ClickListener: p.onNightClicked,
@@ -464,24 +477,24 @@ func (p *HomeScreenPresenter) createNightAmbientLight(scene *graphics.Scene) *gr
 	})
 }
 
-func (p *HomeScreenPresenter) controllerDescription(controller model.Controller) string {
+func (p *HomeScreenPresenter) controllerDescription(controller data.Controller) string {
 	switch controller {
-	case model.ControllerKeyboard:
+	case data.ControllerKeyboard:
 		return "The keyboard provides poor accuracy and is least fun."
-	case model.ControllerMouse:
+	case data.ControllerMouse:
 		return "The mouse provides great control when a gamepad is not available."
-	case model.ControllerGamepad:
+	case data.ControllerGamepad:
 		return "The gamepad is the best option. Most fun with balanced difficulty."
 	default:
 		return ""
 	}
 }
 
-func (p *HomeScreenPresenter) environmentDescription(environment model.Environment) string {
+func (p *HomeScreenPresenter) environmentDescription(environment data.Environment) string {
 	switch environment {
-	case model.EnvironmentDay:
+	case data.EnvironmentDay:
 		return "The day drive is a good starting point for new players."
-	case model.EnvironmentNight:
+	case data.EnvironmentNight:
 		return "The night drive is a nice alternative for regular players."
 	default:
 		return ""
@@ -489,19 +502,19 @@ func (p *HomeScreenPresenter) environmentDescription(environment model.Environme
 }
 
 func (p *HomeScreenPresenter) onKeyboardClicked() {
-	p.homeModel.SetController(model.ControllerKeyboard)
+	p.homeModel.SetController(data.ControllerKeyboard)
 }
 
 func (p *HomeScreenPresenter) onMouseClicked() {
-	p.homeModel.SetController(model.ControllerMouse)
+	p.homeModel.SetController(data.ControllerMouse)
 }
 
 func (p *HomeScreenPresenter) onGamepadClicked() {
-	p.homeModel.SetController(model.ControllerGamepad)
+	p.homeModel.SetController(data.ControllerGamepad)
 }
 
 func (p *HomeScreenPresenter) onDayClicked() {
-	p.homeModel.SetEnvironment(model.EnvironmentDay)
+	p.homeModel.SetEnvironment(data.EnvironmentDay)
 
 	// Disable night lighting
 	p.scene.NightAmbientLight.SetActive(false)
@@ -514,7 +527,7 @@ func (p *HomeScreenPresenter) onDayClicked() {
 }
 
 func (p *HomeScreenPresenter) onNightClicked() {
-	p.homeModel.SetEnvironment(model.EnvironmentNight)
+	p.homeModel.SetEnvironment(data.EnvironmentNight)
 
 	// Disable day lighting
 	p.scene.DayAmbientLight.SetActive(false)
@@ -528,7 +541,7 @@ func (p *HomeScreenPresenter) onNightClicked() {
 
 func (p *HomeScreenPresenter) onStartClicked() {
 	resourceSet := p.engine.CreateResourceSet()
-	promise := data.LoadPlayData(p.engine, resourceSet)
+	promise := data.LoadPlayData(p.engine, resourceSet, p.homeModel.Environment(), p.homeModel.Controller())
 	p.playModel.SetData(promise)
 
 	p.loadingModel.SetPromise(promise)

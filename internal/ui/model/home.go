@@ -16,21 +16,6 @@ var (
 	HomeEnvironmentChange = mvc.SubChange(HomeChange, "environment")
 )
 
-type Controller string
-
-const (
-	ControllerKeyboard Controller = "keyboard"
-	ControllerMouse    Controller = "mouse"
-	ControllerGamepad  Controller = "gamepad"
-)
-
-type Environment string
-
-const (
-	EnvironmentDay   Environment = "day"
-	EnvironmentNight Environment = "night"
-)
-
 type HomeScene struct {
 	Scene *game.Scene
 
@@ -46,8 +31,8 @@ type HomeScene struct {
 func newHome() *Home {
 	return &Home{
 		Observable:  mvc.NewObservable(),
-		controller:  ControllerKeyboard,
-		environment: EnvironmentDay,
+		controller:  data.ControllerKeyboard,
+		environment: data.EnvironmentDay,
 	}
 }
 
@@ -55,8 +40,8 @@ type Home struct {
 	mvc.Observable
 	sceneData   game.Promise[*data.HomeData]
 	scene       *HomeScene
-	controller  Controller
-	environment Environment
+	controller  data.Controller
+	environment data.Environment
 }
 
 func (h *Home) Data() game.Promise[*data.HomeData] {
@@ -77,20 +62,20 @@ func (h *Home) SetScene(scene *HomeScene) {
 	h.SignalChange(HomeSceneChange)
 }
 
-func (h *Home) Controller() Controller {
+func (h *Home) Controller() data.Controller {
 	return h.controller
 }
 
-func (h *Home) SetController(controller Controller) {
+func (h *Home) SetController(controller data.Controller) {
 	h.controller = controller
 	h.SignalChange(HomeControllerChange)
 }
 
-func (h *Home) Environment() Environment {
+func (h *Home) Environment() data.Environment {
 	return h.environment
 }
 
-func (h *Home) SetEnvironment(environment Environment) {
+func (h *Home) SetEnvironment(environment data.Environment) {
 	h.environment = environment
 	h.SignalChange(HomeEnvironmentChange)
 }

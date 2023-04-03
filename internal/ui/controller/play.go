@@ -49,7 +49,7 @@ type PlayController struct {
 	vehicle           *preset.Car
 }
 
-func (c *PlayController) Start() {
+func (c *PlayController) Start(environment data.Environment, controller data.Controller) {
 	// TODO: These subscriptions should be attached on the scene and/or the physics.
 	c.preUpdateSubscription = c.engine.SubscribePreUpdate(c.onPreUpdate)
 	c.postUpdateSubscription = c.engine.SubscribePostUpdate(c.onPostUpdate)
@@ -69,10 +69,19 @@ func (c *PlayController) Start() {
 	c.carSystem = preset.NewCarSystem(c.ecsScene, c.window)
 	c.carSystem.UseDefaults()
 
-	sunLight := c.scene.Graphics().CreateDirectionalLight(graphics.DirectionalLightInfo{
-		EmitColor: dprec.NewVec3(0.5, 0.5, 0.3),
-		EmitRange: 16000, // FIXME
-	})
+	var sunLight *graphics.DirectionalLight
+	switch environment {
+	case data.EnvironmentDay:
+		sunLight = c.scene.Graphics().CreateDirectionalLight(graphics.DirectionalLightInfo{
+			EmitColor: dprec.NewVec3(0.5, 0.5, 0.3),
+			EmitRange: 16000, // FIXME
+		})
+	case data.EnvironmentNight:
+		sunLight = c.scene.Graphics().CreateDirectionalLight(graphics.DirectionalLightInfo{
+			EmitColor: dprec.NewVec3(0.001, 0.001, 0.001),
+			EmitRange: 16000, // FIXME
+		})
+	}
 
 	lightNode := game.NewNode()
 	lightNode.SetPosition(dprec.NewVec3(-100.0, 100.0, 0.0))
@@ -117,8 +126,8 @@ func (c *PlayController) Start() {
 	c.followCamera = c.gfxScene.CreateCamera()
 	c.followCamera.SetFoVMode(graphics.FoVModeHorizontalPlus)
 	c.followCamera.SetFoV(sprec.Degrees(66))
-	c.followCamera.SetAutoExposure(true)
-	c.followCamera.SetExposure(1.0)
+	c.followCamera.SetAutoExposure(false)
+	c.followCamera.SetExposure(15.0)
 	c.followCamera.SetAutoFocus(false)
 	c.gfxScene.SetActiveCamera(c.followCamera)
 
@@ -130,8 +139,8 @@ func (c *PlayController) Start() {
 	c.bonnetCamera = c.gfxScene.CreateCamera()
 	c.bonnetCamera.SetFoVMode(graphics.FoVModeHorizontalPlus)
 	c.bonnetCamera.SetFoV(sprec.Degrees(80))
-	c.bonnetCamera.SetAutoExposure(true)
-	c.bonnetCamera.SetExposure(1.0)
+	c.bonnetCamera.SetAutoExposure(false)
+	c.bonnetCamera.SetExposure(15.0)
 	c.bonnetCamera.SetAutoFocus(false)
 
 	bonnetCameraNode := game.NewNode()
