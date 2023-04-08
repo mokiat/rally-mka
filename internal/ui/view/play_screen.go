@@ -10,6 +10,7 @@ import (
 	"github.com/mokiat/lacking/ui/mat"
 	"github.com/mokiat/lacking/ui/mvc"
 	"github.com/mokiat/lacking/util/metrics"
+	"github.com/mokiat/rally-mka/internal/game/data"
 	"github.com/mokiat/rally-mka/internal/ui/action"
 	"github.com/mokiat/rally-mka/internal/ui/controller"
 	"github.com/mokiat/rally-mka/internal/ui/global"
@@ -28,6 +29,7 @@ type PlayScreenPresenter struct {
 	Data       PlayScreenData `co:"data"`
 	Invalidate func()         `co:"invalidate"`
 
+	hideCursor bool
 	controller *controller.PlayController
 
 	debugVisible       bool
@@ -40,6 +42,7 @@ type PlayScreenPresenter struct {
 }
 
 var _ ui.ElementKeyboardHandler = (*PlayScreenPresenter)(nil)
+var _ ui.ElementMouseHandler = (*PlayScreenPresenter)(nil)
 
 func (p *PlayScreenPresenter) OnCreate() {
 	var context global.Context
@@ -73,7 +76,8 @@ func (p *PlayScreenPresenter) OnCreate() {
 	p.controller = controller.NewPlayController(co.Window(p.Scope).Window, context.Engine, playData)
 	p.controller.Start(playData.Environment, playData.Controller)
 
-	co.Window(p.Scope).SetCursorVisible(false)
+	p.hideCursor = playData.Controller != data.ControllerMouse
+	co.Window(p.Scope).SetCursorVisible(!p.hideCursor)
 }
 
 func (p *PlayScreenPresenter) OnDelete() {
@@ -81,6 +85,10 @@ func (p *PlayScreenPresenter) OnDelete() {
 	defer p.debugRegionsTicker.Stop()
 	defer close(p.debugRegionsStop)
 	defer co.Window(p.Scope).SetCursorVisible(true)
+}
+
+func (p *PlayScreenPresenter) OnMouseEvent(element *ui.Element, event ui.MouseEvent) bool {
+	return p.controller.OnMouseEvent(element, event)
 }
 
 func (p *PlayScreenPresenter) OnKeyboardEvent(element *ui.Element, event ui.KeyboardEvent) bool {
@@ -111,7 +119,7 @@ func (p *PlayScreenPresenter) OnKeyboardEvent(element *ui.Element, event ui.Keyb
 		}
 		return true
 	default:
-		return false
+		return p.controller.OnKeyboardEvent(event)
 	}
 }
 
@@ -183,7 +191,7 @@ func (p *PlayScreenPresenter) onContinue() {
 	p.exitMenu.Close()
 	p.controller.Resume()
 	co.Window(p.Scope).GrantFocus(p.rootElement)
-	co.Window(p.Scope).SetCursorVisible(false)
+	co.Window(p.Scope).SetCursorVisible(!p.hideCursor)
 }
 
 func (p *PlayScreenPresenter) onGoHome() {

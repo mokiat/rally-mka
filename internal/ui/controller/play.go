@@ -9,6 +9,7 @@ import (
 	"github.com/mokiat/lacking/game/graphics"
 	"github.com/mokiat/lacking/game/physics"
 	"github.com/mokiat/lacking/game/preset"
+	"github.com/mokiat/lacking/ui"
 	"github.com/mokiat/lacking/util/shape"
 	"github.com/mokiat/rally-mka/internal/game/data"
 )
@@ -66,8 +67,7 @@ func (c *PlayController) Start(environment data.Environment, controller data.Con
 	c.followCameraSystem = preset.NewFollowCameraSystem(c.ecsScene, c.window)
 	c.followCameraSystem.UseDefaults()
 
-	c.carSystem = preset.NewCarSystem(c.ecsScene, c.window)
-	c.carSystem.UseDefaults()
+	c.carSystem = preset.NewCarSystem(c.ecsScene, c.gfxScene, c.window)
 
 	var sunLight *graphics.DirectionalLight
 	switch environment {
@@ -116,12 +116,38 @@ func (c *PlayController) Start(environment data.Environment, controller data.Con
 		Model:    carInstance,
 		Position: dprec.NewVec3(0.0, 0.5, 0.0),
 		Rotation: dprec.IdentityQuat(),
-		Inputs:   preset.ControlInputKeyboard | preset.ControlInputMouse | preset.ControlInputGamepad0,
 	})
 	var vehicleNodeComponent *preset.NodeComponent
 	ecs.FetchComponent(c.vehicle.Entity(), &vehicleNodeComponent)
 	vehicleNode := vehicleNodeComponent.Node
 	vehicleNode.AppendChild(lightNode) // FIXME
+
+	switch controller {
+	case data.ControllerKeyboard:
+		ecs.AttachComponent(c.vehicle.Entity(), &preset.CarKeyboardControl{
+			AccelerateKey: ui.KeyCodeArrowUp,
+			DecelerateKey: ui.KeyCodeArrowDown,
+			TurnLeftKey:   ui.KeyCodeArrowLeft,
+			TurnRightKey:  ui.KeyCodeArrowRight,
+			ShiftUpKey:    ui.KeyCodeA,
+			ShiftDownKey:  ui.KeyCodeZ,
+
+			AccelerationChangeSpeed: 1.0,
+			DecelerationChangeSpeed: 2.0,
+			SteeringChangeSpeed:     3.0,
+			SteeringRestoreSpeed:    6.0,
+		})
+	case data.ControllerMouse:
+		ecs.AttachComponent(c.vehicle.Entity(), &preset.CarMouseControl{
+			AccelerationChangeSpeed: 1.0,
+			DecelerationChangeSpeed: 2.0,
+			Destination:             dprec.ZeroVec3(),
+		})
+	case data.ControllerGamepad:
+		ecs.AttachComponent(c.vehicle.Entity(), &preset.CarGamepadControl{
+			Gamepad: c.window.Gamepads()[0],
+		})
+	}
 
 	c.followCamera = c.gfxScene.CreateCamera()
 	c.followCamera.SetFoVMode(graphics.FoVModeHorizontalPlus)
@@ -190,6 +216,34 @@ func (c *PlayController) Velocity() float64 {
 	return c.vehicle.Velocity()
 }
 
+func (c *PlayController) VelocityFL() float64 {
+	if c.vehicle == nil {
+		return 0.0
+	}
+	return c.vehicle.Axes()[0].LeftWheel().Velocity()
+}
+
+func (c *PlayController) VelocityFR() float64 {
+	if c.vehicle == nil {
+		return 0.0
+	}
+	return c.vehicle.Axes()[0].RightWheel().Velocity()
+}
+
+func (c *PlayController) VelocityBL() float64 {
+	if c.vehicle == nil {
+		return 0.0
+	}
+	return c.vehicle.Axes()[1].LeftWheel().Velocity()
+}
+
+func (c *PlayController) VelocityBR() float64 {
+	if c.vehicle == nil {
+		return 0.0
+	}
+	return c.vehicle.Axes()[1].RightWheel().Velocity()
+}
+
 func (c *PlayController) Acceleration() float64 {
 	return 0.0
 }
@@ -212,7 +266,15 @@ func (c *PlayController) IsDrive() bool {
 	}
 	var carComp *preset.CarComponent
 	ecs.FetchComponent(c.vehicle.Entity(), &carComp)
-	return carComp.Direction == preset.CarDirectionForward
+	return carComp.Gear == preset.CarGearForward
+}
+
+func (c *PlayController) OnMouseEvent(element *ui.Element, event ui.MouseEvent) bool {
+	return c.carSystem.OnMouseEvent(element, event)
+}
+
+func (c *PlayController) OnKeyboardEvent(event ui.KeyboardEvent) bool {
+	return c.carSystem.OnKeyboardEvent(event)
 }
 
 func (c *PlayController) onPreUpdate(engine *game.Engine, scene *game.Scene, elapsedSeconds float64) {
@@ -294,7 +356,7 @@ func (c *PlayController) createVehicleDefinition() *preset.CarDefinition {
 		WithSpringDamping(0.8).
 		WithLeftWheelDefinition(frontLeftWheelDef).
 		WithRightWheelDefinition(frontRightWheelDef).
-		WithMaxSteeringAngle(dprec.Degrees(30)).
+		WithMaxSteeringAngle(dprec.Degrees(45)).
 		WithMaxAcceleration(145).
 		WithMaxBraking(250).
 		WithReverseRatio(0.5)
