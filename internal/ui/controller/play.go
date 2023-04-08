@@ -131,6 +131,7 @@ func (c *PlayController) Start(environment data.Environment, controller data.Con
 			TurnRightKey:  ui.KeyCodeArrowRight,
 			ShiftUpKey:    ui.KeyCodeA,
 			ShiftDownKey:  ui.KeyCodeZ,
+			RecoverKey:    ui.KeyCodeLeftShift,
 
 			AccelerationChangeSpeed: 1.0,
 			DecelerationChangeSpeed: 2.0,
@@ -214,42 +215,6 @@ func (c *PlayController) Velocity() float64 {
 		return 0.0
 	}
 	return c.vehicle.Velocity()
-}
-
-func (c *PlayController) VelocityFL() float64 {
-	if c.vehicle == nil {
-		return 0.0
-	}
-	return c.vehicle.Axes()[0].LeftWheel().Velocity()
-}
-
-func (c *PlayController) VelocityFR() float64 {
-	if c.vehicle == nil {
-		return 0.0
-	}
-	return c.vehicle.Axes()[0].RightWheel().Velocity()
-}
-
-func (c *PlayController) VelocityBL() float64 {
-	if c.vehicle == nil {
-		return 0.0
-	}
-	return c.vehicle.Axes()[1].LeftWheel().Velocity()
-}
-
-func (c *PlayController) VelocityBR() float64 {
-	if c.vehicle == nil {
-		return 0.0
-	}
-	return c.vehicle.Axes()[1].RightWheel().Velocity()
-}
-
-func (c *PlayController) Acceleration() float64 {
-	return 0.0
-}
-
-func (c *PlayController) Braking() float64 {
-	return 0.0
 }
 
 func (c *PlayController) ToggleCamera() {

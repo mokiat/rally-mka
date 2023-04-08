@@ -10,8 +10,6 @@ import (
 
 type SpeedometerSource interface {
 	Velocity() float64
-	Acceleration() float64
-	Braking() float64
 }
 
 type SpeedometerData struct {
