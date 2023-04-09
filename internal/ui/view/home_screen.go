@@ -480,11 +480,11 @@ func (p *HomeScreenPresenter) createNightAmbientLight(scene *graphics.Scene) *gr
 func (p *HomeScreenPresenter) controllerDescription(controller data.Controller) string {
 	switch controller {
 	case data.ControllerKeyboard:
-		return "The keyboard provides poor accuracy and is least fun."
+		return "Keyboard: Uses assists. Provides an average challenge."
 	case data.ControllerMouse:
-		return "The mouse provides great control when a gamepad is not available."
+		return "Mouse: Just point and drive. Good for a casual play."
 	case data.ControllerGamepad:
-		return "The gamepad is the best option. Most fun with balanced difficulty."
+		return "Gamepad: No assists. Requires significant skills to control."
 	default:
 		return ""
 	}
@@ -493,9 +493,9 @@ func (p *HomeScreenPresenter) controllerDescription(controller data.Controller) 
 func (p *HomeScreenPresenter) environmentDescription(environment data.Environment) string {
 	switch environment {
 	case data.EnvironmentDay:
-		return "The day drive is a good starting point for new players."
+		return "Day: A good starting point to learn the track."
 	case data.EnvironmentNight:
-		return "The night drive is a nice alternative for regular players."
+		return "Night: Can be relaxing if you already know the track."
 	default:
 		return ""
 	}
