@@ -26,16 +26,16 @@ func init() {
 	sections = append(sections, createSection("NOTABLE TOOLING",
 		"Visual Studio Code",
 		"Blender",
-		"Krita",
-		"GIMP",
-		"Procreate",
-		"Aseprite",
 		"Affinity Designer",
+		"Procreate",
+		"GIMP",
 	))
 	sections = append(sections, createSection("SPECIAL THANKS",
-		"Go Developers",
-		"\"GameDev БГ\" Discord Server",
-		"Open-Source Code Developers",
+		"Go Developers for the brilliant programming language",
+		"\"GameDev БГ\" Discord server for provided support",
+		"Open-source developers for used libraries and tools",
+		"Grant Abbitt for video tutorials",
+		"Erin Catto for articles and videos",
 	))
 }
 
