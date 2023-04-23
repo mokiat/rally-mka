@@ -12,8 +12,11 @@ import (
 )
 
 func BootstrapApplication(window *ui.Window, gameController *game.Controller) {
+	engine := gameController.Engine()
+	resourceSet := engine.CreateResourceSet()
 	co.RegisterContext(global.Context{
-		Engine: gameController.Engine(),
+		Engine:      engine,
+		ResourceSet: resourceSet,
 	})
 	co.Initialize(window, co.New(Bootstrap, nil))
 }

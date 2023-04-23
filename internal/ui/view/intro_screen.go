@@ -24,7 +24,9 @@ var IntroScreen = co.Define(func(props co.Properties, scope co.Scope) co.Instanc
 		globalContext = co.GetContext[global.Context]()
 		screenData    = co.GetData[IntroScreenData](props)
 
-		engine       = globalContext.Engine
+		engine      = globalContext.Engine
+		resourceSet = globalContext.ResourceSet
+
 		homeModel    = screenData.Home
 		loadingModel = screenData.LoadingModel
 	)
@@ -37,7 +39,6 @@ var IntroScreen = co.Define(func(props co.Properties, scope co.Scope) co.Instanc
 	})
 
 	co.Once(func() {
-		resourceSet := engine.CreateResourceSet()
 		homeModel.SetData(data.LoadHomeData(engine, resourceSet))
 	})
 

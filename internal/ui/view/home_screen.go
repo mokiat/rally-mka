@@ -33,7 +33,8 @@ type HomeScreenPresenter struct {
 	Data       HomeScreenData `co:"data"`
 	Invalidate func()         `co:"invalidate"`
 
-	engine *game.Engine
+	engine      *game.Engine
+	resourceSet *game.ResourceSet
 
 	loadingModel *model.Loading
 	homeModel    *model.Home
@@ -48,6 +49,7 @@ func (p *HomeScreenPresenter) OnCreate() {
 	co.InjectContext(&globalContext)
 
 	p.engine = globalContext.Engine
+	p.resourceSet = globalContext.ResourceSet
 	p.loadingModel = p.Data.Loading
 	p.homeModel = p.Data.Home
 	p.playModel = p.Data.Play
@@ -540,8 +542,7 @@ func (p *HomeScreenPresenter) onNightClicked() {
 }
 
 func (p *HomeScreenPresenter) onStartClicked() {
-	resourceSet := p.engine.CreateResourceSet()
-	promise := data.LoadPlayData(p.engine, resourceSet, p.homeModel.Environment(), p.homeModel.Controller())
+	promise := data.LoadPlayData(p.engine, p.resourceSet, p.homeModel.Environment(), p.homeModel.Controller())
 	p.playModel.SetData(promise)
 
 	p.loadingModel.SetPromise(promise)

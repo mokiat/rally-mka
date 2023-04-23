@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"runtime"
+
 	"github.com/mokiat/gomath/dprec"
 	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/lacking/app"
@@ -8,9 +10,9 @@ import (
 	"github.com/mokiat/lacking/game/ecs"
 	"github.com/mokiat/lacking/game/graphics"
 	"github.com/mokiat/lacking/game/physics"
+	"github.com/mokiat/lacking/game/physics/collision"
 	"github.com/mokiat/lacking/game/preset"
 	"github.com/mokiat/lacking/ui"
-	"github.com/mokiat/lacking/util/shape"
 	"github.com/mokiat/rally-mka/internal/game/data"
 )
 
@@ -193,6 +195,7 @@ func (c *PlayController) Start(environment data.Environment, controller data.Con
 		Zoom:           1.0,
 	})
 
+	runtime.GC()
 	c.engine.ResetDeltaTime()
 }
 
@@ -266,13 +269,11 @@ func (c *PlayController) createVehicleDefinition() *preset.CarDefinition {
 		AngularDragFactor:      0.0,
 		RestitutionCoefficient: 0.0,
 		CollisionGroup:         collisionGroup,
-		CollisionShapes: []physics.CollisionShape{
-			shape.NewPlacement[shape.Shape](
-				shape.NewTransform(
-					dprec.NewVec3(0.0, 0.3, -0.4),
-					dprec.IdentityQuat(),
-				),
-				shape.NewStaticBox(1.6, 1.4, 4.0),
+		CollisionBoxes: []collision.Box{
+			collision.NewBox(
+				dprec.NewVec3(0.0, 0.3, -0.4),
+				dprec.IdentityQuat(),
+				dprec.NewVec3(1.6, 1.4, 4.0),
 			),
 		},
 	})
@@ -284,11 +285,8 @@ func (c *PlayController) createVehicleDefinition() *preset.CarDefinition {
 		AngularDragFactor:      0.0,
 		RestitutionCoefficient: 0.0,
 		CollisionGroup:         collisionGroup,
-		CollisionShapes: []physics.CollisionShape{
-			shape.NewPlacement[shape.Shape](
-				shape.IdentityTransform(),
-				shape.NewStaticSphere(0.25),
-			),
+		CollisionSpheres: []collision.Sphere{
+			collision.NewSphere(dprec.ZeroVec3(), 0.25),
 		},
 	})
 
@@ -347,15 +345,3 @@ func (c *PlayController) createVehicleDefinition() *preset.CarDefinition {
 
 	return carDef
 }
-
-// func (h *playLifecycle) OnKeyboardEvent(element *ui.Element, event ui.KeyboardEvent) bool {
-// 	return h.carSystem.OnKeyboardEvent(event) || h.cameraStandSystem.OnKeyboardEvent(event)
-// }
-
-// func (h *playLifecycle) OnMouseEvent(element *ui.Element, event ui.MouseEvent) bool {
-// 	// bounds := element.Bounds()
-// 	// viewport := graphics.NewViewport(bounds.X, bounds.Y, bounds.Width, bounds.Height)
-// 	// camera := h.gfxScene.ActiveCamera()
-// 	// return h.vehicleSystem.OnMouseEvent(event, viewport, camera, h.gfxScene)
-// 	return false
-// }
