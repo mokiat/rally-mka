@@ -41,9 +41,21 @@ tasks:
     cmds:
       - go run 'github.com/mokiat/httpserv@v1.0.0' -dir './assets' -host '127.0.0.1'
 
-  profile:
+  profile-cpu:
     cmds:
       - go tool pprof 'http://localhost:6060/debug/pprof/profile?seconds=30'
+
+  profile-alloc:
+    cmds:
+      - go tool pprof 'http://localhost:6060/debug/pprof/allocs?seconds=30'
+
+  profile-heap:
+    cmds:
+      - go tool pprof 'http://localhost:6060/debug/pprof/heap?seconds=30'
+
+  profile-snap:
+    cmds:
+      - go tool pprof 'http://localhost:6060/debug/pprof/heap'
 
   trace:
     cmds:
