@@ -97,6 +97,7 @@ var LicensesScreen = co.Define(func(props co.Properties, scope co.Scope) co.Inst
 				co.WithData(mat.ScrollPaneData{
 					DisableHorizontal: true,
 					DisableVertical:   false,
+					Focused:           true,
 				})
 
 				co.WithLayoutData(mat.LayoutData{
