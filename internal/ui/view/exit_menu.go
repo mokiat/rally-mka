@@ -20,6 +20,20 @@ type ExitMenuPresenter struct {
 	CallbackData ExitMenuCallback `co:"callback"`
 }
 
+var _ ui.ElementKeyboardHandler = (*ExitMenuPresenter)(nil)
+
+func (p *ExitMenuPresenter) OnKeyboardEvent(element *ui.Element, event ui.KeyboardEvent) bool {
+	switch event.Code {
+	case ui.KeyCodeEscape:
+		if event.Type == ui.KeyboardEventTypeKeyUp {
+			p.CallbackData.OnContinue()
+		}
+		return true
+	default:
+		return false
+	}
+}
+
 func (p *ExitMenuPresenter) Render() co.Instance {
 	return co.New(mat.Element, func() {
 		co.WithData(mat.ElementData{

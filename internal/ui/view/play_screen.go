@@ -92,10 +92,9 @@ func (p *PlayScreenPresenter) OnMouseEvent(element *ui.Element, event ui.MouseEv
 }
 
 func (p *PlayScreenPresenter) OnKeyboardEvent(element *ui.Element, event ui.KeyboardEvent) bool {
-	// TODO: Pass to controller
 	switch event.Code {
 	case ui.KeyCodeEscape:
-		if event.Type == ui.KeyboardEventTypeKeyDown {
+		if event.Type == ui.KeyboardEventTypeKeyUp {
 			p.controller.Pause()
 			co.Window(p.Scope).SetCursorVisible(true)
 			p.exitMenu = co.OpenOverlay(p.Scope, co.New(ExitMenu, func() {
