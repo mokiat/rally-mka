@@ -67,7 +67,7 @@ func runTool() error {
 			pack.WithBottomImage(p.BuildCubeSideFromEquirectangular(pack.CubeSideBottom, equirectangularImage)),
 		)
 
-		smallerCubeImage := p.ScaleCubeImage(cubeImage, 256)
+		smallerCubeImage := p.ScaleCubeImage(cubeImage, 512)
 		p.SaveCubeTextureAsset(skyboxDay, smallerCubeImage,
 			pack.WithFormat(asset.TexelFormatRGBA16F),
 		)
@@ -86,7 +86,12 @@ func runTool() error {
 	})
 
 	packer.Pipeline(func(p *pack.Pipeline) {
-		equirectangularImage := p.OpenImageResource("resources/images/night.hdr")
+		// Using GIMP:
+		// 1. Scale height to %50
+		// 2. Convert to float32
+		// 3. Exposure: ~ -6
+
+		equirectangularImage := p.OpenImageResource("resources/images/night.exr")
 		cubeImage := p.BuildCubeImage(
 			pack.WithFrontImage(p.BuildCubeSideFromEquirectangular(pack.CubeSideFront, equirectangularImage)),
 			pack.WithRearImage(p.BuildCubeSideFromEquirectangular(pack.CubeSideRear, equirectangularImage)),
@@ -96,7 +101,7 @@ func runTool() error {
 			pack.WithBottomImage(p.BuildCubeSideFromEquirectangular(pack.CubeSideBottom, equirectangularImage)),
 		)
 
-		smallerCubeImage := p.ScaleCubeImage(cubeImage, 256)
+		smallerCubeImage := p.ScaleCubeImage(cubeImage, 512)
 		p.SaveCubeTextureAsset(skyboxNight, smallerCubeImage,
 			pack.WithFormat(asset.TexelFormatRGBA16F),
 		)
