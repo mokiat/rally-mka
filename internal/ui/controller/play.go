@@ -78,6 +78,7 @@ func (c *PlayController) Start(environment data.Environment, controller data.Con
 			EmitColor: dprec.NewVec3(0.5, 0.5, 0.3),
 			EmitRange: 16000, // FIXME
 		})
+
 	case data.EnvironmentNight:
 		sunLight = c.scene.Graphics().CreateDirectionalLight(graphics.DirectionalLightInfo{
 			EmitColor: dprec.NewVec3(0.001, 0.001, 0.001),
@@ -123,6 +124,10 @@ func (c *PlayController) Start(environment data.Environment, controller data.Con
 	ecs.FetchComponent(c.vehicle.Entity(), &vehicleNodeComponent)
 	vehicleNode := vehicleNodeComponent.Node
 	vehicleNode.AppendChild(lightNode) // FIXME
+
+	var vehicleCarComponent *preset.CarComponent
+	ecs.FetchComponent(c.vehicle.Entity(), &vehicleCarComponent)
+	vehicleCarComponent.LightsOn = (environment == data.EnvironmentNight)
 
 	switch controller {
 	case data.ControllerKeyboard:
@@ -292,7 +297,11 @@ func (c *PlayController) createVehicleDefinition() *preset.CarDefinition {
 
 	chassisDef := preset.NewChassisDefinition().
 		WithNodeName("Chassis").
-		WithBodyDefinition(chassisBodyDef)
+		WithBodyDefinition(chassisBodyDef).
+		WithHeadLightNodeNames("FLLight", "FRLight").
+		WithTailLightNodeNames("BLLight", "BRLight").
+		WithBeamLightNodeNames("FLBeamLight", "FRBeamLight").
+		WithStopLightNodeNames("BLStopLight", "BRStopLight")
 
 	frontLeftWheelDef := preset.NewWheelDefinition().
 		WithNodeName("FLWheel").
