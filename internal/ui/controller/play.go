@@ -53,6 +53,8 @@ type PlayController struct {
 }
 
 func (c *PlayController) Start(environment data.Environment, controller data.Controller) {
+	physics.ImpulseDriftAdjustmentRatio = 0.02 // FIXME: Use default once multi-point collisions are fixed
+
 	// TODO: These subscriptions should be attached on the scene and/or the physics.
 	c.preUpdateSubscription = c.engine.SubscribePreUpdate(c.onPreUpdate)
 	c.postUpdateSubscription = c.engine.SubscribePostUpdate(c.onPostUpdate)
