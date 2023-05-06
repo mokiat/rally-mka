@@ -53,7 +53,7 @@ type PlayController struct {
 }
 
 func (c *PlayController) Start(environment data.Environment, controller data.Controller) {
-	physics.ImpulseDriftAdjustmentRatio = 0.02 // FIXME: Use default once multi-point collisions are fixed
+	physics.ImpulseDriftAdjustmentRatio = 0.06 // FIXME: Use default once multi-point collisions are fixed
 
 	// TODO: These subscriptions should be attached on the scene and/or the physics.
 	c.preUpdateSubscription = c.engine.SubscribePreUpdate(c.onPreUpdate)
@@ -142,15 +142,15 @@ func (c *PlayController) Start(environment data.Environment, controller data.Con
 			ShiftDownKey:  ui.KeyCodeZ,
 			RecoverKey:    ui.KeyCodeLeftShift,
 
-			AccelerationChangeSpeed: 1.0,
-			DecelerationChangeSpeed: 2.0,
+			AccelerationChangeSpeed: 2.0,
+			DecelerationChangeSpeed: 4.0,
 			SteeringChangeSpeed:     3.0,
 			SteeringRestoreSpeed:    6.0,
 		})
 	case data.ControllerMouse:
 		ecs.AttachComponent(c.vehicle.Entity(), &preset.CarMouseControl{
-			AccelerationChangeSpeed: 1.0,
-			DecelerationChangeSpeed: 2.0,
+			AccelerationChangeSpeed: 2.0,
+			DecelerationChangeSpeed: 4.0,
 			Destination:             dprec.ZeroVec3(),
 		})
 	case data.ControllerGamepad:
@@ -182,7 +182,7 @@ func (c *PlayController) Start(environment data.Environment, controller data.Con
 	bonnetCameraNode := game.NewNode()
 	bonnetCameraNode.SetAttachable(c.bonnetCamera)
 	bonnetCameraNode.SetRotation(dprec.RotationQuat(dprec.Degrees(180), dprec.BasisYVec3()))
-	bonnetCameraNode.SetPosition(dprec.NewVec3(0.0, 1.0, 0.0))
+	bonnetCameraNode.SetPosition(dprec.NewVec3(0.0, 0.75, 0.35))
 	vehicleNode.AppendChild(bonnetCameraNode)
 
 	followCameraEntity := c.ecsScene.CreateEntity()
@@ -278,9 +278,9 @@ func (c *PlayController) createVehicleDefinition() *preset.CarDefinition {
 		CollisionGroup:         collisionGroup,
 		CollisionBoxes: []collision.Box{
 			collision.NewBox(
-				dprec.NewVec3(0.0, 0.3, -0.4),
+				dprec.NewVec3(0.0, 0.34, -0.3),
 				dprec.IdentityQuat(),
-				dprec.NewVec3(1.6, 1.4, 4.0),
+				dprec.NewVec3(1.6, 1.18, 3.64),
 			),
 		},
 	})
@@ -322,9 +322,9 @@ func (c *PlayController) createVehicleDefinition() *preset.CarDefinition {
 		WithBodyDefinition(wheelBodyDef)
 
 	frontAxisDef := preset.NewAxisDefinition().
-		WithPosition(dprec.NewVec3(0.0, -0.22, 0.96)).
-		WithWidth(1.8).
-		WithSuspensionLength(0.23).
+		WithPosition(dprec.NewVec3(0.0, -0.18, 0.96)).
+		WithWidth(1.7).
+		WithSuspensionLength(0.16).
 		WithSpringLength(0.25).
 		WithSpringFrequency(2.9).
 		WithSpringDamping(0.8).
@@ -336,16 +336,16 @@ func (c *PlayController) createVehicleDefinition() *preset.CarDefinition {
 		WithReverseRatio(0.5)
 
 	rearAxisDef := preset.NewAxisDefinition().
-		WithPosition(dprec.NewVec3(0.0, -0.22, -1.37)).
-		WithWidth(1.8).
-		WithSuspensionLength(0.23).
+		WithPosition(dprec.NewVec3(0.0, -0.18, -1.37)).
+		WithWidth(1.7).
+		WithSuspensionLength(0.16).
 		WithSpringLength(0.25).
-		WithSpringFrequency(2.4).
+		WithSpringFrequency(2.7).
 		WithSpringDamping(0.8).
 		WithLeftWheelDefinition(rearLeftWheelDef).
 		WithRightWheelDefinition(rearRightWheelDef).
 		WithMaxSteeringAngle(dprec.Degrees(0)).
-		WithMaxAcceleration(160).
+		WithMaxAcceleration(145).
 		WithMaxBraking(180).
 		WithReverseRatio(0.5)
 
