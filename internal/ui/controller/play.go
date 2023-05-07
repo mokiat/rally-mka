@@ -297,6 +297,14 @@ func (c *PlayController) createVehicleDefinition() *preset.CarDefinition {
 		},
 	})
 
+	hubBodyDef := c.physicsScene.Engine().CreateBodyDefinition(physics.BodyDefinitionInfo{
+		Mass:                   1,
+		MomentOfInertia:        physics.SymmetricMomentOfInertia(0.01),
+		DragFactor:             0.0,
+		AngularDragFactor:      0.0,
+		RestitutionCoefficient: 0.0,
+	})
+
 	chassisDef := preset.NewChassisDefinition().
 		WithNodeName("Chassis").
 		WithBodyDefinition(chassisBodyDef).
@@ -321,6 +329,22 @@ func (c *PlayController) createVehicleDefinition() *preset.CarDefinition {
 		WithNodeName("BRWheel").
 		WithBodyDefinition(wheelBodyDef)
 
+	frontLeftHubDef := preset.NewHubDefinition().
+		WithNodeName("FLHub").
+		WithBodyDefinition(hubBodyDef)
+
+	frontRightHubDef := preset.NewHubDefinition().
+		WithNodeName("FRHub").
+		WithBodyDefinition(hubBodyDef)
+
+	rearLeftHubDef := preset.NewHubDefinition().
+		WithNodeName("BLHub").
+		WithBodyDefinition(hubBodyDef)
+
+	rearRightHubDef := preset.NewHubDefinition().
+		WithNodeName("BRHub").
+		WithBodyDefinition(hubBodyDef)
+
 	frontAxisDef := preset.NewAxisDefinition().
 		WithPosition(dprec.NewVec3(0.0, -0.18, 0.96)).
 		WithWidth(1.7).
@@ -330,6 +354,8 @@ func (c *PlayController) createVehicleDefinition() *preset.CarDefinition {
 		WithSpringDamping(0.8).
 		WithLeftWheelDefinition(frontLeftWheelDef).
 		WithRightWheelDefinition(frontRightWheelDef).
+		WithLeftHubDefinition(frontLeftHubDef).
+		WithRightHubDefinition(frontRightHubDef).
 		WithMaxSteeringAngle(dprec.Degrees(45)).
 		WithMaxAcceleration(145).
 		WithMaxBraking(250).
@@ -344,6 +370,8 @@ func (c *PlayController) createVehicleDefinition() *preset.CarDefinition {
 		WithSpringDamping(0.8).
 		WithLeftWheelDefinition(rearLeftWheelDef).
 		WithRightWheelDefinition(rearRightWheelDef).
+		WithLeftHubDefinition(rearLeftHubDef).
+		WithRightHubDefinition(rearRightHubDef).
 		WithMaxSteeringAngle(dprec.Degrees(0)).
 		WithMaxAcceleration(145).
 		WithMaxBraking(180).
