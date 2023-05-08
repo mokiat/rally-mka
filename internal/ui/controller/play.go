@@ -89,11 +89,13 @@ func (c *PlayController) Start(environment data.Environment, controller data.Con
 	}
 
 	lightNode := game.NewNode()
-	lightNode.SetPosition(dprec.NewVec3(-100.0, 100.0, 0.0))
-	lightNode.SetRotation(dprec.QuatProd(
-		dprec.RotationQuat(dprec.Degrees(-90), dprec.BasisYVec3()),
+	lightRotation := dprec.QuatProd(
+		dprec.RotationQuat(dprec.Degrees(-140), dprec.BasisYVec3()),
 		dprec.RotationQuat(dprec.Degrees(-45), dprec.BasisXVec3()),
-	))
+	)
+	lightPosition := dprec.QuatVec3Rotation(lightRotation, dprec.NewVec3(0.0, 0.0, 100.0))
+	lightNode.SetPosition(lightPosition)
+	lightNode.SetRotation(lightRotation)
 	lightNode.UseTransformation(func(parent, current dprec.Mat4) dprec.Mat4 {
 		// Remove parent's rotation
 		parent.M11 = 1.0
