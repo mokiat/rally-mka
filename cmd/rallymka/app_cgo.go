@@ -33,8 +33,8 @@ func runApplication() error {
 	})
 
 	cfg := glapp.NewConfig("Rally MKA", 1024, 576)
-	cfg.SetFullscreen(false) // TODO: Enable
-	cfg.SetMaximized(true)   // TODO: Remove
+	cfg.SetFullscreen(true)
+	cfg.SetMaximized(false)
 	cfg.SetMinSize(1024, 576)
 	cfg.SetVSync(true)
 	cfg.SetIcon("resources/ui/images/icon.png")
