@@ -4,7 +4,7 @@ tasks:
 
   licenses:
     cmds:
-      - go run github.com/google/go-licenses report --template ./resources/licenses.tmpl ./cmd/rallymka > ./resources/licenses.txt
+      - go run github.com/google/go-licenses@v1.6.0 report --template ./resources/licenses.tmpl ./cmd/rallymka ./cmd/rallypack > ./resources/licenses.txt
 
   pack:
     cmds:
