@@ -19,6 +19,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+        with:
+          lfs: 'true'
 
       - name: Setup Go
         uses: actions/setup-go@v3
@@ -31,6 +33,7 @@ jobs:
 
       - name: Compile
         run: |
+          cat resources/resources.go
           mkdir -p "./dist/${{ matrix.os }}"
           go build -o "./dist/${{ matrix.os }}/rally-mka${{ matrix.ext }}" ./cmd/rallymka/
 
