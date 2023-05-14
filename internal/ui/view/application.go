@@ -4,10 +4,7 @@ import (
 	co "github.com/mokiat/lacking/ui/component"
 	"github.com/mokiat/lacking/ui/mat"
 	"github.com/mokiat/lacking/ui/mvc"
-	"github.com/mokiat/rally-mka/internal/ui/home"
-	"github.com/mokiat/rally-mka/internal/ui/intro"
 	"github.com/mokiat/rally-mka/internal/ui/model"
-	"github.com/mokiat/rally-mka/internal/ui/play"
 )
 
 var Application = co.Define(func(props co.Properties, scope co.Scope) co.Instance {
@@ -16,21 +13,38 @@ var Application = co.Define(func(props co.Properties, scope co.Scope) co.Instanc
 	)
 
 	mvc.UseBinding(data, func(ch mvc.Change) bool {
-		return mvc.IsChange(ch, model.ChangeActiveView)
+		return mvc.IsChange(ch, model.ApplicationActiveViewChange)
 	})
 
 	return co.New(mat.Switch, func() {
 		co.WithData(mat.SwitchData{
-			ChildKey: string(data.ActiveView()),
+			ChildKey: data.ActiveView(),
 		})
-		co.WithScope(scope)
 
-		co.WithChild(string(model.ViewNameIntro), co.New(intro.View, func() {}))
-		co.WithChild(string(model.ViewNameHome), co.New(home.View, func() {}))
-		co.WithChild(string(model.ViewNamePlay), co.New(play.View, func() {
-			co.WithData(play.ViewData{
-				GameData: data.GameData(),
+		co.WithChild(model.ViewNameIntro, co.New(IntroScreen, func() {
+			co.WithData(IntroScreenData{
+				Home:         data.Home(),
+				LoadingModel: data.Loading(),
 			})
 		}))
+		co.WithChild(model.ViewNameLoading, co.New(LoadingScreen, func() {
+			co.WithData(LoadingScreenData{
+				Model: data.Loading(),
+			})
+		}))
+		co.WithChild(model.ViewNameHome, co.New(HomeScreen, func() {
+			co.WithData(HomeScreenData{
+				Loading: data.Loading(),
+				Home:    data.Home(),
+				Play:    data.Play(),
+			})
+		}))
+		co.WithChild(model.ViewNamePlay, co.New(PlayScreen, func() {
+			co.WithData(PlayScreenData{
+				Play: data.Play(),
+			})
+		}))
+		co.WithChild(model.ViewNameLicenses, co.New(LicensesScreen, nil))
+		co.WithChild(model.ViewNameCredits, co.New(CreditsScreen, nil))
 	})
 })

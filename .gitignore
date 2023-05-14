@@ -9,3 +9,6 @@
 
 # Distribution
 /dist
+
+# Go
+trace.out

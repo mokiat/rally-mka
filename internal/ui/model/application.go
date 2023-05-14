@@ -1,35 +1,51 @@
 package model
 
-import (
-	"github.com/mokiat/lacking/ui/mvc"
-	"github.com/mokiat/rally-mka/internal/scene"
-)
-
-var (
-	ChangeApplication = mvc.NewChange("application")
-	ChangeActiveView  = mvc.SubChange(ChangeApplication, "active_view")
-	ChangeGameData    = mvc.SubChange(ChangeApplication, "game_data")
-)
+import "github.com/mokiat/lacking/ui/mvc"
 
 const (
-	ViewNameIntro ViewName = "intro"
-	ViewNameHome  ViewName = "home"
-	ViewNamePlay  ViewName = "play"
+	ViewNameIntro    ViewName = "intro"
+	ViewNameHome     ViewName = "home"
+	ViewNamePlay     ViewName = "play"
+	ViewNameLoading  ViewName = "loading"
+	ViewNameLicenses ViewName = "licenses"
+	ViewNameCredits  ViewName = "credits"
 )
 
-type ViewName string
+type ViewName = string
+
+var (
+	ApplicationChange           = mvc.NewChange("application")
+	ApplicationActiveViewChange = mvc.SubChange(ApplicationChange, "active_view")
+)
 
 func NewApplication() *Application {
 	return &Application{
 		Observable: mvc.NewObservable(),
+		loading:    newLoading(),
+		home:       newHome(),
+		play:       newPlay(),
 		activeView: ViewNameIntro,
 	}
 }
 
 type Application struct {
 	mvc.Observable
+	loading    *Loading
+	home       *Home
+	play       *Play
 	activeView ViewName
-	gameData   *scene.Data
+}
+
+func (a *Application) Loading() *Loading {
+	return a.loading
+}
+
+func (a *Application) Home() *Home {
+	return a.home
+}
+
+func (a *Application) Play() *Play {
+	return a.play
 }
 
 func (a *Application) ActiveView() ViewName {
@@ -38,14 +54,5 @@ func (a *Application) ActiveView() ViewName {
 
 func (a *Application) SetActiveView(view ViewName) {
 	a.activeView = view
-	a.SignalChange(ChangeActiveView)
-}
-
-func (a *Application) GameData() *scene.Data {
-	return a.gameData
-}
-
-func (a *Application) SetGameData(data *scene.Data) {
-	a.gameData = data
-	a.SignalChange(ChangeGameData)
+	a.SignalChange(ApplicationActiveViewChange)
 }

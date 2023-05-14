@@ -2,21 +2,25 @@ version: '3'
 
 tasks:
 
-  webpack:
+  licenses:
     cmds:
-      - mkdir -p 'assets/web'
-      - cp 'resources/icon.png' 'assets/web/favicon.png'
-      - cp 'resources/web/main.css' 'assets/web/main.css'
-      - cp 'resources/web/main.js' 'assets/web/main.js'
-      - cp 'resources/web/index.html' 'assets/index.html'
-      - cp "$(go env GOROOT)/misc/wasm/wasm_exec.js" 'assets/web'
+      - go run github.com/google/go-licenses@v1.6.0 report --template ./resources/licenses.tmpl ./cmd/rallymka ./cmd/rallypack | fold -w 80 -s > ./resources/licenses.txt
 
   pack:
     cmds:
       - go run './cmd/rallypack'
 
+  webpack:
+    cmds:
+      - mkdir -p 'assets/web'
+      - cp 'resources/ui/images/icon.png' 'assets/web/favicon.png'
+      - cp 'resources/web/main.css' 'assets/web/main.css'
+      - cp 'resources/web/main.js' 'assets/web/main.js'
+      - cp 'resources/web/index.html' 'assets/index.html'
+      - cp "$(go env GOROOT)/misc/wasm/wasm_exec.js" 'assets/web'
+
   assets:
-    deps: [webpack, pack]
+    deps: [pack, webpack]
 
   run:
     cmds:
@@ -31,8 +35,29 @@ tasks:
       GOOS: js
       GOARCH: wasm
     cmds:
-      - go build -o './assets/web/main.wasm' './cmd/rallywasm'
+      - go build -o './assets/web/main.wasm' './cmd/rallymka'
 
   web:
     cmds:
-      - go run 'github.com/mokiat/httpserv@master' -dir './assets' -host '127.0.0.1'
+      - go run 'github.com/mokiat/httpserv@v1.0.0' -dir './assets' -host '127.0.0.1'
+
+  profile-cpu:
+    cmds:
+      - go tool pprof 'http://localhost:6060/debug/pprof/profile?seconds=30'
+
+  profile-alloc:
+    cmds:
+      - go tool pprof 'http://localhost:6060/debug/pprof/allocs?seconds=30'
+
+  profile-heap:
+    cmds:
+      - go tool pprof 'http://localhost:6060/debug/pprof/heap?seconds=30'
+
+  profile-snap:
+    cmds:
+      - go tool pprof 'http://localhost:6060/debug/pprof/heap'
+
+  trace:
+    cmds:
+      - curl -o trace.out 'http://localhost:6060/debug/pprof/trace?seconds=30'
+      - go tool trace trace.out

@@ -21,9 +21,6 @@ func (a *Application) Reduce(act mvc.Action) bool {
 	case action.ChangeView:
 		a.appModel.SetActiveView(act.ViewName)
 		return true
-	case action.SetGameData:
-		a.appModel.SetGameData(act.GameData)
-		return true
 	default:
 		return false
 	}
