@@ -7,6 +7,7 @@ import (
 	"github.com/mokiat/gog/opt"
 	"github.com/mokiat/lacking/ui"
 	co "github.com/mokiat/lacking/ui/component"
+	"github.com/mokiat/lacking/ui/layout"
 	"github.com/mokiat/lacking/ui/mat"
 	"github.com/mokiat/lacking/ui/mvc"
 	"github.com/mokiat/lacking/util/metrics"
@@ -129,7 +130,7 @@ func (p *PlayScreenPresenter) Render() co.Instance {
 			Essence:   p,
 			Focusable: opt.V(true),
 			Focused:   opt.V(true),
-			Layout:    mat.NewAnchorLayout(mat.AnchorLayoutSettings{}),
+			Layout:    layout.Anchor(),
 		})
 
 		if p.debugVisible {
@@ -137,7 +138,7 @@ func (p *PlayScreenPresenter) Render() co.Instance {
 				co.WithData(widget.RegionBlockData{
 					Regions: p.debugRegions,
 				})
-				co.WithLayoutData(mat.LayoutData{
+				co.WithLayoutData(layout.Data{
 					Top:   opt.V(0),
 					Left:  opt.V(0),
 					Right: opt.V(0),
@@ -146,40 +147,37 @@ func (p *PlayScreenPresenter) Render() co.Instance {
 		}
 
 		co.WithChild("dashboard", co.New(mat.Element, func() {
+			co.WithLayoutData(layout.Data{
+				Left:   opt.V(0),
+				Right:  opt.V(0),
+				Bottom: opt.V(0),
+			})
 			co.WithData(mat.ElementData{
 				Padding: ui.Spacing{
 					Left:   20,
 					Right:  20,
 					Bottom: 20,
 				},
-				Layout: mat.NewAnchorLayout(mat.AnchorLayoutSettings{}),
-			})
-
-			co.WithLayoutData(mat.LayoutData{
-				Left:   opt.V(0),
-				Right:  opt.V(0),
-				Bottom: opt.V(0),
+				Layout: layout.Anchor(),
 			})
 
 			co.WithChild("speedometer", co.New(widget.Speedometer, func() {
-				co.WithData(widget.SpeedometerData{
-					Source: p.controller,
-				})
-
-				co.WithLayoutData(mat.LayoutData{
+				co.WithLayoutData(layout.Data{
 					Left:   opt.V(20),
 					Bottom: opt.V(0),
+				})
+				co.WithData(widget.SpeedometerData{
+					Source: p.controller,
 				})
 			}))
 
 			co.WithChild("gearshifter", co.New(widget.GearShifter, func() {
-				co.WithData(widget.GearShifterData{
-					Source: p.controller,
-				})
-
-				co.WithLayoutData(mat.LayoutData{
+				co.WithLayoutData(layout.Data{
 					Right:  opt.V(20),
 					Bottom: opt.V(0),
+				})
+				co.WithData(widget.GearShifterData{
+					Source: p.controller,
 				})
 			}))
 		}))

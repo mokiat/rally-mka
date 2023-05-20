@@ -6,6 +6,7 @@ import (
 	"github.com/mokiat/gog/opt"
 	"github.com/mokiat/lacking/ui"
 	co "github.com/mokiat/lacking/ui/component"
+	"github.com/mokiat/lacking/ui/layout"
 	"github.com/mokiat/lacking/ui/mat"
 	"github.com/mokiat/lacking/ui/mvc"
 	"github.com/mokiat/rally-mka/internal/game/data"
@@ -61,20 +62,20 @@ var IntroScreen = co.Define(func(props co.Properties, scope co.Scope) co.Instanc
 	return co.New(mat.Container, func() {
 		co.WithData(mat.ContainerData{
 			BackgroundColor: opt.V(ui.Black()),
-			Layout:          mat.NewAnchorLayout(mat.AnchorLayoutSettings{}),
+			Layout:          layout.Anchor(),
 		})
 
 		co.WithChild("logo-picture", co.New(mat.Picture, func() {
-			co.WithData(mat.PictureData{
-				BackgroundColor: opt.V(ui.Transparent()),
-				Image:           co.OpenImage(scope, "ui/images/logo.png"),
-				Mode:            mat.ImageModeFit,
-			})
-			co.WithLayoutData(mat.LayoutData{
+			co.WithLayoutData(layout.Data{
 				Width:            opt.V(512),
 				Height:           opt.V(128),
 				HorizontalCenter: opt.V(0),
 				VerticalCenter:   opt.V(0),
+			})
+			co.WithData(mat.PictureData{
+				BackgroundColor: opt.V(ui.Transparent()),
+				Image:           co.OpenImage(scope, "ui/images/logo.png"),
+				Mode:            mat.ImageModeFit,
 			})
 		}))
 	})

@@ -10,6 +10,7 @@ import (
 	"github.com/mokiat/lacking/log"
 	"github.com/mokiat/lacking/ui"
 	co "github.com/mokiat/lacking/ui/component"
+	"github.com/mokiat/lacking/ui/layout"
 	"github.com/mokiat/lacking/ui/mat"
 	"github.com/mokiat/lacking/ui/mvc"
 	"github.com/mokiat/rally-mka/internal/game/data"
@@ -78,31 +79,31 @@ func (p *HomeScreenPresenter) Render() co.Instance {
 
 	return co.New(mat.Element, func() {
 		co.WithData(mat.ElementData{
-			Layout: mat.NewAnchorLayout(mat.AnchorLayoutSettings{}),
+			Layout: layout.Anchor(),
 		})
 
 		co.WithChild("pane", co.New(mat.Container, func() {
-			co.WithData(mat.ContainerData{
-				BackgroundColor: opt.V(ui.RGBA(0, 0, 0, 192)),
-				Layout:          mat.NewAnchorLayout(mat.AnchorLayoutSettings{}),
-			})
-			co.WithLayoutData(mat.LayoutData{
+			co.WithLayoutData(layout.Data{
 				Top:    opt.V(0),
 				Bottom: opt.V(0),
 				Left:   opt.V(0),
 				Width:  opt.V(320),
 			})
+			co.WithData(mat.ContainerData{
+				BackgroundColor: opt.V(ui.RGBA(0, 0, 0, 192)),
+				Layout:          layout.Anchor(),
+			})
 
 			co.WithChild("holder", co.New(mat.Element, func() {
-				co.WithData(mat.ElementData{
-					Layout: mat.NewVerticalLayout(mat.VerticalLayoutSettings{
-						ContentAlignment: mat.AlignmentLeft,
-						ContentSpacing:   15,
-					}),
-				})
-				co.WithLayoutData(mat.LayoutData{
+				co.WithLayoutData(layout.Data{
 					Left:           opt.V(75),
 					VerticalCenter: opt.V(0),
+				})
+				co.WithData(mat.ElementData{
+					Layout: layout.Vertical(layout.VerticalSettings{
+						ContentAlignment: layout.HorizontalAlignmentLeft,
+						ContentSpacing:   15,
+					}),
 				})
 
 				if p.showOptions {
@@ -165,33 +166,33 @@ func (p *HomeScreenPresenter) Render() co.Instance {
 
 		if p.showOptions {
 			co.WithChild("options", co.New(mat.Container, func() {
-				co.WithData(mat.ContainerData{
-					BackgroundColor: opt.V(ui.RGBA(0, 0, 0, 128)),
-					Layout:          mat.NewAnchorLayout(mat.AnchorLayoutSettings{}),
-				})
-				co.WithLayoutData(mat.LayoutData{
+				co.WithLayoutData(layout.Data{
 					Top:    opt.V(0),
 					Bottom: opt.V(0),
 					Left:   opt.V(320),
 					Right:  opt.V(0),
 				})
+				co.WithData(mat.ContainerData{
+					BackgroundColor: opt.V(ui.RGBA(0, 0, 0, 128)),
+					Layout:          layout.Anchor(),
+				})
 
 				co.WithChild("options-pane", co.New(mat.Element, func() {
-					co.WithData(mat.ElementData{
-						Layout: mat.NewVerticalLayout(mat.VerticalLayoutSettings{
-							ContentAlignment: mat.AlignmentCenter,
-							ContentSpacing:   20,
-						}),
-					})
-					co.WithLayoutData(mat.LayoutData{
+					co.WithLayoutData(layout.Data{
 						HorizontalCenter: opt.V(0),
 						VerticalCenter:   opt.V(0),
+					})
+					co.WithData(mat.ElementData{
+						Layout: layout.Vertical(layout.VerticalSettings{
+							ContentAlignment: layout.HorizontalAlignmentCenter,
+							ContentSpacing:   20,
+						}),
 					})
 
 					co.WithChild("controller-toggles", co.New(mat.Element, func() {
 						co.WithData(mat.ElementData{
-							Layout: mat.NewHorizontalLayout(mat.HorizontalLayoutSettings{
-								ContentAlignment: mat.AlignmentCenter,
+							Layout: layout.Horizontal(layout.HorizontalSettings{
+								ContentAlignment: layout.VerticalAlignmentCenter,
 								ContentSpacing:   40,
 							}),
 						})
@@ -238,30 +239,29 @@ func (p *HomeScreenPresenter) Render() co.Instance {
 					}
 
 					co.WithChild("controller-image", co.New(mat.Picture, func() {
+						co.WithLayoutData(layout.Data{
+							Width:  opt.V(600),
+							Height: opt.V(300),
+						})
 						co.WithData(mat.PictureData{
 							BackgroundColor: opt.V(ui.RGBA(0x00, 0x00, 0x00, 0x9A)),
 							Image:           co.OpenImage(p.Scope, imageURL),
 							ImageColor:      opt.V(ui.White()),
 							Mode:            mat.ImageModeStretch,
 						})
-						co.WithLayoutData(mat.LayoutData{
-							Width:  opt.V(600),
-							Height: opt.V(300),
-						})
 					}))
 
 					co.WithChild("controller-text", co.New(mat.Label, func() {
 						co.WithData(mat.LabelData{
-							Font:          co.OpenFont(p.Scope, "mat:///roboto-regular.ttf"),
-							FontSize:      opt.V(float32(24.0)),
-							FontColor:     opt.V(ui.White()),
-							TextAlignment: mat.AlignmentCenter,
-							Text:          p.controllerDescription(controller),
+							Font:      co.OpenFont(p.Scope, "mat:///roboto-regular.ttf"),
+							FontSize:  opt.V(float32(24.0)),
+							FontColor: opt.V(ui.White()),
+							Text:      p.controllerDescription(controller),
 						})
 					}))
 
 					co.WithChild("separator", co.New(widget.Separator, func() {
-						co.WithLayoutData(mat.LayoutData{
+						co.WithLayoutData(layout.Data{
 							Width:  opt.V(600),
 							Height: opt.V(4),
 						})
@@ -269,8 +269,8 @@ func (p *HomeScreenPresenter) Render() co.Instance {
 
 					co.WithChild("environment-toggles", co.New(mat.Element, func() {
 						co.WithData(mat.ElementData{
-							Layout: mat.NewHorizontalLayout(mat.HorizontalLayoutSettings{
-								ContentAlignment: mat.AlignmentCenter,
+							Layout: layout.Horizontal(layout.HorizontalSettings{
+								ContentAlignment: layout.VerticalAlignmentCenter,
 								ContentSpacing:   40,
 							}),
 						})
@@ -298,11 +298,10 @@ func (p *HomeScreenPresenter) Render() co.Instance {
 
 					co.WithChild("environment-text", co.New(mat.Label, func() {
 						co.WithData(mat.LabelData{
-							Font:          co.OpenFont(p.Scope, "mat:///roboto-regular.ttf"),
-							FontSize:      opt.V(float32(24.0)),
-							FontColor:     opt.V(ui.White()),
-							TextAlignment: mat.AlignmentCenter,
-							Text:          p.environmentDescription(environment),
+							Font:      co.OpenFont(p.Scope, "mat:///roboto-regular.ttf"),
+							FontSize:  opt.V(float32(24.0)),
+							FontColor: opt.V(ui.White()),
+							Text:      p.environmentDescription(environment),
 						})
 					}))
 				}))

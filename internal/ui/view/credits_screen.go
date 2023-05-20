@@ -7,6 +7,7 @@ import (
 	"github.com/mokiat/gog/opt"
 	"github.com/mokiat/lacking/ui"
 	co "github.com/mokiat/lacking/ui/component"
+	"github.com/mokiat/lacking/ui/layout"
 	"github.com/mokiat/lacking/ui/mat"
 	"github.com/mokiat/lacking/ui/mvc"
 	"github.com/mokiat/rally-mka/internal/ui/action"
@@ -69,28 +70,28 @@ var CreditsScreen = co.Define(func(props co.Properties, scope co.Scope) co.Insta
 	return co.New(mat.Container, func() {
 		co.WithData(mat.ContainerData{
 			BackgroundColor: opt.V(ui.Black()),
-			Layout:          mat.NewAnchorLayout(mat.AnchorLayoutSettings{}),
+			Layout:          layout.Anchor(),
 		})
 
 		co.WithChild("menu-pane", co.New(mat.Container, func() {
-			co.WithData(mat.ContainerData{
-				BackgroundColor: opt.V(ui.Black()),
-				Layout:          mat.NewAnchorLayout(mat.AnchorLayoutSettings{}),
-			})
-			co.WithLayoutData(mat.LayoutData{
+			co.WithLayoutData(layout.Data{
 				Top:    opt.V(0),
 				Bottom: opt.V(0),
 				Left:   opt.V(0),
 				Width:  opt.V(200),
 			})
+			co.WithData(mat.ContainerData{
+				BackgroundColor: opt.V(ui.Black()),
+				Layout:          layout.Anchor(),
+			})
 
 			co.WithChild("button", co.New(widget.Button, func() {
-				co.WithData(widget.ButtonData{
-					Text: "Back",
-				})
-				co.WithLayoutData(mat.LayoutData{
+				co.WithLayoutData(layout.Data{
 					HorizontalCenter: opt.V(0),
 					Bottom:           opt.V(100),
+				})
+				co.WithData(widget.ButtonData{
+					Text: "Back",
 				})
 				co.WithCallbackData(widget.ButtonCallbackData{
 					ClickListener: onBackClicked,
@@ -99,15 +100,15 @@ var CreditsScreen = co.Define(func(props co.Properties, scope co.Scope) co.Insta
 		}))
 
 		co.WithChild("content-pane", co.New(mat.Container, func() {
-			co.WithData(mat.ContainerData{
-				BackgroundColor: opt.V(ui.RGB(0x11, 0x11, 0x11)),
-				Layout:          mat.NewFillLayout(),
-			})
-			co.WithLayoutData(mat.LayoutData{
+			co.WithLayoutData(layout.Data{
 				Top:    opt.V(0),
 				Bottom: opt.V(0),
 				Left:   opt.V(200),
 				Right:  opt.V(0),
+			})
+			co.WithData(mat.ContainerData{
+				BackgroundColor: opt.V(ui.RGB(0x11, 0x11, 0x11)),
+				Layout:          layout.Fill(),
 			})
 
 			co.WithChild("scroll-pane", co.New(widget.AutoScroll, func() {
@@ -119,14 +120,14 @@ var CreditsScreen = co.Define(func(props co.Properties, scope co.Scope) co.Insta
 				})
 
 				co.WithChild("credits-list", co.New(mat.Element, func() {
+					co.WithLayoutData(layout.Data{
+						GrowHorizontally: true,
+					})
 					co.WithData(mat.ElementData{
-						Layout: mat.NewVerticalLayout(mat.VerticalLayoutSettings{
-							ContentAlignment: mat.AlignmentCenter,
+						Layout: layout.Vertical(layout.VerticalSettings{
+							ContentAlignment: layout.HorizontalAlignmentCenter,
 							ContentSpacing:   20,
 						}),
-					})
-					co.WithLayoutData(mat.LayoutData{
-						GrowHorizontally: true,
 					})
 
 					co.WithChild("header-spacing", co.New(mat.Spacing, func() {
@@ -137,16 +138,16 @@ var CreditsScreen = co.Define(func(props co.Properties, scope co.Scope) co.Insta
 					}))
 
 					co.WithChild("logo-picture", co.New(mat.Picture, func() {
-						co.WithData(mat.PictureData{
-							BackgroundColor: opt.V(ui.Transparent()),
-							Image:           co.OpenImage(scope, "ui/images/logo.png"),
-							Mode:            mat.ImageModeFit,
-						})
-						co.WithLayoutData(mat.LayoutData{
+						co.WithLayoutData(layout.Data{
 							Width:            opt.V(512),
 							Height:           opt.V(128),
 							HorizontalCenter: opt.V(0),
 							VerticalCenter:   opt.V(0),
+						})
+						co.WithData(mat.PictureData{
+							BackgroundColor: opt.V(ui.Transparent()),
+							Image:           co.OpenImage(scope, "ui/images/logo.png"),
+							Mode:            mat.ImageModeFit,
 						})
 					}))
 

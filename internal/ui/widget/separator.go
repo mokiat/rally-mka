@@ -10,7 +10,7 @@ import (
 var Separator = co.DefineType(&separatorPresenter{})
 
 type separatorPresenter struct {
-	LayoutData mat.LayoutData `co:"layout"`
+	LayoutData any `co:"layout"`
 }
 
 var _ ui.ElementRenderHandler = (*separatorPresenter)(nil)

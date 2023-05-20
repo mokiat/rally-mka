@@ -31,7 +31,7 @@ type togglePresenter struct {
 	Scope        co.Scope           `co:"scope"`
 	Data         ToggleData         `co:"data"`
 	CallbackData ToggleCallbackData `co:"callback"`
-	LayoutData   mat.LayoutData     `co:"layout"`
+	LayoutData   any                `co:"layout"`
 
 	font *ui.Font
 }

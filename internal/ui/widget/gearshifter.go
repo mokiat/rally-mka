@@ -23,7 +23,7 @@ var _ ui.ElementRenderHandler = (*gearShifterPresenter)(nil)
 type gearShifterPresenter struct {
 	Scope      co.Scope        `co:"scope"`
 	Data       GearShifterData `co:"data"`
-	LayoutData mat.LayoutData  `co:"layout"`
+	LayoutData any             `co:"layout"`
 
 	driveImage   *ui.Image
 	reverseImage *ui.Image

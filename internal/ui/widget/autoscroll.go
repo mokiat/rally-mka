@@ -5,6 +5,7 @@ import (
 
 	"github.com/mokiat/lacking/ui"
 	co "github.com/mokiat/lacking/ui/component"
+	"github.com/mokiat/lacking/ui/layout"
 	"github.com/mokiat/lacking/ui/mat"
 )
 
@@ -64,7 +65,7 @@ func (e *scrollPaneEssence) Apply(element *ui.Element) {
 
 	contentBounds := element.ContentBounds()
 	for childElement := element.FirstChild(); childElement != nil; childElement = childElement.RightSibling() {
-		layoutConfig := mat.ElementLayoutData(childElement)
+		layoutConfig := layout.ElementData(childElement)
 
 		childSize := childElement.IdealSize()
 		if layoutConfig.Width.Specified {
