@@ -5,7 +5,7 @@ import (
 	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/lacking/ui"
 	co "github.com/mokiat/lacking/ui/component"
-	"github.com/mokiat/lacking/ui/mat"
+	"github.com/mokiat/lacking/ui/std"
 )
 
 type ButtonData struct {
@@ -17,68 +17,66 @@ var defaultButtonData = ButtonData{
 }
 
 type ButtonCallbackData struct {
-	ClickListener mat.ClickListener
+	OnClick std.OnActionFunc
 }
 
 var defaultButtonCallbackData = ButtonCallbackData{
-	ClickListener: func() {},
+	OnClick: func() {},
 }
 
-var Button = co.Define(func(props co.Properties, scope co.Scope) co.Instance {
-	var (
-		data         = co.GetOptionalData(props, defaultButtonData)
-		callbackData = co.GetOptionalCallbackData(props, defaultButtonCallbackData)
-	)
+var Button = co.Define(&buttonComponent{})
 
-	essence := co.UseState(func() *homeButtonEssence {
-		return &homeButtonEssence{
-			ButtonBaseEssence: mat.NewButtonBaseEssence(callbackData.ClickListener),
-		}
-	}).Get()
-	essence.SetOnClick(callbackData.ClickListener)
+type buttonComponent struct {
+	std.BaseButtonComponent
 
-	essence.font = co.OpenFont(scope, "mat:///roboto-bold.ttf")
-	essence.fontSize = 26
-	essence.text = data.Text
+	Scope      co.Scope      `co:"scope"`
+	Properties co.Properties `co:"properties"`
 
+	font     *ui.Font
+	fontSize float32
+	text     string
+}
+
+func (c *buttonComponent) OnUpsert() {
+	c.font = co.OpenFont(c.Scope, "ui:///roboto-bold.ttf")
+	c.fontSize = 26.0
+
+	data := co.GetOptionalData(c.Properties, defaultButtonData)
+	c.text = data.Text
+
+	callbackData := co.GetOptionalCallbackData(c.Properties, defaultButtonCallbackData)
+	c.SetOnClickFunc(callbackData.OnClick)
+}
+
+func (c *buttonComponent) Render() co.Instance {
 	padding := ui.Spacing{
 		Left:   5,
 		Right:  5,
 		Top:    2,
 		Bottom: 2,
 	}
+	txtSize := c.font.TextSize(c.text, c.fontSize)
 
-	txtSize := essence.font.TextSize(essence.text, essence.fontSize)
-
-	return co.New(mat.Element, func() {
-		co.WithData(mat.ElementData{
-			Essence: essence,
+	return co.New(std.Element, func() {
+		co.WithLayoutData(c.Properties.LayoutData())
+		co.WithData(std.ElementData{
+			Essence: c,
 			Padding: padding,
 			IdealSize: opt.V(
 				ui.NewSize(int(txtSize.X), int(txtSize.Y)).Grow(padding.Size()),
 			),
 		})
-		co.WithLayoutData(props.LayoutData())
-		co.WithChildren(props.Children())
+		co.WithChildren(c.Properties.Children())
 	})
-})
-
-var _ ui.ElementRenderHandler = (*homeButtonEssence)(nil)
-
-type homeButtonEssence struct {
-	*mat.ButtonBaseEssence
-	font     *ui.Font
-	fontSize float32
-	text     string
 }
 
-func (e *homeButtonEssence) OnRender(element *ui.Element, canvas *ui.Canvas) {
+func (c *buttonComponent) OnRender(element *ui.Element, canvas *ui.Canvas) {
 	var fontColor ui.Color
 
-	switch e.State() {
-	case mat.ButtonStateOver:
+	switch c.State() {
+	case std.ButtonStateOver:
 		fontColor = ui.RGB(0x00, 0xB2, 0x08)
-	case mat.ButtonStateDown:
+	case std.ButtonStateDown:
 		fontColor = ui.RGB(0x00, 0x33, 0x00)
 	default:
 		fontColor = ui.White()
@@ -87,12 +85,12 @@ func (e *homeButtonEssence) OnRender(element *ui.Element, canvas *ui.Canvas) {
 	contentArea := element.ContentBounds()
 	textPosition := contentArea.Position
 	canvas.Reset()
-	canvas.FillText(e.text, sprec.NewVec2(
+	canvas.FillText(c.text, sprec.NewVec2(
 		float32(textPosition.X),
 		float32(textPosition.Y),
 	), ui.Typography{
-		Font:  e.font,
-		Size:  e.fontSize,
+		Font:  c.font,
+		Size:  c.fontSize,
 		Color: fontColor,
 	})
 }

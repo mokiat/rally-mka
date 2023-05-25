@@ -13,7 +13,6 @@ import (
 	"github.com/mokiat/lacking/game"
 	"github.com/mokiat/lacking/game/asset"
 	"github.com/mokiat/lacking/ui"
-	"github.com/mokiat/lacking/ui/mat"
 	"github.com/mokiat/lacking/util/resource"
 	gameui "github.com/mokiat/rally-mka/internal/ui"
 	"github.com/mokiat/rally-mka/resources"
@@ -24,7 +23,7 @@ func runApplication() error {
 	if err != nil {
 		return fmt.Errorf("failed to initialize registry: %w", err)
 	}
-	resourceLocator := mat.WrappedResourceLocator(resource.NewFSLocator(resources.UI))
+	resourceLocator := ui.WrappedLocator(resource.NewFSLocator(resources.UI))
 	renderAPI := jsrender.NewAPI()
 	gameController := game.NewController(registry, renderAPI, jsgame.NewShaderCollection())
 	uiCfg := ui.NewConfig(resourceLocator, renderAPI, jsui.NewShaderCollection())

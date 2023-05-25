@@ -5,7 +5,7 @@ import (
 	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/lacking/ui"
 	co "github.com/mokiat/lacking/ui/component"
-	"github.com/mokiat/lacking/ui/mat"
+	"github.com/mokiat/lacking/ui/std"
 )
 
 type GearShifterSource interface {
@@ -16,11 +16,9 @@ type GearShifterData struct {
 	Source GearShifterSource
 }
 
-var GearShifter = co.DefineType(&gearShifterPresenter{})
+var GearShifter = co.Define(&gearShifterComponent{})
 
-var _ ui.ElementRenderHandler = (*gearShifterPresenter)(nil)
-
-type gearShifterPresenter struct {
+type gearShifterComponent struct {
 	Scope      co.Scope        `co:"scope"`
 	Data       GearShifterData `co:"data"`
 	LayoutData any             `co:"layout"`
@@ -30,32 +28,32 @@ type gearShifterPresenter struct {
 	source       GearShifterSource
 }
 
-func (p *gearShifterPresenter) OnCreate() {
-	p.source = p.Data.Source
-	p.driveImage = co.OpenImage(p.Scope, "ui/images/drive.png")
-	p.reverseImage = co.OpenImage(p.Scope, "ui/images/reverse.png")
+func (c *gearShifterComponent) OnCreate() {
+	c.source = c.Data.Source
+	c.driveImage = co.OpenImage(c.Scope, "ui/images/drive.png")
+	c.reverseImage = co.OpenImage(c.Scope, "ui/images/reverse.png")
 }
 
-func (p *gearShifterPresenter) Render() co.Instance {
-	return co.New(mat.Element, func() {
-		co.WithData(mat.ElementData{
-			Essence:   p,
+func (c *gearShifterComponent) Render() co.Instance {
+	return co.New(std.Element, func() {
+		co.WithData(std.ElementData{
+			Essence:   c,
 			IdealSize: opt.V(ui.NewSize(200, 150)),
 		})
-		co.WithLayoutData(p.LayoutData)
+		co.WithLayoutData(c.LayoutData)
 	})
 }
 
-func (p *gearShifterPresenter) OnRender(element *ui.Element, canvas *ui.Canvas) {
+func (c *gearShifterComponent) OnRender(element *ui.Element, canvas *ui.Canvas) {
 	bounds := element.Bounds()
 	area := sprec.Vec2{
 		X: float32(bounds.Width),
 		Y: float32(bounds.Height),
 	}
 
-	image := p.reverseImage
-	if p.source.IsDrive() {
-		image = p.driveImage
+	image := c.reverseImage
+	if c.source.IsDrive() {
+		image = c.driveImage
 	}
 
 	canvas.Reset()

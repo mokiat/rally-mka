@@ -13,23 +13,35 @@ import (
 
 func BootstrapApplication(window *ui.Window, gameController *game.Controller) {
 	engine := gameController.Engine()
-	resourceSet := engine.CreateResourceSet()
-	co.RegisterContext(global.Context{
+
+	scope := co.RootScope(window)
+	scope = co.TypedValueScope(scope, global.Context{
 		Engine:      engine,
-		ResourceSet: resourceSet,
+		ResourceSet: engine.CreateResourceSet(),
 	})
-	co.Initialize(window, co.New(Bootstrap, nil))
+	co.Initialize(scope, co.New(Bootstrap, nil))
 }
 
-var Bootstrap = co.Define(func(props co.Properties, scope co.Scope) co.Instance {
-	appModel := co.UseState(func() *model.Application {
-		return model.NewApplication()
-	})
-	appController := co.UseState(func() *controller.Application {
-		return controller.NewApplication(appModel.Get())
-	})
+var Bootstrap = co.Define(&bootstrapComponent{})
+
+type bootstrapComponent struct {
+	Scope      co.Scope      `co:"scope"`
+	Properties co.Properties `co:"properties"`
+
+	appModel      *model.Application
+	appController *controller.Application
+	childrenScope co.Scope
+}
+
+func (c *bootstrapComponent) OnCreate() {
+	c.appModel = model.NewApplication()
+	c.appController = controller.NewApplication(c.appModel)
+	c.childrenScope = mvc.UseReducer(c.Scope, c.appController)
+}
+
+func (c *bootstrapComponent) Render() co.Instance {
 	return co.New(view.Application, func() {
-		co.WithData(appModel.Get())
-		co.WithScope(mvc.UseReducer(scope, appController.Get()))
+		co.WithData(c.appModel)
+		co.WithScope(c.childrenScope)
 	})
-})
+}

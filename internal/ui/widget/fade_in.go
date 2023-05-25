@@ -8,7 +8,7 @@ import (
 	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/lacking/ui"
 	co "github.com/mokiat/lacking/ui/component"
-	"github.com/mokiat/lacking/ui/mat"
+	"github.com/mokiat/lacking/ui/std"
 )
 
 type FadeInData struct {
@@ -27,51 +27,52 @@ var defaultFadeInCallbackData = FadeInCallbackData{
 	OnFinished: func() {},
 }
 
-var FadeIn = co.Define(func(props co.Properties, scope co.Scope) co.Instance {
-	var (
-		data         = co.GetOptionalData(props, defaultFadeInData)
-		callbackData = co.GetOptionalCallbackData(props, defaultFadeInCallbackData)
-	)
+var FadeIn = co.Define(&fadeInComponent{})
 
-	essence := co.UseState(func() *fadeInEssence {
-		return &fadeInEssence{
-			lastTick: time.Now(),
-		}
-	}).Get()
-	essence.duration = data.Duration.Seconds()
-	essence.onFinished = callbackData.OnFinished
+type fadeInComponent struct {
+	Properties co.Properties `co:"properties"`
 
-	return co.New(mat.Element, func() {
-		co.WithData(co.ElementData{
-			Essence:   essence,
-			Focusable: opt.V(false),
-		})
-		co.WithLayoutData(props.LayoutData())
-		co.WithChildren(props.Children())
-	})
-})
+	opacity  float64
+	duration float64
+	lastTick time.Time
 
-var _ ui.ElementRenderHandler = (*fadeInEssence)(nil)
-
-type fadeInEssence struct {
-	opacity    float64
-	duration   float64
-	lastTick   time.Time
-	onFinished func()
+	onFinished std.OnActionFunc
 }
 
-func (e *fadeInEssence) OnRender(element *ui.Element, canvas *ui.Canvas) {
-	currentTime := time.Now()
-	elapsedSeconds := currentTime.Sub(e.lastTick).Seconds()
-	e.lastTick = currentTime
+func (c *fadeInComponent) OnCreate() {
+	c.lastTick = time.Now()
+	c.opacity = 0.0
 
-	wasRunning := e.opacity < 1.0
-	e.opacity += elapsedSeconds / e.duration
-	isRunning := e.opacity < 1.0
-	e.opacity = dprec.Clamp(e.opacity, 0.0, 1.0)
+	data := co.GetOptionalData(c.Properties, defaultFadeInData)
+	c.duration = data.Duration.Seconds()
+
+	callbackData := co.GetOptionalCallbackData(c.Properties, defaultFadeInCallbackData)
+	c.onFinished = callbackData.OnFinished
+}
+
+func (c *fadeInComponent) Render() co.Instance {
+	return co.New(std.Element, func() {
+		co.WithLayoutData(c.Properties.LayoutData())
+		co.WithData(std.ElementData{
+			Essence:   c,
+			Focusable: opt.V(false),
+		})
+		co.WithChildren(c.Properties.Children())
+	})
+}
+
+func (c *fadeInComponent) OnRender(element *ui.Element, canvas *ui.Canvas) {
+	currentTime := time.Now()
+	elapsedSeconds := currentTime.Sub(c.lastTick).Seconds()
+	c.lastTick = currentTime
+
+	wasRunning := c.opacity < 1.0
+	c.opacity += elapsedSeconds / c.duration
+	isRunning := c.opacity < 1.0
+	c.opacity = dprec.Clamp(c.opacity, 0.0, 1.0)
 
 	if wasRunning && !isRunning {
-		e.onFinished()
+		c.onFinished()
 	}
 
 	bounds := element.Bounds()
@@ -82,11 +83,11 @@ func (e *fadeInEssence) OnRender(element *ui.Element, canvas *ui.Canvas) {
 		sprec.NewVec2(float32(bounds.Width), float32(bounds.Height)),
 	)
 	canvas.Fill(ui.Fill{
-		Color: ui.RGBA(0, 0, 0, 255-uint8(e.opacity*255)),
+		Color: ui.RGBA(0, 0, 0, 255-uint8(c.opacity*255)),
 	})
 
 	// Force redraw.
-	if e.opacity < 1.0 {
+	if c.opacity < 1.0 {
 		element.Invalidate()
 	}
 }

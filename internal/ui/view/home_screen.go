@@ -11,8 +11,8 @@ import (
 	"github.com/mokiat/lacking/ui"
 	co "github.com/mokiat/lacking/ui/component"
 	"github.com/mokiat/lacking/ui/layout"
-	"github.com/mokiat/lacking/ui/mat"
 	"github.com/mokiat/lacking/ui/mvc"
+	"github.com/mokiat/lacking/ui/std"
 	"github.com/mokiat/rally-mka/internal/game/data"
 	"github.com/mokiat/rally-mka/internal/ui/action"
 	"github.com/mokiat/rally-mka/internal/ui/global"
@@ -21,7 +21,7 @@ import (
 	"github.com/x448/float16"
 )
 
-var HomeScreen = co.DefineType(&HomeScreenPresenter{})
+var HomeScreen = co.Define(&homeScreenComponent{})
 
 type HomeScreenData struct {
 	Loading *model.Loading
@@ -29,7 +29,7 @@ type HomeScreenData struct {
 	Play    *model.Play
 }
 
-type HomeScreenPresenter struct {
+type homeScreenComponent struct {
 	Scope      co.Scope       `co:"scope"`
 	Data       HomeScreenData `co:"data"`
 	Invalidate func()         `co:"invalidate"`
@@ -45,74 +45,73 @@ type HomeScreenPresenter struct {
 	showOptions bool
 }
 
-func (p *HomeScreenPresenter) OnCreate() {
-	var globalContext global.Context
-	co.InjectContext(&globalContext)
+func (c *homeScreenComponent) OnCreate() {
+	globalContext := co.TypedValue[global.Context](c.Scope)
 
-	p.engine = globalContext.Engine
-	p.resourceSet = globalContext.ResourceSet
-	p.loadingModel = p.Data.Loading
-	p.homeModel = p.Data.Home
-	p.playModel = p.Data.Play
+	c.engine = globalContext.Engine
+	c.resourceSet = globalContext.ResourceSet
+	c.loadingModel = c.Data.Loading
+	c.homeModel = c.Data.Home
+	c.playModel = c.Data.Play
 
 	// TODO: Figure out an alternative way for TypeComponents
-	mvc.UseBinding(p.homeModel, func(ch mvc.Change) bool {
+	mvc.UseBinding(c.homeModel, func(ch mvc.Change) bool {
 		return mvc.IsChange(ch, model.HomeChange)
 	})
 
-	p.scene = p.homeModel.Scene()
-	if p.scene == nil {
-		p.scene = p.createScene()
-		p.homeModel.SetScene(p.scene)
-		p.onDayClicked()
+	c.scene = c.homeModel.Scene()
+	if c.scene == nil {
+		c.scene = c.createScene()
+		c.homeModel.SetScene(c.scene)
+		c.onDayClicked()
 	}
-	p.engine.SetActiveScene(p.scene.Scene)
+	c.engine.SetActiveScene(c.scene.Scene)
 }
 
-func (p *HomeScreenPresenter) OnDelete() {
-	p.engine.SetActiveScene(nil)
+func (c *homeScreenComponent) OnDelete() {
+	c.engine.SetActiveScene(nil)
 }
 
-func (p *HomeScreenPresenter) Render() co.Instance {
-	controller := p.homeModel.Controller()
-	environment := p.homeModel.Environment()
+func (c *homeScreenComponent) Render() co.Instance {
+	controller := c.homeModel.Controller()
+	environment := c.homeModel.Environment()
 
-	return co.New(mat.Element, func() {
-		co.WithData(mat.ElementData{
+	return co.New(std.Element, func() {
+		co.WithData(std.ElementData{
 			Layout: layout.Anchor(),
 		})
 
-		co.WithChild("pane", co.New(mat.Container, func() {
+		co.WithChild("pane", co.New(std.Container, func() {
 			co.WithLayoutData(layout.Data{
 				Top:    opt.V(0),
 				Bottom: opt.V(0),
 				Left:   opt.V(0),
 				Width:  opt.V(320),
 			})
-			co.WithData(mat.ContainerData{
+			co.WithData(std.ContainerData{
 				BackgroundColor: opt.V(ui.RGBA(0, 0, 0, 192)),
 				Layout:          layout.Anchor(),
 			})
 
-			co.WithChild("holder", co.New(mat.Element, func() {
+			co.WithChild("holder", co.New(std.Element, func() {
 				co.WithLayoutData(layout.Data{
 					Left:           opt.V(75),
 					VerticalCenter: opt.V(0),
 				})
-				co.WithData(mat.ElementData{
+				co.WithData(std.ElementData{
 					Layout: layout.Vertical(layout.VerticalSettings{
 						ContentAlignment: layout.HorizontalAlignmentLeft,
 						ContentSpacing:   15,
 					}),
 				})
 
-				if p.showOptions {
+				if c.showOptions {
 					co.WithChild("start-button", co.New(widget.Button, func() {
 						co.WithData(widget.ButtonData{
 							Text: "Start",
 						})
 						co.WithCallbackData(widget.ButtonCallbackData{
-							ClickListener: p.onStartClicked,
+							OnClick: c.onStartClicked,
 						})
 					}))
 
@@ -121,7 +120,7 @@ func (p *HomeScreenPresenter) Render() co.Instance {
 							Text: "Back",
 						})
 						co.WithCallbackData(widget.ButtonCallbackData{
-							ClickListener: p.onBackClicked,
+							OnClick: c.onBackClicked,
 						})
 					}))
 				} else {
@@ -130,7 +129,7 @@ func (p *HomeScreenPresenter) Render() co.Instance {
 							Text: "Play",
 						})
 						co.WithCallbackData(widget.ButtonCallbackData{
-							ClickListener: p.onPlayClicked,
+							OnClick: c.onPlayClicked,
 						})
 					}))
 
@@ -139,7 +138,7 @@ func (p *HomeScreenPresenter) Render() co.Instance {
 							Text: "Licenses",
 						})
 						co.WithCallbackData(widget.ButtonCallbackData{
-							ClickListener: p.onLicensesClicked,
+							OnClick: c.onLicensesClicked,
 						})
 					}))
 
@@ -148,7 +147,7 @@ func (p *HomeScreenPresenter) Render() co.Instance {
 							Text: "Credits",
 						})
 						co.WithCallbackData(widget.ButtonCallbackData{
-							ClickListener: p.onCreditsClicked,
+							OnClick: c.onCreditsClicked,
 						})
 					}))
 
@@ -157,40 +156,40 @@ func (p *HomeScreenPresenter) Render() co.Instance {
 							Text: "Exit",
 						})
 						co.WithCallbackData(widget.ButtonCallbackData{
-							ClickListener: p.onExitClicked,
+							OnClick: c.onExitClicked,
 						})
 					}))
 				}
 			}))
 		}))
 
-		if p.showOptions {
-			co.WithChild("options", co.New(mat.Container, func() {
+		if c.showOptions {
+			co.WithChild("options", co.New(std.Container, func() {
 				co.WithLayoutData(layout.Data{
 					Top:    opt.V(0),
 					Bottom: opt.V(0),
 					Left:   opt.V(320),
 					Right:  opt.V(0),
 				})
-				co.WithData(mat.ContainerData{
+				co.WithData(std.ContainerData{
 					BackgroundColor: opt.V(ui.RGBA(0, 0, 0, 128)),
 					Layout:          layout.Anchor(),
 				})
 
-				co.WithChild("options-pane", co.New(mat.Element, func() {
+				co.WithChild("options-pane", co.New(std.Element, func() {
 					co.WithLayoutData(layout.Data{
 						HorizontalCenter: opt.V(0),
 						VerticalCenter:   opt.V(0),
 					})
-					co.WithData(mat.ElementData{
+					co.WithData(std.ElementData{
 						Layout: layout.Vertical(layout.VerticalSettings{
 							ContentAlignment: layout.HorizontalAlignmentCenter,
 							ContentSpacing:   20,
 						}),
 					})
 
-					co.WithChild("controller-toggles", co.New(mat.Element, func() {
-						co.WithData(mat.ElementData{
+					co.WithChild("controller-toggles", co.New(std.Element, func() {
+						co.WithData(std.ElementData{
 							Layout: layout.Horizontal(layout.HorizontalSettings{
 								ContentAlignment: layout.VerticalAlignmentCenter,
 								ContentSpacing:   40,
@@ -203,7 +202,7 @@ func (p *HomeScreenPresenter) Render() co.Instance {
 								Selected: controller == data.ControllerKeyboard,
 							})
 							co.WithCallbackData(widget.ToggleCallbackData{
-								ClickListener: p.onKeyboardClicked,
+								OnToggle: c.onKeyboardClicked,
 							})
 						}))
 
@@ -213,7 +212,7 @@ func (p *HomeScreenPresenter) Render() co.Instance {
 								Selected: controller == data.ControllerMouse,
 							})
 							co.WithCallbackData(widget.ToggleCallbackData{
-								ClickListener: p.onMouseClicked,
+								OnToggle: c.onMouseClicked,
 							})
 						}))
 
@@ -223,7 +222,7 @@ func (p *HomeScreenPresenter) Render() co.Instance {
 								Selected: controller == data.ControllerGamepad,
 							})
 							co.WithCallbackData(widget.ToggleCallbackData{
-								ClickListener: p.onGamepadClicked,
+								OnToggle: c.onGamepadClicked,
 							})
 						}))
 					}))
@@ -238,25 +237,25 @@ func (p *HomeScreenPresenter) Render() co.Instance {
 						imageURL = "ui/images/gamepad.png"
 					}
 
-					co.WithChild("controller-image", co.New(mat.Picture, func() {
+					co.WithChild("controller-image", co.New(std.Picture, func() {
 						co.WithLayoutData(layout.Data{
 							Width:  opt.V(600),
 							Height: opt.V(300),
 						})
-						co.WithData(mat.PictureData{
+						co.WithData(std.PictureData{
 							BackgroundColor: opt.V(ui.RGBA(0x00, 0x00, 0x00, 0x9A)),
-							Image:           co.OpenImage(p.Scope, imageURL),
+							Image:           co.OpenImage(c.Scope, imageURL),
 							ImageColor:      opt.V(ui.White()),
-							Mode:            mat.ImageModeStretch,
+							Mode:            std.ImageModeStretch,
 						})
 					}))
 
-					co.WithChild("controller-text", co.New(mat.Label, func() {
-						co.WithData(mat.LabelData{
-							Font:      co.OpenFont(p.Scope, "mat:///roboto-regular.ttf"),
+					co.WithChild("controller-text", co.New(std.Label, func() {
+						co.WithData(std.LabelData{
+							Font:      co.OpenFont(c.Scope, "ui:///roboto-regular.ttf"),
 							FontSize:  opt.V(float32(24.0)),
 							FontColor: opt.V(ui.White()),
-							Text:      p.controllerDescription(controller),
+							Text:      c.controllerDescription(controller),
 						})
 					}))
 
@@ -267,8 +266,8 @@ func (p *HomeScreenPresenter) Render() co.Instance {
 						})
 					}))
 
-					co.WithChild("environment-toggles", co.New(mat.Element, func() {
-						co.WithData(mat.ElementData{
+					co.WithChild("environment-toggles", co.New(std.Element, func() {
+						co.WithData(std.ElementData{
 							Layout: layout.Horizontal(layout.HorizontalSettings{
 								ContentAlignment: layout.VerticalAlignmentCenter,
 								ContentSpacing:   40,
@@ -281,7 +280,7 @@ func (p *HomeScreenPresenter) Render() co.Instance {
 								Selected: environment == data.EnvironmentDay,
 							})
 							co.WithCallbackData(widget.ToggleCallbackData{
-								ClickListener: p.onDayClicked,
+								OnToggle: c.onDayClicked,
 							})
 						}))
 
@@ -291,17 +290,17 @@ func (p *HomeScreenPresenter) Render() co.Instance {
 								Selected: environment == data.EnvironmentNight,
 							})
 							co.WithCallbackData(widget.ToggleCallbackData{
-								ClickListener: p.onNightClicked,
+								OnToggle: c.onNightClicked,
 							})
 						}))
 					}))
 
-					co.WithChild("environment-text", co.New(mat.Label, func() {
-						co.WithData(mat.LabelData{
-							Font:      co.OpenFont(p.Scope, "mat:///roboto-regular.ttf"),
+					co.WithChild("environment-text", co.New(std.Label, func() {
+						co.WithData(std.LabelData{
+							Font:      co.OpenFont(c.Scope, "ui:///roboto-regular.ttf"),
 							FontSize:  opt.V(float32(24.0)),
 							FontColor: opt.V(ui.White()),
-							Text:      p.environmentDescription(environment),
+							Text:      c.environmentDescription(environment),
 						})
 					}))
 				}))
@@ -310,25 +309,25 @@ func (p *HomeScreenPresenter) Render() co.Instance {
 	})
 }
 
-func (p *HomeScreenPresenter) createScene() *model.HomeScene {
+func (c *homeScreenComponent) createScene() *model.HomeScene {
 	result := &model.HomeScene{}
 
-	promise := p.homeModel.Data()
+	promise := c.homeModel.Data()
 	sceneData, err := promise.Get()
 	if err != nil {
 		log.Error("ERROR: %v", err) // TODO: Go to error screen
 		return nil
 	}
 
-	scene := p.engine.CreateScene()
+	scene := c.engine.CreateScene()
 	scene.Initialize(sceneData.Scene)
 	result.Scene = scene
 
-	camera := p.createCamera(scene.Graphics())
+	camera := c.createCamera(scene.Graphics())
 	scene.Graphics().SetActiveCamera(camera)
 
 	result.DaySkyColor = sprec.NewVec3(20.0, 25.0, 30.0)
-	result.DayAmbientLight = p.createDayAmbientLight(scene.Graphics())
+	result.DayAmbientLight = c.createDayAmbientLight(scene.Graphics())
 	result.DayDirectionalLight = scene.Graphics().CreateDirectionalLight(graphics.DirectionalLightInfo{
 		EmitColor: dprec.NewVec3(10, 10, 6),
 		EmitRange: 16000, // FIXME
@@ -343,7 +342,7 @@ func (p *HomeScreenPresenter) createScene() *model.HomeScene {
 	dayDirectionalLightNode.SetAttachable(result.DayDirectionalLight)
 
 	result.NightSkyColor = sprec.NewVec3(0.01, 0.01, 0.01)
-	result.NightAmbientLight = p.createNightAmbientLight(scene.Graphics())
+	result.NightAmbientLight = c.createNightAmbientLight(scene.Graphics())
 	result.NightSpotLight = scene.Graphics().CreateSpotLight(graphics.SpotLightInfo{
 		EmitColor:          dprec.NewVec3(5000.0, 5000.0, 7500.0),
 		EmitOuterConeAngle: dprec.Degrees(50),
@@ -375,7 +374,7 @@ func (p *HomeScreenPresenter) createScene() *model.HomeScene {
 	return result
 }
 
-func (p *HomeScreenPresenter) createCamera(scene *graphics.Scene) *graphics.Camera {
+func (c *homeScreenComponent) createCamera(scene *graphics.Scene) *graphics.Camera {
 	result := scene.CreateCamera()
 	result.SetFoVMode(graphics.FoVModeHorizontalPlus)
 	result.SetFoV(sprec.Degrees(66))
@@ -386,14 +385,14 @@ func (p *HomeScreenPresenter) createCamera(scene *graphics.Scene) *graphics.Came
 	return result
 }
 
-func (p *HomeScreenPresenter) createDayAmbientLight(scene *graphics.Scene) *graphics.AmbientLight {
+func (c *homeScreenComponent) createDayAmbientLight(scene *graphics.Scene) *graphics.AmbientLight {
 	reflectionData := gblob.LittleEndianBlock(make([]byte, 4*2))
 	reflectionData.SetUint16(0, float16.Fromfloat32(20.0).Bits())
 	reflectionData.SetUint16(2, float16.Fromfloat32(25.0).Bits())
 	reflectionData.SetUint16(4, float16.Fromfloat32(30.0).Bits())
 	reflectionData.SetUint16(6, float16.Fromfloat32(1.0).Bits())
 
-	reflectionTexture := p.engine.Graphics().CreateCubeTexture(graphics.CubeTextureDefinition{
+	reflectionTexture := c.engine.Graphics().CreateCubeTexture(graphics.CubeTextureDefinition{
 		Dimension:       1,
 		Filtering:       graphics.FilterNearest,
 		InternalFormat:  graphics.InternalFormatRGBA16F,
@@ -408,7 +407,7 @@ func (p *HomeScreenPresenter) createDayAmbientLight(scene *graphics.Scene) *grap
 		BottomSideData:  reflectionData,
 	})
 
-	refractionTexture := p.engine.Graphics().CreateCubeTexture(graphics.CubeTextureDefinition{
+	refractionTexture := c.engine.Graphics().CreateCubeTexture(graphics.CubeTextureDefinition{
 		Dimension:       1,
 		Filtering:       graphics.FilterNearest,
 		InternalFormat:  graphics.InternalFormatRGBA16F,
@@ -432,14 +431,14 @@ func (p *HomeScreenPresenter) createDayAmbientLight(scene *graphics.Scene) *grap
 	})
 }
 
-func (p *HomeScreenPresenter) createNightAmbientLight(scene *graphics.Scene) *graphics.AmbientLight {
+func (c *homeScreenComponent) createNightAmbientLight(scene *graphics.Scene) *graphics.AmbientLight {
 	reflectionData := gblob.LittleEndianBlock(make([]byte, 4*2))
 	reflectionData.SetUint16(0, float16.Fromfloat32(0.1).Bits())
 	reflectionData.SetUint16(2, float16.Fromfloat32(0.1).Bits())
 	reflectionData.SetUint16(4, float16.Fromfloat32(0.1).Bits())
 	reflectionData.SetUint16(6, float16.Fromfloat32(1.0).Bits())
 
-	reflectionTexture := p.engine.Graphics().CreateCubeTexture(graphics.CubeTextureDefinition{
+	reflectionTexture := c.engine.Graphics().CreateCubeTexture(graphics.CubeTextureDefinition{
 		Dimension:       1,
 		Filtering:       graphics.FilterNearest,
 		InternalFormat:  graphics.InternalFormatRGBA16F,
@@ -454,7 +453,7 @@ func (p *HomeScreenPresenter) createNightAmbientLight(scene *graphics.Scene) *gr
 		BottomSideData:  reflectionData,
 	})
 
-	refractionTexture := p.engine.Graphics().CreateCubeTexture(graphics.CubeTextureDefinition{
+	refractionTexture := c.engine.Graphics().CreateCubeTexture(graphics.CubeTextureDefinition{
 		Dimension:       1,
 		Filtering:       graphics.FilterNearest,
 		InternalFormat:  graphics.InternalFormatRGBA16F,
@@ -478,7 +477,7 @@ func (p *HomeScreenPresenter) createNightAmbientLight(scene *graphics.Scene) *gr
 	})
 }
 
-func (p *HomeScreenPresenter) controllerDescription(controller data.Controller) string {
+func (c *homeScreenComponent) controllerDescription(controller data.Controller) string {
 	switch controller {
 	case data.ControllerKeyboard:
 		return "Keyboard: Uses assists. Provides an average challenge."
@@ -491,7 +490,7 @@ func (p *HomeScreenPresenter) controllerDescription(controller data.Controller) 
 	}
 }
 
-func (p *HomeScreenPresenter) environmentDescription(environment data.Environment) string {
+func (c *homeScreenComponent) environmentDescription(environment data.Environment) string {
 	switch environment {
 	case data.EnvironmentDay:
 		return "Day: A good starting point to learn the track."
@@ -502,78 +501,78 @@ func (p *HomeScreenPresenter) environmentDescription(environment data.Environmen
 	}
 }
 
-func (p *HomeScreenPresenter) onKeyboardClicked() {
-	p.homeModel.SetController(data.ControllerKeyboard)
+func (c *homeScreenComponent) onKeyboardClicked() {
+	c.homeModel.SetController(data.ControllerKeyboard)
 }
 
-func (p *HomeScreenPresenter) onMouseClicked() {
-	p.homeModel.SetController(data.ControllerMouse)
+func (c *homeScreenComponent) onMouseClicked() {
+	c.homeModel.SetController(data.ControllerMouse)
 }
 
-func (p *HomeScreenPresenter) onGamepadClicked() {
-	p.homeModel.SetController(data.ControllerGamepad)
+func (c *homeScreenComponent) onGamepadClicked() {
+	c.homeModel.SetController(data.ControllerGamepad)
 }
 
-func (p *HomeScreenPresenter) onDayClicked() {
-	p.homeModel.SetEnvironment(data.EnvironmentDay)
+func (c *homeScreenComponent) onDayClicked() {
+	c.homeModel.SetEnvironment(data.EnvironmentDay)
 
 	// Disable night lighting
-	p.scene.NightAmbientLight.SetActive(false)
-	p.scene.NightSpotLight.SetActive(false)
+	c.scene.NightAmbientLight.SetActive(false)
+	c.scene.NightSpotLight.SetActive(false)
 
 	// Enable day lighting
-	p.scene.Scene.Graphics().Sky().SetBackgroundColor(p.scene.DaySkyColor)
-	p.scene.DayAmbientLight.SetActive(true)
-	p.scene.DayDirectionalLight.SetActive(true)
+	c.scene.Scene.Graphics().Sky().SetBackgroundColor(c.scene.DaySkyColor)
+	c.scene.DayAmbientLight.SetActive(true)
+	c.scene.DayDirectionalLight.SetActive(true)
 }
 
-func (p *HomeScreenPresenter) onNightClicked() {
-	p.homeModel.SetEnvironment(data.EnvironmentNight)
+func (c *homeScreenComponent) onNightClicked() {
+	c.homeModel.SetEnvironment(data.EnvironmentNight)
 
 	// Disable day lighting
-	p.scene.DayAmbientLight.SetActive(false)
-	p.scene.DayDirectionalLight.SetActive(false)
+	c.scene.DayAmbientLight.SetActive(false)
+	c.scene.DayDirectionalLight.SetActive(false)
 
 	// Enable night lighting
-	p.scene.Scene.Graphics().Sky().SetBackgroundColor(p.scene.NightSkyColor)
-	p.scene.NightAmbientLight.SetActive(true)
-	p.scene.NightSpotLight.SetActive(true)
+	c.scene.Scene.Graphics().Sky().SetBackgroundColor(c.scene.NightSkyColor)
+	c.scene.NightAmbientLight.SetActive(true)
+	c.scene.NightSpotLight.SetActive(true)
 }
 
-func (p *HomeScreenPresenter) onStartClicked() {
-	promise := data.LoadPlayData(p.engine, p.resourceSet, p.homeModel.Environment(), p.homeModel.Controller())
-	p.playModel.SetData(promise)
+func (c *homeScreenComponent) onStartClicked() {
+	promise := data.LoadPlayData(c.engine, c.resourceSet, c.homeModel.Environment(), c.homeModel.Controller())
+	c.playModel.SetData(promise)
 
-	p.loadingModel.SetPromise(promise)
-	p.loadingModel.SetNextViewName(model.ViewNamePlay)
-	mvc.Dispatch(p.Scope, action.ChangeView{
+	c.loadingModel.SetPromise(promise)
+	c.loadingModel.SetNextViewName(model.ViewNamePlay)
+	mvc.Dispatch(c.Scope, action.ChangeView{
 		ViewName: model.ViewNameLoading,
 	})
 }
 
-func (p *HomeScreenPresenter) onBackClicked() {
+func (c *homeScreenComponent) onBackClicked() {
 	// TODO: Add a `Property` concept instead of manual Invalidate.
-	p.showOptions = false
-	p.Invalidate()
+	c.showOptions = false
+	c.Invalidate()
 }
 
-func (p *HomeScreenPresenter) onPlayClicked() {
-	p.showOptions = true
-	p.Invalidate()
+func (c *homeScreenComponent) onPlayClicked() {
+	c.showOptions = true
+	c.Invalidate()
 }
 
-func (p *HomeScreenPresenter) onLicensesClicked() {
-	mvc.Dispatch(p.Scope, action.ChangeView{
+func (c *homeScreenComponent) onLicensesClicked() {
+	mvc.Dispatch(c.Scope, action.ChangeView{
 		ViewName: model.ViewNameLicenses,
 	})
 }
 
-func (p *HomeScreenPresenter) onCreditsClicked() {
-	mvc.Dispatch(p.Scope, action.ChangeView{
+func (c *homeScreenComponent) onCreditsClicked() {
+	mvc.Dispatch(c.Scope, action.ChangeView{
 		ViewName: model.ViewNameCredits,
 	})
 }
 
-func (p *HomeScreenPresenter) onExitClicked() {
-	co.Window(p.Scope).Close()
+func (c *homeScreenComponent) onExitClicked() {
+	co.Window(c.Scope).Close()
 }
