@@ -20,8 +20,7 @@ type SpeedometerData struct {
 var Speedometer = co.Define(&speedometerComponent{})
 
 type speedometerComponent struct {
-	Scope      co.Scope      `co:"scope"`
-	Properties co.Properties `co:"properties"`
+	co.BaseComponent
 
 	speedometerImage *ui.Image
 	needleImage      *ui.Image
@@ -31,22 +30,22 @@ type speedometerComponent struct {
 }
 
 func (c *speedometerComponent) OnUpsert() {
-	c.speedometerImage = co.OpenImage(c.Scope, "ui/images/speedometer.png")
-	c.needleImage = co.OpenImage(c.Scope, "ui/images/needle.png")
+	c.speedometerImage = co.OpenImage(c.Scope(), "ui/images/speedometer.png")
+	c.needleImage = co.OpenImage(c.Scope(), "ui/images/needle.png")
 
-	data := co.GetData[SpeedometerData](c.Properties)
+	data := co.GetData[SpeedometerData](c.Properties())
 	c.maxVelocity = data.MaxVelocity
 	c.source = data.Source
 }
 
 func (c *speedometerComponent) Render() co.Instance {
 	return co.New(std.Element, func() {
-		co.WithLayoutData(c.Properties.LayoutData())
+		co.WithLayoutData(c.Properties().LayoutData())
 		co.WithData(std.ElementData{
 			Essence:   c,
 			IdealSize: opt.V(ui.NewSize(300, 150)),
 		})
-		co.WithChildren(c.Properties.Children())
+		co.WithChildren(c.Properties().Children())
 	})
 }
 

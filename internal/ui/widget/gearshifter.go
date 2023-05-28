@@ -19,9 +19,7 @@ type GearShifterData struct {
 var GearShifter = co.Define(&gearShifterComponent{})
 
 type gearShifterComponent struct {
-	Scope      co.Scope        `co:"scope"`
-	Data       GearShifterData `co:"data"`
-	LayoutData any             `co:"layout"`
+	co.BaseComponent
 
 	driveImage   *ui.Image
 	reverseImage *ui.Image
@@ -29,9 +27,10 @@ type gearShifterComponent struct {
 }
 
 func (c *gearShifterComponent) OnCreate() {
-	c.source = c.Data.Source
-	c.driveImage = co.OpenImage(c.Scope, "ui/images/drive.png")
-	c.reverseImage = co.OpenImage(c.Scope, "ui/images/reverse.png")
+	data := co.GetData[GearShifterData](c.Properties())
+	c.source = data.Source
+	c.driveImage = co.OpenImage(c.Scope(), "ui/images/drive.png")
+	c.reverseImage = co.OpenImage(c.Scope(), "ui/images/reverse.png")
 }
 
 func (c *gearShifterComponent) Render() co.Instance {
@@ -40,7 +39,7 @@ func (c *gearShifterComponent) Render() co.Instance {
 			Essence:   c,
 			IdealSize: opt.V(ui.NewSize(200, 150)),
 		})
-		co.WithLayoutData(c.LayoutData)
+		co.WithLayoutData(c.Properties().LayoutData())
 	})
 }
 

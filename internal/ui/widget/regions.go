@@ -26,8 +26,7 @@ type RegionBlockData struct {
 var RegionBlock = co.Define(&regionBlockComponent{})
 
 type regionBlockComponent struct {
-	Scope      co.Scope      `co:"scope"`
-	Properties co.Properties `co:"properties"`
+	co.BaseComponent
 
 	font *ui.Font
 
@@ -38,14 +37,14 @@ type regionBlockComponent struct {
 }
 
 func (c *regionBlockComponent) OnCreate() {
-	c.font = co.OpenFont(c.Scope, "ui:///roboto-bold.ttf")
+	c.font = co.OpenFont(c.Scope(), "ui:///roboto-bold.ttf")
 	c.selectedNodeID = metrics.NilParentID
 	c.placement = make(map[int]regionPlacement)
 	c.graph = make(map[int]regionNode)
 }
 
 func (c *regionBlockComponent) OnUpsert() {
-	data := co.GetData[RegionBlockData](c.Properties)
+	data := co.GetData[RegionBlockData](c.Properties())
 
 	c.maxDepth = 0
 	for _, region := range data.Regions {
@@ -58,7 +57,7 @@ func (c *regionBlockComponent) OnUpsert() {
 
 func (c *regionBlockComponent) Render() co.Instance {
 	return co.New(std.Element, func() {
-		co.WithLayoutData(c.Properties.LayoutData())
+		co.WithLayoutData(c.Properties().LayoutData())
 		co.WithData(std.ElementData{
 			Essence: c,
 			IdealSize: opt.V(ui.Size{

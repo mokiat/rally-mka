@@ -28,7 +28,7 @@ var defaultAutoScrollCallbackData = AutoScrollCallbackData{
 var AutoScroll = co.Define(&autoScrollComponent{})
 
 type autoScrollComponent struct {
-	Properties co.Properties `co:"properties"`
+	co.BaseComponent
 
 	lastTick   time.Time
 	offsetY    float64
@@ -42,21 +42,21 @@ func (c *autoScrollComponent) OnCreate() {
 	c.lastTick = time.Now()
 	c.offsetY = 0.0
 
-	data := co.GetOptionalData(c.Properties, defaultAutoScrollData)
+	data := co.GetOptionalData(c.Properties(), defaultAutoScrollData)
 	c.velocity = data.Velocity
 
-	callbackData := co.GetOptionalCallbackData(c.Properties, defaultAutoScrollCallbackData)
+	callbackData := co.GetOptionalCallbackData(c.Properties(), defaultAutoScrollCallbackData)
 	c.onFinished = callbackData.OnFinished
 }
 
 func (c *autoScrollComponent) Render() co.Instance {
 	return co.New(std.Element, func() {
-		co.WithLayoutData(c.Properties.LayoutData())
+		co.WithLayoutData(c.Properties().LayoutData())
 		co.WithData(std.ElementData{
 			Essence: c,
 			Layout:  c,
 		})
-		co.WithChildren(c.Properties.Children())
+		co.WithChildren(c.Properties().Children())
 	})
 }
 

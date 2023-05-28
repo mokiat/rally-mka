@@ -20,16 +20,15 @@ type LoadingScreenData struct {
 var LoadingScreen = co.Define(&loadingScreenComponent{})
 
 type loadingScreenComponent struct {
-	Scope      co.Scope      `co:"scope"`
-	Properties co.Properties `co:"properties"`
+	co.BaseComponent
 }
 
 func (c *loadingScreenComponent) OnCreate() {
-	screenData := co.GetData[LoadingScreenData](c.Properties)
+	screenData := co.GetData[LoadingScreenData](c.Properties())
 	loadingModel := screenData.Model
 	loadingModel.Promise().OnReady(func() {
 		// TODO: Handle errors!
-		mvc.Dispatch(c.Scope, action.ChangeView{
+		mvc.Dispatch(c.Scope(), action.ChangeView{
 			ViewName: loadingModel.NextViewName(),
 		})
 	})
@@ -55,7 +54,7 @@ func (c *loadingScreenComponent) Render() co.Instance {
 				Bottom: opt.V(40),
 			})
 			co.WithData(std.LabelData{
-				Font:      co.OpenFont(c.Scope, "ui:///roboto-italic.ttf"),
+				Font:      co.OpenFont(c.Scope(), "ui:///roboto-italic.ttf"),
 				FontSize:  opt.V(float32(32)),
 				FontColor: opt.V(theme.PrimaryColor),
 				Text:      "Loading...",

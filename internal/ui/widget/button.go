@@ -27,10 +27,8 @@ var defaultButtonCallbackData = ButtonCallbackData{
 var Button = co.Define(&buttonComponent{})
 
 type buttonComponent struct {
+	co.BaseComponent
 	std.BaseButtonComponent
-
-	Scope      co.Scope      `co:"scope"`
-	Properties co.Properties `co:"properties"`
 
 	font     *ui.Font
 	fontSize float32
@@ -38,13 +36,13 @@ type buttonComponent struct {
 }
 
 func (c *buttonComponent) OnUpsert() {
-	c.font = co.OpenFont(c.Scope, "ui:///roboto-bold.ttf")
+	c.font = co.OpenFont(c.Scope(), "ui:///roboto-bold.ttf")
 	c.fontSize = 26.0
 
-	data := co.GetOptionalData(c.Properties, defaultButtonData)
+	data := co.GetOptionalData(c.Properties(), defaultButtonData)
 	c.text = data.Text
 
-	callbackData := co.GetOptionalCallbackData(c.Properties, defaultButtonCallbackData)
+	callbackData := co.GetOptionalCallbackData(c.Properties(), defaultButtonCallbackData)
 	c.SetOnClickFunc(callbackData.OnClick)
 }
 
@@ -58,7 +56,7 @@ func (c *buttonComponent) Render() co.Instance {
 	txtSize := c.font.TextSize(c.text, c.fontSize)
 
 	return co.New(std.Element, func() {
-		co.WithLayoutData(c.Properties.LayoutData())
+		co.WithLayoutData(c.Properties().LayoutData())
 		co.WithData(std.ElementData{
 			Essence: c,
 			Padding: padding,
@@ -66,7 +64,7 @@ func (c *buttonComponent) Render() co.Instance {
 				ui.NewSize(int(txtSize.X), int(txtSize.Y)).Grow(padding.Size()),
 			),
 		})
-		co.WithChildren(c.Properties.Children())
+		co.WithChildren(c.Properties().Children())
 	})
 }
 

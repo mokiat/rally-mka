@@ -23,34 +23,33 @@ type IntroScreenData struct {
 var IntroScreen = co.Define(&introScreenComponent{})
 
 type introScreenComponent struct {
-	Scope      co.Scope      `co:"scope"`
-	Properties co.Properties `co:"properties"`
+	co.BaseComponent
 }
 
 func (c *introScreenComponent) OnCreate() {
-	co.Window(c.Scope).SetCursorVisible(false)
+	co.Window(c.Scope()).SetCursorVisible(false)
 
-	globalContext := co.TypedValue[global.Context](c.Scope)
+	globalContext := co.TypedValue[global.Context](c.Scope())
 	engine := globalContext.Engine
 	resourceSet := globalContext.ResourceSet
 
-	screenData := co.GetData[IntroScreenData](c.Properties)
+	screenData := co.GetData[IntroScreenData](c.Properties())
 	homeModel := screenData.Home
 	loadingModel := screenData.LoadingModel
 
 	homeModel.SetData(data.LoadHomeData(engine, resourceSet))
 
-	co.After(time.Second, func() {
+	co.After(c.Scope(), time.Second, func() {
 		promise := homeModel.Data()
 		if promise.Ready() {
 			// TODO: Handle errors!!!
-			mvc.Dispatch(c.Scope, action.ChangeView{
+			mvc.Dispatch(c.Scope(), action.ChangeView{
 				ViewName: model.ViewNameHome,
 			})
 		} else {
 			loadingModel.SetPromise(promise)
 			loadingModel.SetNextViewName(model.ViewNameHome)
-			mvc.Dispatch(c.Scope, action.ChangeView{
+			mvc.Dispatch(c.Scope(), action.ChangeView{
 				ViewName: model.ViewNameLoading,
 			})
 		}
@@ -58,7 +57,7 @@ func (c *introScreenComponent) OnCreate() {
 }
 
 func (c *introScreenComponent) OnDelete() {
-	co.Window(c.Scope).SetCursorVisible(true)
+	co.Window(c.Scope()).SetCursorVisible(true)
 }
 
 func (c *introScreenComponent) Render() co.Instance {
@@ -77,7 +76,7 @@ func (c *introScreenComponent) Render() co.Instance {
 			})
 			co.WithData(std.PictureData{
 				BackgroundColor: opt.V(ui.Transparent()),
-				Image:           co.OpenImage(c.Scope, "ui/images/logo.png"),
+				Image:           co.OpenImage(c.Scope(), "ui/images/logo.png"),
 				Mode:            std.ImageModeFit,
 			})
 		}))

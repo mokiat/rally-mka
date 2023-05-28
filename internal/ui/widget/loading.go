@@ -14,7 +14,7 @@ import (
 var Loading = co.Define(&loadingComponent{})
 
 type loadingComponent struct {
-	Properties co.Properties `co:"properties"`
+	co.BaseComponent
 
 	lastTick   time.Time
 	greenAngle sprec.Angle
@@ -31,8 +31,8 @@ func (c *loadingComponent) Render() co.Instance {
 			Essence:   c,
 			IdealSize: opt.V(ui.NewSize(300, 300)),
 		})
-		co.WithLayoutData(c.Properties.LayoutData())
-		co.WithChildren(c.Properties.Children())
+		co.WithLayoutData(c.Properties().LayoutData())
+		co.WithChildren(c.Properties().Children())
 	})
 }
 

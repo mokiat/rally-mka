@@ -26,9 +26,7 @@ type PlayScreenData struct {
 }
 
 type playScreenComponent struct {
-	Scope      co.Scope       `co:"scope"`
-	Data       PlayScreenData `co:"data"`
-	Invalidate func()         `co:"invalidate"`
+	co.BaseComponent
 
 	hideCursor bool
 	controller *controller.PlayController
@@ -46,7 +44,7 @@ var _ ui.ElementKeyboardHandler = (*playScreenComponent)(nil)
 var _ ui.ElementMouseHandler = (*playScreenComponent)(nil)
 
 func (c *playScreenComponent) OnCreate() {
-	context := co.TypedValue[global.Context](c.Scope)
+	context := co.TypedValue[global.Context](c.Scope())
 
 	// FIXME: This is ugly and complicated. Come up with a better API
 	// than what Go provides that is integrated into component library and
@@ -57,7 +55,7 @@ func (c *playScreenComponent) OnCreate() {
 		for {
 			select {
 			case <-c.debugRegionsTicker.C:
-				co.Schedule(func() {
+				co.Schedule(c.Scope(), func() {
 					c.debugRegions = metrics.RegionStats()
 					c.Invalidate()
 				})
@@ -67,24 +65,26 @@ func (c *playScreenComponent) OnCreate() {
 		}
 	}()
 
+	screenData := co.GetData[PlayScreenData](c.Properties())
+
 	// FIXME: This may actually panic if there is a third party
 	// waiting / reading on this and it happens to match the Get call.
-	playData, err := c.Data.Play.Data().Get()
+	playData, err := screenData.Play.Data().Get()
 	if err != nil {
 		panic(fmt.Errorf("failed to get data: %w", err))
 	}
-	c.controller = controller.NewPlayController(co.Window(c.Scope).Window, context.Engine, playData)
+	c.controller = controller.NewPlayController(co.Window(c.Scope()).Window, context.Engine, playData)
 	c.controller.Start(playData.Environment, playData.Controller)
 
 	c.hideCursor = playData.Controller != data.ControllerMouse
-	co.Window(c.Scope).SetCursorVisible(!c.hideCursor)
+	co.Window(c.Scope()).SetCursorVisible(!c.hideCursor)
 }
 
 func (c *playScreenComponent) OnDelete() {
 	defer c.controller.Stop()
 	defer c.debugRegionsTicker.Stop()
 	defer close(c.debugRegionsStop)
-	defer co.Window(c.Scope).SetCursorVisible(true)
+	defer co.Window(c.Scope()).SetCursorVisible(true)
 }
 
 func (c *playScreenComponent) OnMouseEvent(element *ui.Element, event ui.MouseEvent) bool {
@@ -96,8 +96,8 @@ func (c *playScreenComponent) OnKeyboardEvent(element *ui.Element, event ui.Keyb
 	case ui.KeyCodeEscape:
 		if event.Type == ui.KeyboardEventTypeKeyUp {
 			c.controller.Pause()
-			co.Window(c.Scope).SetCursorVisible(true)
-			c.exitMenu = co.OpenOverlay(c.Scope, co.New(ExitMenu, func() {
+			co.Window(c.Scope()).SetCursorVisible(true)
+			c.exitMenu = co.OpenOverlay(c.Scope(), co.New(ExitMenu, func() {
 				co.WithCallbackData(ExitMenuCallback{
 					OnContinue: c.onContinue,
 					OnHome:     c.onGoHome,
@@ -187,17 +187,17 @@ func (c *playScreenComponent) Render() co.Instance {
 func (c *playScreenComponent) onContinue() {
 	c.exitMenu.Close()
 	c.controller.Resume()
-	co.Window(c.Scope).GrantFocus(c.rootElement)
-	co.Window(c.Scope).SetCursorVisible(!c.hideCursor)
+	co.Window(c.Scope()).GrantFocus(c.rootElement)
+	co.Window(c.Scope()).SetCursorVisible(!c.hideCursor)
 }
 
 func (c *playScreenComponent) onGoHome() {
 	c.exitMenu.Close()
-	mvc.Dispatch(c.Scope, action.ChangeView{
+	mvc.Dispatch(c.Scope(), action.ChangeView{
 		ViewName: model.ViewNameHome,
 	})
 }
 
 func (c *playScreenComponent) onExit() {
-	co.Window(c.Scope).Close()
+	co.Window(c.Scope()).Close()
 }

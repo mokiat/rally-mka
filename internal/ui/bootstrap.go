@@ -25,8 +25,7 @@ func BootstrapApplication(window *ui.Window, gameController *game.Controller) {
 var Bootstrap = co.Define(&bootstrapComponent{})
 
 type bootstrapComponent struct {
-	Scope      co.Scope      `co:"scope"`
-	Properties co.Properties `co:"properties"`
+	co.BaseComponent
 
 	appModel      *model.Application
 	appController *controller.Application
@@ -36,7 +35,7 @@ type bootstrapComponent struct {
 func (c *bootstrapComponent) OnCreate() {
 	c.appModel = model.NewApplication()
 	c.appController = controller.NewApplication(c.appModel)
-	c.childrenScope = mvc.UseReducer(c.Scope, c.appController)
+	c.childrenScope = mvc.UseReducer(c.Scope(), c.appController)
 }
 
 func (c *bootstrapComponent) Render() co.Instance {

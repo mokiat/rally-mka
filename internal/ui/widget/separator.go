@@ -10,17 +10,17 @@ import (
 var Separator = co.Define(&separatorComponent{})
 
 type separatorComponent struct {
-	LayoutData any `co:"layout"`
+	co.BaseComponent
 }
 
 var _ ui.ElementRenderHandler = (*separatorComponent)(nil)
 
 func (c *separatorComponent) Render() co.Instance {
 	return co.New(std.Element, func() {
+		co.WithLayoutData(c.Properties().LayoutData())
 		co.WithData(std.ElementData{
 			Essence: c,
 		})
-		co.WithLayoutData(c.LayoutData)
 	})
 }
 

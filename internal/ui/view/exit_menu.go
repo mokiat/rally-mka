@@ -12,20 +12,31 @@ import (
 var ExitMenu = co.Define(&exitMenuComponent{})
 
 type ExitMenuCallback struct {
-	OnContinue func()
-	OnHome     func()
-	OnExit     func()
+	OnContinue std.OnActionFunc
+	OnHome     std.OnActionFunc
+	OnExit     std.OnActionFunc
 }
 
 type exitMenuComponent struct {
-	CallbackData ExitMenuCallback `co:"callback"`
+	co.BaseComponent
+
+	onContinue std.OnActionFunc
+	onHome     std.OnActionFunc
+	onExit     std.OnActionFunc
+}
+
+func (c *exitMenuComponent) OnUpsert() {
+	callbackData := co.GetCallbackData[ExitMenuCallback](c.Properties())
+	c.onContinue = callbackData.OnContinue
+	c.onHome = callbackData.OnHome
+	c.onExit = callbackData.OnExit
 }
 
 func (c *exitMenuComponent) OnKeyboardEvent(element *ui.Element, event ui.KeyboardEvent) bool {
 	switch event.Code {
 	case ui.KeyCodeEscape:
 		if event.Type == ui.KeyboardEventTypeKeyUp {
-			c.CallbackData.OnContinue()
+			c.onContinue()
 		}
 		return true
 	default:
@@ -77,7 +88,7 @@ func (c *exitMenuComponent) Render() co.Instance {
 							Text: "Continue",
 						})
 						co.WithCallbackData(widget.ButtonCallbackData{
-							OnClick: c.CallbackData.OnContinue,
+							OnClick: c.onContinue,
 						})
 					}))
 
@@ -86,7 +97,7 @@ func (c *exitMenuComponent) Render() co.Instance {
 							Text: "Main Menu",
 						})
 						co.WithCallbackData(widget.ButtonCallbackData{
-							OnClick: c.CallbackData.OnHome,
+							OnClick: c.onHome,
 						})
 					}))
 
@@ -95,7 +106,7 @@ func (c *exitMenuComponent) Render() co.Instance {
 							Text: "Exit",
 						})
 						co.WithCallbackData(widget.ButtonCallbackData{
-							OnClick: c.CallbackData.OnExit,
+							OnClick: c.onExit,
 						})
 					}))
 				}))

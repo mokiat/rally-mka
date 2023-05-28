@@ -43,8 +43,7 @@ func init() {
 var CreditsScreen = co.Define(&creditsScreenComponent{})
 
 type creditsScreenComponent struct {
-	Scope      co.Scope `co:"scope"`
-	Invalidate func()   `co:"invalidate"`
+	co.BaseComponent
 
 	fadeInVisible  bool
 	fadeOutVisible bool
@@ -134,7 +133,7 @@ func (c *creditsScreenComponent) Render() co.Instance {
 						})
 						co.WithData(std.PictureData{
 							BackgroundColor: opt.V(ui.Transparent()),
-							Image:           co.OpenImage(c.Scope, "ui/images/logo.png"),
+							Image:           co.OpenImage(c.Scope(), "ui/images/logo.png"),
 							Mode:            std.ImageModeFit,
 						})
 					}))
@@ -148,7 +147,7 @@ func (c *creditsScreenComponent) Render() co.Instance {
 					for i, section := range sections {
 						co.WithChild(fmt.Sprintf("section-%d-title", i), co.New(std.Label, func() {
 							co.WithData(std.LabelData{
-								Font:      co.OpenFont(c.Scope, "ui:///roboto-bold.ttf"),
+								Font:      co.OpenFont(c.Scope(), "ui:///roboto-bold.ttf"),
 								FontSize:  opt.V(float32(24)),
 								FontColor: opt.V(theme.PrimaryColor),
 								Text:      section.Title,
@@ -157,7 +156,7 @@ func (c *creditsScreenComponent) Render() co.Instance {
 						for j, item := range section.Items {
 							co.WithChild(fmt.Sprintf("section-%d-item-%d", i, j), co.New(std.Label, func() {
 								co.WithData(std.LabelData{
-									Font:      co.OpenFont(c.Scope, "ui:///roboto-regular.ttf"),
+									Font:      co.OpenFont(c.Scope(), "ui:///roboto-regular.ttf"),
 									FontSize:  opt.V(float32(32)),
 									FontColor: opt.V(theme.PrimaryOverColor),
 									Text:      item,
@@ -179,7 +178,7 @@ func (c *creditsScreenComponent) Render() co.Instance {
 
 					co.WithChild("thank-you", co.New(std.Label, func() {
 						co.WithData(std.LabelData{
-							Font:      co.OpenFont(c.Scope, "ui:///roboto-bold.ttf"),
+							Font:      co.OpenFont(c.Scope(), "ui:///roboto-bold.ttf"),
 							FontSize:  opt.V(float32(64.0)),
 							FontColor: opt.V(ui.White()),
 							Text:      "THANK YOU",
@@ -220,7 +219,7 @@ func (c *creditsScreenComponent) Render() co.Instance {
 }
 
 func (c *creditsScreenComponent) onBackClicked() {
-	mvc.Dispatch(c.Scope, action.ChangeView{
+	mvc.Dispatch(c.Scope(), action.ChangeView{
 		ViewName: model.ViewNameHome,
 	})
 }

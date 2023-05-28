@@ -21,7 +21,7 @@ import (
 	"github.com/x448/float16"
 )
 
-var HomeScreen = co.Define(&homeScreenComponent{})
+var HomeScreen = mvc.Wrap(co.Define(&homeScreenComponent{}))
 
 type HomeScreenData struct {
 	Loading *model.Loading
@@ -30,9 +30,7 @@ type HomeScreenData struct {
 }
 
 type homeScreenComponent struct {
-	Scope      co.Scope       `co:"scope"`
-	Data       HomeScreenData `co:"data"`
-	Invalidate func()         `co:"invalidate"`
+	co.BaseComponent
 
 	engine      *game.Engine
 	resourceSet *game.ResourceSet
@@ -46,16 +44,16 @@ type homeScreenComponent struct {
 }
 
 func (c *homeScreenComponent) OnCreate() {
-	globalContext := co.TypedValue[global.Context](c.Scope)
+	globalContext := co.TypedValue[global.Context](c.Scope())
 
+	data := co.GetData[HomeScreenData](c.Properties())
 	c.engine = globalContext.Engine
 	c.resourceSet = globalContext.ResourceSet
-	c.loadingModel = c.Data.Loading
-	c.homeModel = c.Data.Home
-	c.playModel = c.Data.Play
+	c.loadingModel = data.Loading
+	c.homeModel = data.Home
+	c.playModel = data.Play
 
-	// TODO: Figure out an alternative way for TypeComponents
-	mvc.UseBinding(c.homeModel, func(ch mvc.Change) bool {
+	mvc.UseBinding(c.Scope(), c.homeModel, func(ch mvc.Change) bool {
 		return mvc.IsChange(ch, model.HomeChange)
 	})
 
@@ -244,7 +242,7 @@ func (c *homeScreenComponent) Render() co.Instance {
 						})
 						co.WithData(std.PictureData{
 							BackgroundColor: opt.V(ui.RGBA(0x00, 0x00, 0x00, 0x9A)),
-							Image:           co.OpenImage(c.Scope, imageURL),
+							Image:           co.OpenImage(c.Scope(), imageURL),
 							ImageColor:      opt.V(ui.White()),
 							Mode:            std.ImageModeStretch,
 						})
@@ -252,7 +250,7 @@ func (c *homeScreenComponent) Render() co.Instance {
 
 					co.WithChild("controller-text", co.New(std.Label, func() {
 						co.WithData(std.LabelData{
-							Font:      co.OpenFont(c.Scope, "ui:///roboto-regular.ttf"),
+							Font:      co.OpenFont(c.Scope(), "ui:///roboto-regular.ttf"),
 							FontSize:  opt.V(float32(24.0)),
 							FontColor: opt.V(ui.White()),
 							Text:      c.controllerDescription(controller),
@@ -297,7 +295,7 @@ func (c *homeScreenComponent) Render() co.Instance {
 
 					co.WithChild("environment-text", co.New(std.Label, func() {
 						co.WithData(std.LabelData{
-							Font:      co.OpenFont(c.Scope, "ui:///roboto-regular.ttf"),
+							Font:      co.OpenFont(c.Scope(), "ui:///roboto-regular.ttf"),
 							FontSize:  opt.V(float32(24.0)),
 							FontColor: opt.V(ui.White()),
 							Text:      c.environmentDescription(environment),
@@ -545,7 +543,7 @@ func (c *homeScreenComponent) onStartClicked() {
 
 	c.loadingModel.SetPromise(promise)
 	c.loadingModel.SetNextViewName(model.ViewNamePlay)
-	mvc.Dispatch(c.Scope, action.ChangeView{
+	mvc.Dispatch(c.Scope(), action.ChangeView{
 		ViewName: model.ViewNameLoading,
 	})
 }
@@ -562,17 +560,17 @@ func (c *homeScreenComponent) onPlayClicked() {
 }
 
 func (c *homeScreenComponent) onLicensesClicked() {
-	mvc.Dispatch(c.Scope, action.ChangeView{
+	mvc.Dispatch(c.Scope(), action.ChangeView{
 		ViewName: model.ViewNameLicenses,
 	})
 }
 
 func (c *homeScreenComponent) onCreditsClicked() {
-	mvc.Dispatch(c.Scope, action.ChangeView{
+	mvc.Dispatch(c.Scope(), action.ChangeView{
 		ViewName: model.ViewNameCredits,
 	})
 }
 
 func (c *homeScreenComponent) onExitClicked() {
-	co.Window(c.Scope).Close()
+	co.Window(c.Scope()).Close()
 }

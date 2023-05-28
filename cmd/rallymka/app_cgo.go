@@ -38,7 +38,6 @@ func runApplication() error {
 	cfg.SetMinSize(1024, 576)
 	cfg.SetVSync(true)
 	cfg.SetIcon("ui/images/icon.png")
-	cfg.SetMaximized(true)
 	cfg.SetLocator(locator)
 	return glapp.Run(cfg, app.NewLayeredController(gameController, uiController))
 }

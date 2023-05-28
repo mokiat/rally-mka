@@ -30,7 +30,7 @@ var defaultFadeInCallbackData = FadeInCallbackData{
 var FadeIn = co.Define(&fadeInComponent{})
 
 type fadeInComponent struct {
-	Properties co.Properties `co:"properties"`
+	co.BaseComponent
 
 	opacity  float64
 	duration float64
@@ -43,21 +43,21 @@ func (c *fadeInComponent) OnCreate() {
 	c.lastTick = time.Now()
 	c.opacity = 0.0
 
-	data := co.GetOptionalData(c.Properties, defaultFadeInData)
+	data := co.GetOptionalData(c.Properties(), defaultFadeInData)
 	c.duration = data.Duration.Seconds()
 
-	callbackData := co.GetOptionalCallbackData(c.Properties, defaultFadeInCallbackData)
+	callbackData := co.GetOptionalCallbackData(c.Properties(), defaultFadeInCallbackData)
 	c.onFinished = callbackData.OnFinished
 }
 
 func (c *fadeInComponent) Render() co.Instance {
 	return co.New(std.Element, func() {
-		co.WithLayoutData(c.Properties.LayoutData())
+		co.WithLayoutData(c.Properties().LayoutData())
 		co.WithData(std.ElementData{
 			Essence:   c,
 			Focusable: opt.V(false),
 		})
-		co.WithChildren(c.Properties.Children())
+		co.WithChildren(c.Properties().Children())
 	})
 }
 

@@ -32,10 +32,8 @@ var Toggle = co.Define(&toggleComponent{})
 var _ ui.ElementRenderHandler = (*toggleComponent)(nil)
 
 type toggleComponent struct {
+	co.BaseComponent
 	std.BaseButtonComponent
-
-	Scope      co.Scope      `co:"scope"`
-	Properties co.Properties `co:"properties"`
 
 	font       *ui.Font
 	text       string
@@ -43,13 +41,13 @@ type toggleComponent struct {
 }
 
 func (c *toggleComponent) OnUpsert() {
-	c.font = co.OpenFont(c.Scope, "ui:///roboto-bold.ttf")
+	c.font = co.OpenFont(c.Scope(), "ui:///roboto-bold.ttf")
 
-	data := co.GetOptionalData(c.Properties, toggleDefaultData)
+	data := co.GetOptionalData(c.Properties(), toggleDefaultData)
 	c.text = data.Text
 	c.isSelected = data.Selected
 
-	callbackData := co.GetOptionalCallbackData(c.Properties, toggleDefaultCallbackData)
+	callbackData := co.GetOptionalCallbackData(c.Properties(), toggleDefaultCallbackData)
 	c.SetOnClickFunc(callbackData.OnToggle)
 }
 
@@ -63,7 +61,7 @@ func (c *toggleComponent) Render() co.Instance {
 	txtSize := c.font.TextSize(c.text, toggleFontSize)
 
 	return co.New(std.Element, func() {
-		co.WithLayoutData(c.Properties.LayoutData())
+		co.WithLayoutData(c.Properties().LayoutData())
 		co.WithData(std.ElementData{
 			Essence: c,
 			Padding: padding,

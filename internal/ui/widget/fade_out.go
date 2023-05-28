@@ -30,7 +30,7 @@ var defaultFadeOutCallbackData = FadeOutCallbackData{
 var FadeOut = co.Define(&fadeOutComponent{})
 
 type fadeOutComponent struct {
-	Properties co.Properties `co:"properties"`
+	co.BaseComponent
 
 	lastTick time.Time
 	opacity  float64
@@ -43,21 +43,21 @@ func (c *fadeOutComponent) OnCreate() {
 	c.lastTick = time.Now()
 	c.opacity = 0.0
 
-	data := co.GetOptionalData(c.Properties, defaultFadeOutData)
+	data := co.GetOptionalData(c.Properties(), defaultFadeOutData)
 	c.duration = data.Duration.Seconds()
 
-	callbackData := co.GetOptionalCallbackData(c.Properties, defaultFadeOutCallbackData)
+	callbackData := co.GetOptionalCallbackData(c.Properties(), defaultFadeOutCallbackData)
 	c.onFinished = callbackData.OnFinished
 }
 
 func (c *fadeOutComponent) Render() co.Instance {
 	return co.New(std.Element, func() {
-		co.WithLayoutData(c.Properties.LayoutData())
+		co.WithLayoutData(c.Properties().LayoutData())
 		co.WithData(std.ElementData{
 			Essence:   c,
 			Focusable: opt.V(false),
 		})
-		co.WithChildren(c.Properties.Children())
+		co.WithChildren(c.Properties().Children())
 	})
 }
 

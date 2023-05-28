@@ -7,10 +7,10 @@ import (
 	"github.com/mokiat/rally-mka/internal/ui/model"
 )
 
-var Application = co.Define(&applicationComponent{})
+var Application = mvc.Wrap(co.Define(&applicationComponent{}))
 
 type applicationComponent struct {
-	Properties co.Properties `co:"properties"`
+	co.BaseComponent
 
 	homeModel    *model.Home
 	loadingModel *model.Loading
@@ -19,13 +19,13 @@ type applicationComponent struct {
 }
 
 func (c *applicationComponent) OnUpsert() {
-	data := co.GetData[*model.Application](c.Properties)
+	data := co.GetData[*model.Application](c.Properties())
 	c.homeModel = data.Home()
 	c.loadingModel = data.Loading()
 	c.playModel = data.Play()
 	c.activeView = data.ActiveView()
 
-	mvc.UseBinding(data, func(ch mvc.Change) bool {
+	mvc.UseBinding(c.Scope(), data, func(ch mvc.Change) bool {
 		return mvc.IsChange(ch, model.ApplicationActiveViewChange)
 	})
 }

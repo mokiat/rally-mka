@@ -16,11 +16,11 @@ import (
 var LicensesScreen = co.Define(&licensesScreenComponent{})
 
 type licensesScreenComponent struct {
-	Scope co.Scope `co:"scope"`
+	co.BaseComponent
 }
 
 func (c *licensesScreenComponent) onBackClicked() {
-	mvc.Dispatch(c.Scope, action.ChangeView{
+	mvc.Dispatch(c.Scope(), action.ChangeView{
 		ViewName: model.ViewNameHome,
 	})
 }
@@ -77,7 +77,7 @@ func (c *licensesScreenComponent) Render() co.Instance {
 					HorizontalCenter: opt.V(0),
 				})
 				co.WithData(std.LabelData{
-					Font:      co.OpenFont(c.Scope, "ui:///roboto-bold.ttf"),
+					Font:      co.OpenFont(c.Scope(), "ui:///roboto-bold.ttf"),
 					FontSize:  opt.V(float32(32)),
 					FontColor: opt.V(ui.White()),
 					Text:      "Open-Source Licenses",
@@ -91,7 +91,7 @@ func (c *licensesScreenComponent) Render() co.Instance {
 					HorizontalCenter: opt.V(0),
 				})
 				co.WithData(std.LabelData{
-					Font:      co.OpenFont(c.Scope, "ui:///roboto-italic.ttf"),
+					Font:      co.OpenFont(c.Scope(), "ui:///roboto-italic.ttf"),
 					FontSize:  opt.V(float32(20)),
 					FontColor: opt.V(ui.White()),
 					Text:      "- scroll to view all -",
@@ -129,7 +129,7 @@ func (c *licensesScreenComponent) Render() co.Instance {
 							VerticalCenter:   opt.V(0),
 						})
 						co.WithData(std.LabelData{
-							Font:      co.OpenFont(c.Scope, "ui:///roboto-bold.ttf"),
+							Font:      co.OpenFont(c.Scope(), "ui:///roboto-bold.ttf"),
 							FontSize:  opt.V(float32(16)),
 							FontColor: opt.V(ui.White()),
 							Text:      resources.Licenses,
