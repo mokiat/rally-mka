@@ -86,14 +86,11 @@ func (c *toggleComponent) OnRender(element *ui.Element, canvas *ui.Canvas) {
 		fontColor = ui.RGB(0x00, 0xB2, 0x08)
 	}
 
-	bounds := element.ContentBounds() // take padding into consideration
-	area := sprec.Vec2{
-		X: float32(bounds.Width),
-		Y: float32(bounds.Height),
-	}
+	drawBounds := canvas.DrawBounds(element, true)
 
+	halfHeight := drawBounds.Height() / 2.0
 	canvas.Reset()
-	canvas.Circle(sprec.NewVec2(area.Y/2.0, area.Y/2.0), area.Y/2.0)
+	canvas.Circle(sprec.NewVec2(halfHeight, halfHeight), halfHeight)
 	canvas.Fill(ui.Fill{
 		Rule:  ui.FillRuleSimple,
 		Color: fontColor,
@@ -101,7 +98,7 @@ func (c *toggleComponent) OnRender(element *ui.Element, canvas *ui.Canvas) {
 
 	canvas.Reset()
 	canvas.FillText(c.text, sprec.NewVec2(
-		float32(area.Y+10),
+		float32(drawBounds.Height()+10),
 		float32(0.0),
 	), ui.Typography{
 		Font:  c.font,

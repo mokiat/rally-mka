@@ -51,11 +51,8 @@ func (c *loadingComponent) OnRender(element *ui.Element, canvas *ui.Canvas) {
 	c.lastTick = currentTime
 
 	canvas.Push()
-	bounds := element.ContentBounds()
-	canvas.Translate(sprec.Vec2{
-		X: float32(bounds.Width) / 2.0,
-		Y: float32(bounds.Height) / 2.0,
-	})
+	drawBounds := canvas.DrawBounds(element, false)
+	canvas.Translate(sprec.Vec2Quot(drawBounds.Size, 2.0))
 
 	canvas.Reset()
 	for angle := sprec.Degrees(0); angle < sprec.Degrees(360); angle += sprec.Degrees(anglePrecision) {

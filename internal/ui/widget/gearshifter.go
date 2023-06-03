@@ -2,7 +2,6 @@ package widget
 
 import (
 	"github.com/mokiat/gog/opt"
-	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/lacking/ui"
 	co "github.com/mokiat/lacking/ui/component"
 	"github.com/mokiat/lacking/ui/std"
@@ -44,11 +43,7 @@ func (c *gearShifterComponent) Render() co.Instance {
 }
 
 func (c *gearShifterComponent) OnRender(element *ui.Element, canvas *ui.Canvas) {
-	bounds := element.Bounds()
-	area := sprec.Vec2{
-		X: float32(bounds.Width),
-		Y: float32(bounds.Height),
-	}
+	drawBounds := canvas.DrawBounds(element, false)
 
 	image := c.reverseImage
 	if c.source.IsDrive() {
@@ -56,13 +51,16 @@ func (c *gearShifterComponent) OnRender(element *ui.Element, canvas *ui.Canvas) 
 	}
 
 	canvas.Reset()
-	canvas.Rectangle(sprec.ZeroVec2(), area)
+	canvas.Rectangle(
+		drawBounds.Position,
+		drawBounds.Size,
+	)
 	canvas.Fill(ui.Fill{
 		Rule:        ui.FillRuleSimple,
 		Color:       ui.White(),
 		Image:       image,
-		ImageOffset: sprec.ZeroVec2(),
-		ImageSize:   area,
+		ImageOffset: drawBounds.Position,
+		ImageSize:   drawBounds.Size,
 	})
 	element.Invalidate() // force redraw
 }

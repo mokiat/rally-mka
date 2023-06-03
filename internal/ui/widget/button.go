@@ -80,8 +80,8 @@ func (c *buttonComponent) OnRender(element *ui.Element, canvas *ui.Canvas) {
 		fontColor = ui.White()
 	}
 
-	contentArea := element.ContentBounds()
-	textPosition := contentArea.Position
+	drawBounds := canvas.DrawBounds(element, true)
+	textPosition := drawBounds.Position
 	canvas.Reset()
 	canvas.FillText(c.text, sprec.NewVec2(
 		float32(textPosition.X),

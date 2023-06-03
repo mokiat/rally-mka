@@ -1,7 +1,6 @@
 package widget
 
 import (
-	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/lacking/ui"
 	co "github.com/mokiat/lacking/ui/component"
 	"github.com/mokiat/lacking/ui/std"
@@ -25,14 +24,13 @@ func (c *separatorComponent) Render() co.Instance {
 }
 
 func (c *separatorComponent) OnRender(element *ui.Element, canvas *ui.Canvas) {
-	bounds := element.Bounds() // take padding into consideration
-	area := sprec.Vec2{
-		X: float32(bounds.Width),
-		Y: float32(bounds.Height),
-	}
+	drawBounds := canvas.DrawBounds(element, true)
 
 	canvas.Reset()
-	canvas.Rectangle(sprec.ZeroVec2(), area)
+	canvas.Rectangle(
+		drawBounds.Position,
+		drawBounds.Size,
+	)
 	canvas.Fill(ui.Fill{
 		Rule:  ui.FillRuleSimple,
 		Color: ui.Black(),

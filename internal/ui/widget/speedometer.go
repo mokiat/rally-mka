@@ -50,27 +50,26 @@ func (c *speedometerComponent) Render() co.Instance {
 }
 
 func (c *speedometerComponent) OnRender(element *ui.Element, canvas *ui.Canvas) {
-	bounds := element.Bounds()
-	area := sprec.Vec2{
-		X: float32(bounds.Width),
-		Y: float32(bounds.Height),
-	}
+	drawBounds := canvas.DrawBounds(element, false)
 
 	canvas.Push()
 	canvas.Reset()
-	canvas.Rectangle(sprec.ZeroVec2(), area)
+	canvas.Rectangle(
+		drawBounds.Position,
+		drawBounds.Size,
+	)
 	canvas.Fill(ui.Fill{
 		Rule:        ui.FillRuleSimple,
 		Color:       ui.White(),
 		Image:       c.speedometerImage,
-		ImageOffset: sprec.ZeroVec2(),
-		ImageSize:   area,
+		ImageOffset: drawBounds.Position,
+		ImageSize:   drawBounds.Size,
 	})
 
 	needleSize := sprec.NewVec2(34.0, 150.0)
 	canvas.Translate(sprec.NewVec2(
-		area.X/2.0,
-		area.Y-20,
+		drawBounds.Width()/2.0,
+		drawBounds.Height()-20.0,
 	))
 	velocity := c.source.Velocity() * 3.6 // from m/s to km/h
 

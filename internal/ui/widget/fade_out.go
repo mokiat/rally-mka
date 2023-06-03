@@ -5,7 +5,6 @@ import (
 
 	"github.com/mokiat/gog/opt"
 	"github.com/mokiat/gomath/dprec"
-	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/lacking/ui"
 	co "github.com/mokiat/lacking/ui/component"
 	"github.com/mokiat/lacking/ui/std"
@@ -75,12 +74,12 @@ func (c *fadeOutComponent) OnRender(element *ui.Element, canvas *ui.Canvas) {
 		c.onFinished()
 	}
 
-	bounds := element.Bounds()
+	drawBound := canvas.DrawBounds(element, false)
 
 	canvas.Reset()
 	canvas.Rectangle(
-		sprec.NewVec2(0, 0),
-		sprec.NewVec2(float32(bounds.Width), float32(bounds.Height)),
+		drawBound.Position,
+		drawBound.Size,
 	)
 	canvas.Fill(ui.Fill{
 		Color: ui.RGBA(0, 0, 0, uint8(c.opacity*255)),

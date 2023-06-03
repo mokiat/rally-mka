@@ -160,12 +160,12 @@ func (c *regionBlockComponent) renderRegionNode(element *ui.Element, canvas *ui.
 	parentDuration := c.graph[node.ParentID].Duration
 	parentPlacement, ok := c.placement[node.ParentID]
 	if !ok {
-		contentArea := element.ContentBounds()
+		drawBounds := canvas.DrawBounds(element, false)
 		parentPlacement = regionPlacement{
 			Top:      0.0,
 			Left:     0.0,
 			Height:   0.0,
-			Width:    float32(contentArea.Width),
+			Width:    drawBounds.Width(),
 			FreeLeft: 0.0,
 		}
 		parentDuration = node.Duration
