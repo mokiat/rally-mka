@@ -4,29 +4,39 @@ import (
 	"github.com/mokiat/gog/opt"
 	"github.com/mokiat/lacking/ui"
 	co "github.com/mokiat/lacking/ui/component"
-	"github.com/mokiat/lacking/ui/mat"
+	"github.com/mokiat/lacking/ui/layout"
+	"github.com/mokiat/lacking/ui/std"
 	"github.com/mokiat/rally-mka/internal/ui/widget"
 )
 
-var ExitMenu = co.DefineType(&ExitMenuPresenter{})
+var ExitMenu = co.Define(&exitMenuComponent{})
 
 type ExitMenuCallback struct {
-	OnContinue func()
-	OnHome     func()
-	OnExit     func()
+	OnContinue std.OnActionFunc
+	OnHome     std.OnActionFunc
+	OnExit     std.OnActionFunc
 }
 
-type ExitMenuPresenter struct {
-	CallbackData ExitMenuCallback `co:"callback"`
+type exitMenuComponent struct {
+	co.BaseComponent
+
+	onContinue std.OnActionFunc
+	onHome     std.OnActionFunc
+	onExit     std.OnActionFunc
 }
 
-var _ ui.ElementKeyboardHandler = (*ExitMenuPresenter)(nil)
+func (c *exitMenuComponent) OnUpsert() {
+	callbackData := co.GetCallbackData[ExitMenuCallback](c.Properties())
+	c.onContinue = callbackData.OnContinue
+	c.onHome = callbackData.OnHome
+	c.onExit = callbackData.OnExit
+}
 
-func (p *ExitMenuPresenter) OnKeyboardEvent(element *ui.Element, event ui.KeyboardEvent) bool {
+func (c *exitMenuComponent) OnKeyboardEvent(element *ui.Element, event ui.KeyboardEvent) bool {
 	switch event.Code {
 	case ui.KeyCodeEscape:
 		if event.Type == ui.KeyboardEventTypeKeyUp {
-			p.CallbackData.OnContinue()
+			c.onContinue()
 		}
 		return true
 	default:
@@ -34,43 +44,43 @@ func (p *ExitMenuPresenter) OnKeyboardEvent(element *ui.Element, event ui.Keyboa
 	}
 }
 
-func (p *ExitMenuPresenter) Render() co.Instance {
-	return co.New(mat.Element, func() {
-		co.WithData(mat.ElementData{
-			Essence:   p,
+func (c *exitMenuComponent) Render() co.Instance {
+	return co.New(std.Element, func() {
+		co.WithData(std.ElementData{
+			Essence:   c,
 			Focusable: opt.V(true),
 			Focused:   opt.V(true),
-			Layout:    mat.NewFillLayout(),
+			Layout:    layout.Fill(),
 		})
 
-		co.WithChild("background", co.New(mat.Container, func() {
-			co.WithData(mat.ContainerData{
+		co.WithChild("background", co.New(std.Container, func() {
+			co.WithData(std.ContainerData{
 				BackgroundColor: opt.V(ui.RGBA(0x00, 0x00, 0x00, 0xAA)),
-				Layout:          mat.NewAnchorLayout(mat.AnchorLayoutSettings{}),
+				Layout:          layout.Anchor(),
 			})
 
-			co.WithChild("pane", co.New(mat.Container, func() {
-				co.WithData(mat.ContainerData{
-					BackgroundColor: opt.V(ui.RGBA(0, 0, 0, 192)),
-					Layout:          mat.NewAnchorLayout(mat.AnchorLayoutSettings{}),
-				})
-				co.WithLayoutData(mat.LayoutData{
+			co.WithChild("pane", co.New(std.Container, func() {
+				co.WithLayoutData(layout.Data{
 					Top:    opt.V(0),
 					Bottom: opt.V(0),
 					Left:   opt.V(0),
 					Width:  opt.V(320),
 				})
+				co.WithData(std.ContainerData{
+					BackgroundColor: opt.V(ui.RGBA(0, 0, 0, 192)),
+					Layout:          layout.Anchor(),
+				})
 
-				co.WithChild("holder", co.New(mat.Element, func() {
-					co.WithData(mat.ElementData{
-						Layout: mat.NewVerticalLayout(mat.VerticalLayoutSettings{
-							ContentAlignment: mat.AlignmentLeft,
-							ContentSpacing:   15,
-						}),
-					})
-					co.WithLayoutData(mat.LayoutData{
+				co.WithChild("holder", co.New(std.Element, func() {
+					co.WithLayoutData(layout.Data{
 						Left:           opt.V(75),
 						VerticalCenter: opt.V(0),
+					})
+					co.WithData(std.ElementData{
+						Layout: layout.Vertical(layout.VerticalSettings{
+							ContentAlignment: layout.HorizontalAlignmentLeft,
+							ContentSpacing:   15,
+						}),
 					})
 
 					co.WithChild("continue-button", co.New(widget.Button, func() {
@@ -78,7 +88,7 @@ func (p *ExitMenuPresenter) Render() co.Instance {
 							Text: "Continue",
 						})
 						co.WithCallbackData(widget.ButtonCallbackData{
-							ClickListener: p.CallbackData.OnContinue,
+							OnClick: c.onContinue,
 						})
 					}))
 
@@ -87,7 +97,7 @@ func (p *ExitMenuPresenter) Render() co.Instance {
 							Text: "Main Menu",
 						})
 						co.WithCallbackData(widget.ButtonCallbackData{
-							ClickListener: p.CallbackData.OnHome,
+							OnClick: c.onHome,
 						})
 					}))
 
@@ -96,7 +106,7 @@ func (p *ExitMenuPresenter) Render() co.Instance {
 							Text: "Exit",
 						})
 						co.WithCallbackData(widget.ButtonCallbackData{
-							ClickListener: p.CallbackData.OnExit,
+							OnClick: c.onExit,
 						})
 					}))
 				}))

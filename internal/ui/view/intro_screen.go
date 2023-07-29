@@ -6,8 +6,9 @@ import (
 	"github.com/mokiat/gog/opt"
 	"github.com/mokiat/lacking/ui"
 	co "github.com/mokiat/lacking/ui/component"
-	"github.com/mokiat/lacking/ui/mat"
+	"github.com/mokiat/lacking/ui/layout"
 	"github.com/mokiat/lacking/ui/mvc"
+	"github.com/mokiat/lacking/ui/std"
 	"github.com/mokiat/rally-mka/internal/game/data"
 	"github.com/mokiat/rally-mka/internal/ui/action"
 	"github.com/mokiat/rally-mka/internal/ui/global"
@@ -19,63 +20,65 @@ type IntroScreenData struct {
 	LoadingModel *model.Loading
 }
 
-var IntroScreen = co.Define(func(props co.Properties, scope co.Scope) co.Instance {
-	var (
-		globalContext = co.GetContext[global.Context]()
-		screenData    = co.GetData[IntroScreenData](props)
+var IntroScreen = co.Define(&introScreenComponent{})
 
-		engine      = globalContext.Engine
-		resourceSet = globalContext.ResourceSet
+type introScreenComponent struct {
+	co.BaseComponent
+}
 
-		homeModel    = screenData.Home
-		loadingModel = screenData.LoadingModel
-	)
+func (c *introScreenComponent) OnCreate() {
+	co.Window(c.Scope()).SetCursorVisible(false)
 
-	co.Once(func() {
-		co.Window(scope).SetCursorVisible(false)
-	})
-	co.Defer(func() {
-		co.Window(scope).SetCursorVisible(true)
-	})
+	globalContext := co.TypedValue[global.Context](c.Scope())
+	engine := globalContext.Engine
+	resourceSet := globalContext.ResourceSet
 
-	co.Once(func() {
-		homeModel.SetData(data.LoadHomeData(engine, resourceSet))
-	})
+	screenData := co.GetData[IntroScreenData](c.Properties())
+	homeModel := screenData.Home
+	loadingModel := screenData.LoadingModel
 
-	co.After(time.Second, func() {
+	homeModel.SetData(data.LoadHomeData(engine, resourceSet))
+
+	co.After(c.Scope(), time.Second, func() {
 		promise := homeModel.Data()
 		if promise.Ready() {
 			// TODO: Handle errors!!!
-			mvc.Dispatch(scope, action.ChangeView{
+			mvc.Dispatch(c.Scope(), action.ChangeView{
 				ViewName: model.ViewNameHome,
 			})
 		} else {
 			loadingModel.SetPromise(promise)
 			loadingModel.SetNextViewName(model.ViewNameHome)
-			mvc.Dispatch(scope, action.ChangeView{
+			mvc.Dispatch(c.Scope(), action.ChangeView{
 				ViewName: model.ViewNameLoading,
 			})
 		}
 	})
+}
 
-	return co.New(mat.Container, func() {
-		co.WithData(mat.ContainerData{
+func (c *introScreenComponent) OnDelete() {
+	co.Window(c.Scope()).SetCursorVisible(true)
+}
+
+func (c *introScreenComponent) Render() co.Instance {
+	return co.New(std.Container, func() {
+		co.WithData(std.ContainerData{
 			BackgroundColor: opt.V(ui.Black()),
-			Layout:          mat.NewAnchorLayout(mat.AnchorLayoutSettings{}),
+			Layout:          layout.Anchor(),
 		})
 
-		co.WithChild("logo-picture", co.New(mat.Picture, func() {
-			co.WithData(mat.PictureData{
-				BackgroundColor: opt.V(ui.Transparent()),
-				Image:           co.OpenImage(scope, "ui/images/logo.png"),
-				Mode:            mat.ImageModeFit,
-			})
-			co.WithLayoutData(mat.LayoutData{
+		co.WithChild("logo-picture", co.New(std.Picture, func() {
+			co.WithLayoutData(layout.Data{
 				Width:            opt.V(512),
 				Height:           opt.V(128),
 				HorizontalCenter: opt.V(0),
 				VerticalCenter:   opt.V(0),
 			})
+			co.WithData(std.PictureData{
+				BackgroundColor: opt.V(ui.Transparent()),
+				Image:           co.OpenImage(c.Scope(), "ui/images/logo.png"),
+				Mode:            std.ImageModeFit,
+			})
 		}))
 	})
-})
+}

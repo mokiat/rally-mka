@@ -9,7 +9,7 @@ import (
 	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/lacking/ui"
 	co "github.com/mokiat/lacking/ui/component"
-	"github.com/mokiat/lacking/ui/mat"
+	"github.com/mokiat/lacking/ui/std"
 	"github.com/mokiat/lacking/util/metrics"
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
@@ -23,52 +23,52 @@ type RegionBlockData struct {
 	Regions []metrics.RegionStat
 }
 
-var RegionBlock = co.Define(func(props co.Properties, scope co.Scope) co.Instance {
-	var (
-		data = co.GetData[RegionBlockData](props)
-	)
+var RegionBlock = co.Define(&regionBlockComponent{})
 
-	var maxDepth int
-	for _, region := range data.Regions {
-		if region.Depth > maxDepth {
-			maxDepth = region.Depth
-		}
-	}
+type regionBlockComponent struct {
+	co.BaseComponent
 
-	essence := co.UseState(func() *regionBlockEssence {
-		return &regionBlockEssence{
-			selectedNodeID: metrics.NilParentID,
-			placement:      make(map[int]regionPlacement),
-			graph:          make(map[int]regionNode),
-		}
-	}).Get()
-	essence.font = co.OpenFont(scope, "mat:///roboto-bold.ttf")
-	essence.rebuildGraph(data.Regions)
-
-	return co.New(mat.Element, func() {
-		co.WithData(mat.ElementData{
-			Essence: essence,
-			IdealSize: opt.V(ui.Size{
-				Width:  200,
-				Height: maxDepth * regionHeight,
-			}),
-		})
-		co.WithLayoutData(props.LayoutData())
-	})
-})
-
-var _ ui.ElementMouseHandler = (*regionBlockEssence)(nil)
-var _ ui.ElementRenderHandler = (*regionBlockEssence)(nil)
-
-type regionBlockEssence struct {
 	font *ui.Font
 
+	maxDepth       int
 	selectedNodeID int
 	graph          map[int]regionNode
 	placement      map[int]regionPlacement
 }
 
-func (b *regionBlockEssence) rebuildGraph(stats []metrics.RegionStat) {
+func (c *regionBlockComponent) OnCreate() {
+	c.font = co.OpenFont(c.Scope(), "ui:///roboto-bold.ttf")
+	c.selectedNodeID = metrics.NilParentID
+	c.placement = make(map[int]regionPlacement)
+	c.graph = make(map[int]regionNode)
+}
+
+func (c *regionBlockComponent) OnUpsert() {
+	data := co.GetData[RegionBlockData](c.Properties())
+
+	c.maxDepth = 0
+	for _, region := range data.Regions {
+		if region.Depth > c.maxDepth {
+			c.maxDepth = region.Depth
+		}
+	}
+	c.rebuildGraph(data.Regions)
+}
+
+func (c *regionBlockComponent) Render() co.Instance {
+	return co.New(std.Element, func() {
+		co.WithLayoutData(c.Properties().LayoutData())
+		co.WithData(std.ElementData{
+			Essence: c,
+			IdealSize: opt.V(ui.Size{
+				Width:  200,
+				Height: c.maxDepth * regionHeight,
+			}),
+		})
+	})
+}
+
+func (c *regionBlockComponent) rebuildGraph(stats []metrics.RegionStat) {
 	slices.SortFunc(stats, func(a, b metrics.RegionStat) bool {
 		if a.Depth == b.Depth {
 			return a.ID > b.ID // inversed on purpose
@@ -92,11 +92,11 @@ func (b *regionBlockEssence) rebuildGraph(stats []metrics.RegionStat) {
 		}
 	}
 
-	maps.Clear(b.graph)
+	maps.Clear(c.graph)
 	if rootSamples == 0 {
 		return
 	}
-	b.graph[metrics.NilParentID] = regionNode{
+	c.graph[metrics.NilParentID] = regionNode{
 		ParentID:      metrics.NilParentID,
 		ID:            metrics.NilParentID,
 		FirstChild:    metrics.NilParentID,
@@ -104,7 +104,7 @@ func (b *regionBlockEssence) rebuildGraph(stats []metrics.RegionStat) {
 		DurationRatio: 1.0,
 	}
 	for _, stat := range stats {
-		parentNode := b.graph[stat.ParentID]
+		parentNode := c.graph[stat.ParentID]
 		node := regionNode{
 			ParentID:      stat.ParentID,
 			ID:            stat.ID,
@@ -115,16 +115,16 @@ func (b *regionBlockEssence) rebuildGraph(stats []metrics.RegionStat) {
 			DurationRatio: float32(stat.Duration.Seconds() / rootDuration.Seconds()),
 		}
 		parentNode.FirstChild = stat.ID
-		b.graph[stat.ParentID] = parentNode
-		b.graph[stat.ID] = node
+		c.graph[stat.ParentID] = parentNode
+		c.graph[stat.ID] = node
 	}
 }
 
-func (b *regionBlockEssence) OnMouseEvent(element *ui.Element, event ui.MouseEvent) bool {
+func (c *regionBlockComponent) OnMouseEvent(element *ui.Element, event ui.MouseEvent) bool {
 	if event.Type == ui.MouseEventTypeDown {
 		if event.Button == ui.MouseButtonLeft {
 			position := event.Position.Translate(element.ContentBounds().Position.Inverse())
-			for id, placement := range b.placement {
+			for id, placement := range c.placement {
 				bounds := ui.NewBounds(
 					int(placement.Left),
 					int(placement.Top),
@@ -132,40 +132,40 @@ func (b *regionBlockEssence) OnMouseEvent(element *ui.Element, event ui.MouseEve
 					int(placement.Height),
 				)
 				if bounds.Contains(position) {
-					b.selectedNodeID = id
+					c.selectedNodeID = id
 					return true
 				}
 			}
 		}
 		if event.Button == ui.MouseButtonRight {
-			node := b.graph[b.selectedNodeID]
-			b.selectedNodeID = node.ParentID
+			node := c.graph[c.selectedNodeID]
+			c.selectedNodeID = node.ParentID
 			return true
 		}
 	}
 	return false
 }
 
-func (b *regionBlockEssence) OnRender(element *ui.Element, canvas *ui.Canvas) {
-	node := b.graph[b.selectedNodeID]
-	maps.Clear(b.placement)
-	b.renderRegionNode(element, canvas, node)
+func (c *regionBlockComponent) OnRender(element *ui.Element, canvas *ui.Canvas) {
+	node := c.graph[c.selectedNodeID]
+	maps.Clear(c.placement)
+	c.renderRegionNode(element, canvas, node)
 }
 
-func (b *regionBlockEssence) renderRegionNode(element *ui.Element, canvas *ui.Canvas, node regionNode) {
+func (c *regionBlockComponent) renderRegionNode(element *ui.Element, canvas *ui.Canvas, node regionNode) {
 	if node.Duration == 0 {
 		return
 	}
 
-	parentDuration := b.graph[node.ParentID].Duration
-	parentPlacement, ok := b.placement[node.ParentID]
+	parentDuration := c.graph[node.ParentID].Duration
+	parentPlacement, ok := c.placement[node.ParentID]
 	if !ok {
-		contentArea := element.ContentBounds()
+		drawBounds := canvas.DrawBounds(element, false)
 		parentPlacement = regionPlacement{
 			Top:      0.0,
 			Left:     0.0,
 			Height:   0.0,
-			Width:    float32(contentArea.Width),
+			Width:    drawBounds.Width(),
 			FreeLeft: 0.0,
 		}
 		parentDuration = node.Duration
@@ -181,9 +181,9 @@ func (b *regionBlockEssence) renderRegionNode(element *ui.Element, canvas *ui.Ca
 			Y: regionHeight,
 		}
 		parentPlacement.FreeLeft += regionSize.X
-		b.placement[node.ParentID] = parentPlacement
+		c.placement[node.ParentID] = parentPlacement
 
-		b.placement[node.ID] = regionPlacement{
+		c.placement[node.ID] = regionPlacement{
 			Top:      regionPosition.Y,
 			Left:     regionPosition.X,
 			Height:   regionSize.Y,
@@ -211,13 +211,13 @@ func (b *regionBlockEssence) renderRegionNode(element *ui.Element, canvas *ui.Ca
 		percentage := node.DurationRatio * 100
 		text := fmt.Sprintf("%s\n%s | %.2f%%", name, duration, percentage)
 		fontSize := float32(20)
-		textSize := b.font.TextSize(text, fontSize)
+		textSize := c.font.TextSize(text, fontSize)
 		textPosition := sprec.Vec2{
 			X: regionPosition.X + (regionSize.X-textSize.X)/2.0,
 			Y: regionPosition.Y + (regionSize.Y-textSize.Y)/2.0,
 		}
 		canvas.FillText(text, textPosition, ui.Typography{
-			Font:  b.font,
+			Font:  c.font,
 			Size:  fontSize,
 			Color: ui.White(),
 		})
@@ -225,8 +225,8 @@ func (b *regionBlockEssence) renderRegionNode(element *ui.Element, canvas *ui.Ca
 
 	childID := node.FirstChild
 	for childID != metrics.NilParentID {
-		childNode := b.graph[childID]
-		b.renderRegionNode(element, canvas, childNode)
+		childNode := c.graph[childID]
+		c.renderRegionNode(element, canvas, childNode)
 		childID = childNode.NextSibling
 	}
 }

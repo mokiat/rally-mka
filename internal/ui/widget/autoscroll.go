@@ -5,7 +5,8 @@ import (
 
 	"github.com/mokiat/lacking/ui"
 	co "github.com/mokiat/lacking/ui/component"
-	"github.com/mokiat/lacking/ui/mat"
+	"github.com/mokiat/lacking/ui/layout"
+	"github.com/mokiat/lacking/ui/std"
 )
 
 type AutoScrollData struct {
@@ -24,47 +25,47 @@ var defaultAutoScrollCallbackData = AutoScrollCallbackData{
 	OnFinished: func() {},
 }
 
-var AutoScroll = co.Define(func(props co.Properties, scope co.Scope) co.Instance {
-	var (
-		data         = co.GetOptionalData(props, defaultAutoScrollData)
-		callbackData = co.GetOptionalCallbackData(props, defaultAutoScrollCallbackData)
-	)
+var AutoScroll = co.Define(&autoScrollComponent{})
 
-	essence := co.UseState(func() *scrollPaneEssence {
-		return &scrollPaneEssence{
-			lastTick: time.Now(),
-		}
-	}).Get()
-	essence.velocity = data.Velocity
-	essence.onFinished = callbackData.OnFinished
+type autoScrollComponent struct {
+	co.BaseComponent
 
-	return co.New(mat.Element, func() {
-		co.WithData(co.ElementData{
-			Essence: essence,
-			Layout:  essence,
-		})
-		co.WithLayoutData(props.LayoutData())
-		co.WithChildren(props.Children())
-	})
-})
-
-var _ ui.Layout = (*scrollPaneEssence)(nil)
-var _ ui.ElementRenderHandler = (*scrollPaneEssence)(nil)
-
-type scrollPaneEssence struct {
+	lastTick   time.Time
 	offsetY    float64
 	maxOffsetY float64
 	velocity   float64
-	lastTick   time.Time
+
 	onFinished func()
 }
 
-func (e *scrollPaneEssence) Apply(element *ui.Element) {
+func (c *autoScrollComponent) OnCreate() {
+	c.lastTick = time.Now()
+	c.offsetY = 0.0
+
+	data := co.GetOptionalData(c.Properties(), defaultAutoScrollData)
+	c.velocity = data.Velocity
+
+	callbackData := co.GetOptionalCallbackData(c.Properties(), defaultAutoScrollCallbackData)
+	c.onFinished = callbackData.OnFinished
+}
+
+func (c *autoScrollComponent) Render() co.Instance {
+	return co.New(std.Element, func() {
+		co.WithLayoutData(c.Properties().LayoutData())
+		co.WithData(std.ElementData{
+			Essence: c,
+			Layout:  c,
+		})
+		co.WithChildren(c.Properties().Children())
+	})
+}
+
+func (c *autoScrollComponent) Apply(element *ui.Element) {
 	var maxChildSize ui.Size
 
 	contentBounds := element.ContentBounds()
 	for childElement := element.FirstChild(); childElement != nil; childElement = childElement.RightSibling() {
-		layoutConfig := mat.ElementLayoutData(childElement)
+		layoutConfig := layout.ElementData(childElement)
 
 		childSize := childElement.IdealSize()
 		if layoutConfig.Width.Specified {
@@ -81,12 +82,12 @@ func (e *scrollPaneEssence) Apply(element *ui.Element) {
 		}
 
 		childElement.SetBounds(ui.Bounds{
-			Position: ui.NewPosition(0, -int(e.offsetY)),
+			Position: ui.NewPosition(0, -int(c.offsetY)),
 			Size:     childSize,
 		})
 	}
 
-	e.maxOffsetY = float64(maxInt(0, maxChildSize.Height-contentBounds.Height))
+	c.maxOffsetY = float64(maxInt(0, maxChildSize.Height-contentBounds.Height))
 
 	element.SetIdealSize(ui.Size{
 		Width:  maxChildSize.Width + element.Padding().Horizontal(),
@@ -94,20 +95,20 @@ func (e *scrollPaneEssence) Apply(element *ui.Element) {
 	})
 }
 
-func (e *scrollPaneEssence) OnRender(element *ui.Element, canvas *ui.Canvas) {
+func (c *autoScrollComponent) OnRender(element *ui.Element, canvas *ui.Canvas) {
 	currentTime := time.Now()
-	elapsedSeconds := currentTime.Sub(e.lastTick).Seconds()
-	e.lastTick = currentTime
+	elapsedSeconds := currentTime.Sub(c.lastTick).Seconds()
+	c.lastTick = currentTime
 
-	wasEnded := e.offsetY > e.maxOffsetY
-	e.offsetY += e.velocity * elapsedSeconds
-	isEnded := e.offsetY > e.maxOffsetY
+	wasEnded := c.offsetY > c.maxOffsetY
+	c.offsetY += c.velocity * elapsedSeconds
+	isEnded := c.offsetY > c.maxOffsetY
 	if isEnded && !wasEnded {
-		e.onFinished()
+		c.onFinished()
 	}
 
 	// Relayout and redraw
-	e.Apply(element)
+	c.Apply(element)
 	element.Invalidate()
 }
 
