@@ -23,7 +23,7 @@ require (
 	github.com/mokiat/goexr v0.1.0 // indirect
 	github.com/mokiat/wasmgl v0.5.0 // indirect
 	github.com/qmuntal/gltf v0.24.1 // indirect
-	golang.org/x/image v0.9.0 // indirect
+	golang.org/x/image v0.10.0 // indirect
 	golang.org/x/net v0.12.0 // indirect
 	golang.org/x/sync v0.3.0 // indirect
 	golang.org/x/sys v0.10.0 // indirect
