@@ -1,6 +1,8 @@
 module github.com/mokiat/rally-mka
 
-go 1.20
+go 1.21
+
+toolchain go1.21.3
 
 require (
 	github.com/mokiat/gblob v0.2.1

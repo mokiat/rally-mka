@@ -2,6 +2,7 @@ package controller
 
 import (
 	"runtime"
+	"time"
 
 	"github.com/mokiat/gomath/dprec"
 	"github.com/mokiat/gomath/sprec"
@@ -12,6 +13,7 @@ import (
 	"github.com/mokiat/lacking/game/physics"
 	"github.com/mokiat/lacking/game/physics/collision"
 	"github.com/mokiat/lacking/game/preset"
+	"github.com/mokiat/lacking/game/timestep"
 	"github.com/mokiat/lacking/ui"
 	"github.com/mokiat/rally-mka/internal/game/data"
 )
@@ -35,8 +37,8 @@ type PlayController struct {
 	engine   *game.Engine
 	playData *data.PlayData
 
-	preUpdateSubscription  *game.UpdateSubscription
-	postUpdateSubscription *game.UpdateSubscription
+	preUpdateSubscription  *timestep.UpdateSubscription
+	postUpdateSubscription *timestep.UpdateSubscription
 
 	scene        *game.Scene
 	gfxScene     *graphics.Scene
@@ -56,11 +58,12 @@ func (c *PlayController) Start(environment data.Environment, controller data.Con
 	physics.ImpulseDriftAdjustmentRatio = 0.06 // FIXME: Use default once multi-point collisions are fixed
 
 	// TODO: These subscriptions should be attached on the scene and/or the physics.
-	c.preUpdateSubscription = c.engine.SubscribePreUpdate(c.onPreUpdate)
-	c.postUpdateSubscription = c.engine.SubscribePostUpdate(c.onPostUpdate)
 
 	c.scene = c.engine.CreateScene()
 	c.scene.Initialize(c.playData.Scene)
+
+	c.preUpdateSubscription = c.scene.SubscribePreUpdate(c.onPreUpdate)
+	c.postUpdateSubscription = c.scene.SubscribePostUpdate(c.onPostUpdate)
 
 	c.gfxScene = c.scene.Graphics()
 	c.physicsScene = c.scene.Physics()
@@ -71,7 +74,7 @@ func (c *PlayController) Start(environment data.Environment, controller data.Con
 	c.followCameraSystem = preset.NewFollowCameraSystem(c.ecsScene, c.window)
 	c.followCameraSystem.UseDefaults()
 
-	c.carSystem = preset.NewCarSystem(c.ecsScene, c.gfxScene, c.window)
+	c.carSystem = preset.NewCarSystem(c.ecsScene, c.gfxScene)
 
 	var sunLight *graphics.DirectionalLight
 	switch environment {
@@ -254,17 +257,17 @@ func (c *PlayController) OnKeyboardEvent(event ui.KeyboardEvent) bool {
 	return c.carSystem.OnKeyboardEvent(event)
 }
 
-func (c *PlayController) onPreUpdate(engine *game.Engine, scene *game.Scene, elapsedSeconds float64) {
+func (c *PlayController) onPreUpdate(elapsedTime time.Duration) {
 	// TODO: This check will not be necessary if subscription is on Scene.
 	if !c.scene.IsFrozen() {
-		c.carSystem.Update(elapsedSeconds)
+		c.carSystem.Update(elapsedTime.Seconds())
 	}
 }
 
-func (c *PlayController) onPostUpdate(engine *game.Engine, scene *game.Scene, elapsedSeconds float64) {
+func (c *PlayController) onPostUpdate(elapsedTime time.Duration) {
 	// TODO: This check will not be necessary if subscription is on Scene.
 	if !c.scene.IsFrozen() {
-		c.followCameraSystem.Update(elapsedSeconds)
+		c.followCameraSystem.Update(elapsedTime.Seconds())
 	}
 }
 

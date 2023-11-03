@@ -1,6 +1,7 @@
 package widget
 
 import (
+	"cmp"
 	"fmt"
 	"strings"
 	"time"
@@ -69,11 +70,11 @@ func (c *regionBlockComponent) Render() co.Instance {
 }
 
 func (c *regionBlockComponent) rebuildGraph(stats []metrics.RegionStat) {
-	slices.SortFunc(stats, func(a, b metrics.RegionStat) bool {
+	slices.SortFunc(stats, func(a, b metrics.RegionStat) int {
 		if a.Depth == b.Depth {
-			return a.ID > b.ID // inversed on purpose
+			return cmp.Compare(a.ID, b.ID)
 		}
-		return a.Depth < b.Depth
+		return cmp.Compare(a.Depth, b.Depth)
 	})
 
 	rootDuration := time.Duration(0)
@@ -121,9 +122,9 @@ func (c *regionBlockComponent) rebuildGraph(stats []metrics.RegionStat) {
 }
 
 func (c *regionBlockComponent) OnMouseEvent(element *ui.Element, event ui.MouseEvent) bool {
-	if event.Type == ui.MouseEventTypeDown {
+	if event.Action == ui.MouseActionDown {
 		if event.Button == ui.MouseButtonLeft {
-			position := event.Position.Translate(element.ContentBounds().Position.Inverse())
+			position := event.Position().Translate(element.ContentBounds().Position.Inverse())
 			for id, placement := range c.placement {
 				bounds := ui.NewBounds(
 					int(placement.Left),
@@ -191,11 +192,9 @@ func (c *regionBlockComponent) renderRegionNode(element *ui.Element, canvas *ui.
 			FreeLeft: regionPosition.X,
 		}
 
-		canvas.SetClipRect(
-			regionPosition.X,
-			regionPosition.X+regionSize.X,
-			regionPosition.Y,
-			regionPosition.Y+regionSize.Y,
+		canvas.ClipRect(
+			regionPosition,
+			regionSize,
 		)
 		canvas.Reset()
 		canvas.SetStrokeColor(ui.Gray())
@@ -216,7 +215,7 @@ func (c *regionBlockComponent) renderRegionNode(element *ui.Element, canvas *ui.
 			X: regionPosition.X + (regionSize.X-textSize.X)/2.0,
 			Y: regionPosition.Y + (regionSize.Y-textSize.Y)/2.0,
 		}
-		canvas.FillText(text, textPosition, ui.Typography{
+		canvas.FillTextLine([]rune(text), textPosition, ui.Typography{
 			Font:  c.font,
 			Size:  fontSize,
 			Color: ui.White(),

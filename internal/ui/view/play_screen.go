@@ -94,7 +94,7 @@ func (c *playScreenComponent) OnMouseEvent(element *ui.Element, event ui.MouseEv
 func (c *playScreenComponent) OnKeyboardEvent(element *ui.Element, event ui.KeyboardEvent) bool {
 	switch event.Code {
 	case ui.KeyCodeEscape:
-		if event.Type == ui.KeyboardEventTypeKeyUp {
+		if event.Action == ui.KeyboardActionUp {
 			c.controller.Pause()
 			co.Window(c.Scope()).SetCursorVisible(true)
 			c.exitMenu = co.OpenOverlay(c.Scope(), co.New(ExitMenu, func() {
@@ -107,13 +107,13 @@ func (c *playScreenComponent) OnKeyboardEvent(element *ui.Element, event ui.Keyb
 		}
 		return true
 	case ui.KeyCodeTab:
-		if event.Type == ui.KeyboardEventTypeKeyDown {
+		if event.Action == ui.KeyboardActionDown {
 			c.debugVisible = !c.debugVisible
 			c.Invalidate()
 		}
 		return true
 	case ui.KeyCodeEnter:
-		if event.Type == ui.KeyboardEventTypeKeyDown {
+		if event.Action == ui.KeyboardActionDown {
 			c.controller.ToggleCamera()
 		}
 		return true

@@ -35,7 +35,7 @@ func (c *exitMenuComponent) OnUpsert() {
 func (c *exitMenuComponent) OnKeyboardEvent(element *ui.Element, event ui.KeyboardEvent) bool {
 	switch event.Code {
 	case ui.KeyCodeEscape:
-		if event.Type == ui.KeyboardEventTypeKeyUp {
+		if event.Action == ui.KeyboardActionUp {
 			c.onContinue()
 		}
 		return true
