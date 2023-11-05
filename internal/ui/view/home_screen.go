@@ -8,6 +8,7 @@ import (
 	"github.com/mokiat/lacking/debug/log"
 	"github.com/mokiat/lacking/game"
 	"github.com/mokiat/lacking/game/graphics"
+	"github.com/mokiat/lacking/game/hierarchy"
 	"github.com/mokiat/lacking/ui"
 	co "github.com/mokiat/lacking/ui/component"
 	"github.com/mokiat/lacking/ui/layout"
@@ -330,14 +331,16 @@ func (c *homeScreenComponent) createScene() *model.HomeScene {
 		EmitColor: dprec.NewVec3(10, 10, 6),
 		EmitRange: 16000, // FIXME
 	})
-	dayDirectionalLightNode := game.NewNode()
+	dayDirectionalLightNode := hierarchy.NewNode()
 	dayDirectionalLightNode.SetPosition(dprec.NewVec3(-100.0, 100.0, 0.0))
 	dayDirectionalLightNode.SetRotation(dprec.QuatProd(
 		dprec.RotationQuat(dprec.Degrees(-90), dprec.BasisYVec3()),
 		dprec.RotationQuat(dprec.Degrees(-45), dprec.BasisXVec3()),
 	))
-	dayDirectionalLightNode.UseTransformation(game.IgnoreParentRotation)
-	dayDirectionalLightNode.SetAttachable(result.DayDirectionalLight)
+	dayDirectionalLightNode.SetTarget(game.DirectionalLightNodeTarget{
+		Light:                 result.DayDirectionalLight,
+		UseOnlyParentPosition: true,
+	})
 
 	result.NightSkyColor = sprec.NewVec3(0.01, 0.01, 0.01)
 	result.NightAmbientLight = c.createNightAmbientLight(scene.Graphics())
@@ -347,10 +350,12 @@ func (c *homeScreenComponent) createScene() *model.HomeScene {
 		EmitInnerConeAngle: dprec.Degrees(20),
 		EmitRange:          1000,
 	})
-	nightSpotLightNode := game.NewNode()
+	nightSpotLightNode := hierarchy.NewNode()
 	nightSpotLightNode.SetPosition(dprec.NewVec3(0.0, 0.0, 0.0))
 	nightSpotLightNode.SetRotation(dprec.RotationQuat(dprec.Degrees(0), dprec.BasisXVec3()))
-	nightSpotLightNode.SetAttachable(result.NightSpotLight)
+	nightSpotLightNode.SetTarget(game.SpotLightNodeTarget{
+		Light: result.NightSpotLight,
+	})
 
 	sceneModel := scene.FindModel("Content")
 	// TODO: Remove manual attachment, once this is configurable from
@@ -358,7 +363,9 @@ func (c *homeScreenComponent) createScene() *model.HomeScene {
 	scene.Root().AppendChild(sceneModel.Root())
 
 	if cameraNode := scene.Root().FindNode("Camera"); cameraNode != nil {
-		cameraNode.SetAttachable(camera)
+		cameraNode.SetTarget(game.CameraNodeTarget{
+			Camera: camera,
+		})
 		cameraNode.AppendChild(dayDirectionalLightNode)
 		cameraNode.AppendChild(nightSpotLightNode)
 	}

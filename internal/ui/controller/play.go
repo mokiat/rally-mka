@@ -10,6 +10,7 @@ import (
 	"github.com/mokiat/lacking/game"
 	"github.com/mokiat/lacking/game/ecs"
 	"github.com/mokiat/lacking/game/graphics"
+	"github.com/mokiat/lacking/game/hierarchy"
 	"github.com/mokiat/lacking/game/physics"
 	"github.com/mokiat/lacking/game/physics/collision"
 	"github.com/mokiat/lacking/game/preset"
@@ -91,7 +92,7 @@ func (c *PlayController) Start(environment data.Environment, controller data.Con
 		})
 	}
 
-	lightNode := game.NewNode()
+	lightNode := hierarchy.NewNode()
 	lightRotation := dprec.QuatProd(
 		dprec.RotationQuat(dprec.Degrees(-140), dprec.BasisYVec3()),
 		dprec.RotationQuat(dprec.Degrees(-45), dprec.BasisXVec3()),
@@ -99,20 +100,10 @@ func (c *PlayController) Start(environment data.Environment, controller data.Con
 	lightPosition := dprec.QuatVec3Rotation(lightRotation, dprec.NewVec3(0.0, 0.0, 100.0))
 	lightNode.SetPosition(lightPosition)
 	lightNode.SetRotation(lightRotation)
-	lightNode.UseTransformation(func(parent, current dprec.Mat4) dprec.Mat4 {
-		// Remove parent's rotation
-		parent.M11 = 1.0
-		parent.M12 = 0.0
-		parent.M13 = 0.0
-		parent.M21 = 0.0
-		parent.M22 = 1.0
-		parent.M23 = 0.0
-		parent.M31 = 0.0
-		parent.M32 = 0.0
-		parent.M33 = 1.0
-		return dprec.Mat4Prod(parent, current)
+	lightNode.SetTarget(game.DirectionalLightNodeTarget{
+		Light:                 sunLight,
+		UseOnlyParentPosition: true,
 	})
-	lightNode.SetAttachable(sunLight)
 
 	carInstance := c.scene.CreateModel(game.ModelInfo{
 		Name:       "SUV",
@@ -172,9 +163,11 @@ func (c *PlayController) Start(environment data.Environment, controller data.Con
 	c.followCamera.SetAutoFocus(false)
 	c.gfxScene.SetActiveCamera(c.followCamera)
 
-	followCameraNode := game.NewNode()
+	followCameraNode := hierarchy.NewNode()
 	followCameraNode.SetPosition(dprec.NewVec3(0.0, 20.0, 10.0))
-	followCameraNode.SetAttachable(c.followCamera)
+	followCameraNode.SetTarget(game.CameraNodeTarget{
+		Camera: c.followCamera,
+	})
 	c.scene.Root().AppendChild(followCameraNode)
 
 	c.bonnetCamera = c.gfxScene.CreateCamera()
@@ -184,8 +177,10 @@ func (c *PlayController) Start(environment data.Environment, controller data.Con
 	c.bonnetCamera.SetExposure(15.0)
 	c.bonnetCamera.SetAutoFocus(false)
 
-	bonnetCameraNode := game.NewNode()
-	bonnetCameraNode.SetAttachable(c.bonnetCamera)
+	bonnetCameraNode := hierarchy.NewNode()
+	bonnetCameraNode.SetTarget(game.CameraNodeTarget{
+		Camera: c.bonnetCamera,
+	})
 	bonnetCameraNode.SetRotation(dprec.RotationQuat(dprec.Degrees(180), dprec.BasisYVec3()))
 	bonnetCameraNode.SetPosition(dprec.NewVec3(0.0, 0.75, 0.35))
 	vehicleNode.AppendChild(bonnetCameraNode)

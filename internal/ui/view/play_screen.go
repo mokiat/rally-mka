@@ -5,12 +5,12 @@ import (
 	"time"
 
 	"github.com/mokiat/gog/opt"
+	"github.com/mokiat/lacking/debug/metric/metricui"
 	"github.com/mokiat/lacking/ui"
 	co "github.com/mokiat/lacking/ui/component"
 	"github.com/mokiat/lacking/ui/layout"
 	"github.com/mokiat/lacking/ui/mvc"
 	"github.com/mokiat/lacking/ui/std"
-	"github.com/mokiat/lacking/util/metrics"
 	"github.com/mokiat/rally-mka/internal/game/data"
 	"github.com/mokiat/rally-mka/internal/ui/action"
 	"github.com/mokiat/rally-mka/internal/ui/controller"
@@ -31,10 +31,7 @@ type playScreenComponent struct {
 	hideCursor bool
 	controller *controller.PlayController
 
-	debugVisible       bool
-	debugRegions       []metrics.RegionStat
-	debugRegionsTicker *time.Ticker
-	debugRegionsStop   chan struct{}
+	debugVisible bool
 
 	rootElement *ui.Element
 	exitMenu    co.Overlay
@@ -45,26 +42,6 @@ var _ ui.ElementMouseHandler = (*playScreenComponent)(nil)
 
 func (c *playScreenComponent) OnCreate() {
 	context := co.TypedValue[global.Context](c.Scope())
-
-	// FIXME: This is ugly and complicated. Come up with a better API
-	// than what Go provides that is integrated into component library and
-	// handles everything (cleanup, thread scheduling, etc).
-	c.debugRegionsTicker = time.NewTicker(time.Second)
-	c.debugRegionsStop = make(chan struct{})
-	go func() {
-		for {
-			select {
-			case <-c.debugRegionsTicker.C:
-				co.Schedule(c.Scope(), func() {
-					c.debugRegions = metrics.RegionStats()
-					c.Invalidate()
-				})
-			case <-c.debugRegionsStop:
-				return
-			}
-		}
-	}()
-
 	screenData := co.GetData[PlayScreenData](c.Properties())
 
 	// FIXME: This may actually panic if there is a third party
@@ -82,8 +59,6 @@ func (c *playScreenComponent) OnCreate() {
 
 func (c *playScreenComponent) OnDelete() {
 	defer c.controller.Stop()
-	defer c.debugRegionsTicker.Stop()
-	defer close(c.debugRegionsStop)
 	defer co.Window(c.Scope()).SetCursorVisible(true)
 }
 
@@ -133,9 +108,9 @@ func (c *playScreenComponent) Render() co.Instance {
 		})
 
 		if c.debugVisible {
-			co.WithChild("regions", co.New(widget.RegionBlock, func() {
-				co.WithData(widget.RegionBlockData{
-					Regions: c.debugRegions,
+			co.WithChild("flamegraph", co.New(metricui.FlameGraph, func() {
+				co.WithData(metricui.FlameGraphData{
+					UpdateInterval: time.Second,
 				})
 				co.WithLayoutData(layout.Data{
 					Top:   opt.V(0),
