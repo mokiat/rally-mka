@@ -5,10 +5,9 @@ package main
 import (
 	"fmt"
 
-	glapp "github.com/mokiat/lacking-gl/app"
-	glgame "github.com/mokiat/lacking-gl/game"
-	glrender "github.com/mokiat/lacking-gl/render"
-	glui "github.com/mokiat/lacking-gl/ui"
+	glapp "github.com/mokiat/lacking-native/app"
+	glgame "github.com/mokiat/lacking-native/game"
+	glui "github.com/mokiat/lacking-native/ui"
 	"github.com/mokiat/lacking/app"
 	"github.com/mokiat/lacking/game"
 	"github.com/mokiat/lacking/game/asset"
@@ -25,10 +24,8 @@ func runApplication() error {
 	}
 	locator := ui.WrappedLocator(resource.NewFSLocator(resources.UI))
 
-	renderAPI := glrender.NewAPI()
-	gameController := game.NewController(registry, renderAPI, glgame.NewShaderCollection())
-	uiCfg := ui.NewConfig(locator, renderAPI, glui.NewShaderCollection())
-	uiController := ui.NewController(uiCfg, func(w *ui.Window) {
+	gameController := game.NewController(registry, glgame.NewShaderCollection())
+	uiController := ui.NewController(locator, glui.NewShaderCollection(), func(w *ui.Window) {
 		gameui.BootstrapApplication(w, gameController)
 	})
 

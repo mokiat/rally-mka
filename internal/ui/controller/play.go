@@ -2,6 +2,7 @@ package controller
 
 import (
 	"runtime"
+	"time"
 
 	"github.com/mokiat/gomath/dprec"
 	"github.com/mokiat/gomath/sprec"
@@ -9,9 +10,11 @@ import (
 	"github.com/mokiat/lacking/game"
 	"github.com/mokiat/lacking/game/ecs"
 	"github.com/mokiat/lacking/game/graphics"
+	"github.com/mokiat/lacking/game/hierarchy"
 	"github.com/mokiat/lacking/game/physics"
 	"github.com/mokiat/lacking/game/physics/collision"
 	"github.com/mokiat/lacking/game/preset"
+	"github.com/mokiat/lacking/game/timestep"
 	"github.com/mokiat/lacking/ui"
 	"github.com/mokiat/rally-mka/internal/game/data"
 )
@@ -35,8 +38,8 @@ type PlayController struct {
 	engine   *game.Engine
 	playData *data.PlayData
 
-	preUpdateSubscription  *game.UpdateSubscription
-	postUpdateSubscription *game.UpdateSubscription
+	preUpdateSubscription  *timestep.UpdateSubscription
+	postUpdateSubscription *timestep.UpdateSubscription
 
 	scene        *game.Scene
 	gfxScene     *graphics.Scene
@@ -56,11 +59,12 @@ func (c *PlayController) Start(environment data.Environment, controller data.Con
 	physics.ImpulseDriftAdjustmentRatio = 0.06 // FIXME: Use default once multi-point collisions are fixed
 
 	// TODO: These subscriptions should be attached on the scene and/or the physics.
-	c.preUpdateSubscription = c.engine.SubscribePreUpdate(c.onPreUpdate)
-	c.postUpdateSubscription = c.engine.SubscribePostUpdate(c.onPostUpdate)
 
 	c.scene = c.engine.CreateScene()
 	c.scene.Initialize(c.playData.Scene)
+
+	c.preUpdateSubscription = c.scene.SubscribePreUpdate(c.onPreUpdate)
+	c.postUpdateSubscription = c.scene.SubscribePostUpdate(c.onPostUpdate)
 
 	c.gfxScene = c.scene.Graphics()
 	c.physicsScene = c.scene.Physics()
@@ -71,7 +75,7 @@ func (c *PlayController) Start(environment data.Environment, controller data.Con
 	c.followCameraSystem = preset.NewFollowCameraSystem(c.ecsScene, c.window)
 	c.followCameraSystem.UseDefaults()
 
-	c.carSystem = preset.NewCarSystem(c.ecsScene, c.gfxScene, c.window)
+	c.carSystem = preset.NewCarSystem(c.ecsScene, c.gfxScene)
 
 	var sunLight *graphics.DirectionalLight
 	switch environment {
@@ -88,7 +92,7 @@ func (c *PlayController) Start(environment data.Environment, controller data.Con
 		})
 	}
 
-	lightNode := game.NewNode()
+	lightNode := hierarchy.NewNode()
 	lightRotation := dprec.QuatProd(
 		dprec.RotationQuat(dprec.Degrees(-140), dprec.BasisYVec3()),
 		dprec.RotationQuat(dprec.Degrees(-45), dprec.BasisXVec3()),
@@ -96,20 +100,10 @@ func (c *PlayController) Start(environment data.Environment, controller data.Con
 	lightPosition := dprec.QuatVec3Rotation(lightRotation, dprec.NewVec3(0.0, 0.0, 100.0))
 	lightNode.SetPosition(lightPosition)
 	lightNode.SetRotation(lightRotation)
-	lightNode.UseTransformation(func(parent, current dprec.Mat4) dprec.Mat4 {
-		// Remove parent's rotation
-		parent.M11 = 1.0
-		parent.M12 = 0.0
-		parent.M13 = 0.0
-		parent.M21 = 0.0
-		parent.M22 = 1.0
-		parent.M23 = 0.0
-		parent.M31 = 0.0
-		parent.M32 = 0.0
-		parent.M33 = 1.0
-		return dprec.Mat4Prod(parent, current)
+	lightNode.SetTarget(game.DirectionalLightNodeTarget{
+		Light:                 sunLight,
+		UseOnlyParentPosition: true,
 	})
-	lightNode.SetAttachable(sunLight)
 
 	carInstance := c.scene.CreateModel(game.ModelInfo{
 		Name:       "SUV",
@@ -169,9 +163,11 @@ func (c *PlayController) Start(environment data.Environment, controller data.Con
 	c.followCamera.SetAutoFocus(false)
 	c.gfxScene.SetActiveCamera(c.followCamera)
 
-	followCameraNode := game.NewNode()
+	followCameraNode := hierarchy.NewNode()
 	followCameraNode.SetPosition(dprec.NewVec3(0.0, 20.0, 10.0))
-	followCameraNode.SetAttachable(c.followCamera)
+	followCameraNode.SetTarget(game.CameraNodeTarget{
+		Camera: c.followCamera,
+	})
 	c.scene.Root().AppendChild(followCameraNode)
 
 	c.bonnetCamera = c.gfxScene.CreateCamera()
@@ -181,8 +177,10 @@ func (c *PlayController) Start(environment data.Environment, controller data.Con
 	c.bonnetCamera.SetExposure(15.0)
 	c.bonnetCamera.SetAutoFocus(false)
 
-	bonnetCameraNode := game.NewNode()
-	bonnetCameraNode.SetAttachable(c.bonnetCamera)
+	bonnetCameraNode := hierarchy.NewNode()
+	bonnetCameraNode.SetTarget(game.CameraNodeTarget{
+		Camera: c.bonnetCamera,
+	})
 	bonnetCameraNode.SetRotation(dprec.RotationQuat(dprec.Degrees(180), dprec.BasisYVec3()))
 	bonnetCameraNode.SetPosition(dprec.NewVec3(0.0, 0.75, 0.35))
 	vehicleNode.AppendChild(bonnetCameraNode)
@@ -254,17 +252,17 @@ func (c *PlayController) OnKeyboardEvent(event ui.KeyboardEvent) bool {
 	return c.carSystem.OnKeyboardEvent(event)
 }
 
-func (c *PlayController) onPreUpdate(engine *game.Engine, scene *game.Scene, elapsedSeconds float64) {
+func (c *PlayController) onPreUpdate(elapsedTime time.Duration) {
 	// TODO: This check will not be necessary if subscription is on Scene.
 	if !c.scene.IsFrozen() {
-		c.carSystem.Update(elapsedSeconds)
+		c.carSystem.Update(elapsedTime.Seconds())
 	}
 }
 
-func (c *PlayController) onPostUpdate(engine *game.Engine, scene *game.Scene, elapsedSeconds float64) {
+func (c *PlayController) onPostUpdate(elapsedTime time.Duration) {
 	// TODO: This check will not be necessary if subscription is on Scene.
 	if !c.scene.IsFrozen() {
-		c.followCameraSystem.Update(elapsedSeconds)
+		c.followCameraSystem.Update(elapsedTime.Seconds())
 	}
 }
 

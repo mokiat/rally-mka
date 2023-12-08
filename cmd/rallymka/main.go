@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/mokiat/lacking/log"
+	"github.com/mokiat/lacking/debug/log"
 )
 
 func main() {
