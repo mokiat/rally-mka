@@ -45,10 +45,11 @@ func (c *playScreenComponent) OnCreate() {
 	context := co.TypedValue[global.Context](c.Scope())
 	screenData := co.GetData[PlayScreenData](c.Properties())
 	c.appModel = screenData.AppModel
+	playModel := screenData.Play
 
 	// FIXME: This may actually panic if there is a third party
 	// waiting / reading on this and it happens to match the Get call.
-	playData, err := screenData.Play.Data().Get()
+	playData, err := playModel.Data().Wait()
 	if err != nil {
 		panic(fmt.Errorf("failed to get data: %w", err))
 	}

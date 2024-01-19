@@ -1,6 +1,7 @@
 package data
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/mokiat/lacking/game"
@@ -22,7 +23,7 @@ const (
 	EnvironmentNight Environment = "night"
 )
 
-func LoadPlayData(engine *game.Engine, resourceSet *game.ResourceSet, environment Environment, controller Controller) game.Promise[*PlayData] {
+func LoadPlayData(engine *game.Engine, resourceSet *game.ResourceSet, environment Environment, controller Controller) async.Promise[*PlayData] {
 	var sceneName string
 	switch environment {
 	case EnvironmentDay:
@@ -36,22 +37,22 @@ func LoadPlayData(engine *game.Engine, resourceSet *game.ResourceSet, environmen
 	scenePromise := resourceSet.OpenSceneByName(sceneName)
 	vehiclePromise := resourceSet.OpenModelByName("SUV")
 
-	result := async.NewPromise[*PlayData]()
+	promise := async.NewPromise[*PlayData]()
 	go func() {
 		var data PlayData
 		data.Environment = environment
 		data.Controller = controller
-		err := firstErr(
+		err := errors.Join(
 			scenePromise.Inject(&data.Scene),
 			vehiclePromise.Inject(&data.Vehicle),
 		)
 		if err != nil {
-			result.Fail(err)
+			promise.Fail(err)
 		} else {
-			result.Deliver(&data)
+			promise.Deliver(&data)
 		}
 	}()
-	return game.SafePromise(result, engine)
+	return promise
 }
 
 type PlayData struct {

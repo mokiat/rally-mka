@@ -45,7 +45,7 @@ func (c *introScreenComponent) OnCreate() {
 			// TODO: Handle errors!!!
 			appModel.SetActiveView(model.ViewNameHome)
 		} else {
-			loadingModel.SetPromise(promise)
+			loadingModel.SetPromise(model.ToLoadingPromise(promise))
 			loadingModel.SetNextViewName(model.ViewNameHome)
 			appModel.SetActiveView(model.ViewNameLoading)
 		}

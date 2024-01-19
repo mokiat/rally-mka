@@ -5,6 +5,7 @@ import (
 	"github.com/mokiat/lacking/game"
 	"github.com/mokiat/lacking/game/graphics"
 	"github.com/mokiat/lacking/ui/mvc"
+	"github.com/mokiat/lacking/util/async"
 	"github.com/mokiat/rally-mka/internal/game/data"
 )
 
@@ -30,17 +31,17 @@ func NewHome(eventBus *mvc.EventBus) *Home {
 
 type Home struct {
 	eventBus    *mvc.EventBus
-	sceneData   game.Promise[*data.HomeData]
+	sceneData   async.Promise[*data.HomeData]
 	scene       *HomeScene
 	controller  data.Controller
 	environment data.Environment
 }
 
-func (h *Home) Data() game.Promise[*data.HomeData] {
+func (h *Home) Data() async.Promise[*data.HomeData] {
 	return h.sceneData
 }
 
-func (h *Home) SetData(sceneData game.Promise[*data.HomeData]) {
+func (h *Home) SetData(sceneData async.Promise[*data.HomeData]) {
 	h.sceneData = sceneData
 }
 

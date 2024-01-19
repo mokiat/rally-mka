@@ -2,10 +2,6 @@ package model
 
 import "github.com/mokiat/lacking/ui/mvc"
 
-type LoadingPromise interface {
-	OnReady(func())
-}
-
 func NewLoading(eventBus *mvc.EventBus) *Loading {
 	return &Loading{
 		promise:      nil,

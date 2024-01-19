@@ -1,37 +1,30 @@
 package data
 
 import (
+	"errors"
+
 	"github.com/mokiat/lacking/game"
 	"github.com/mokiat/lacking/util/async"
 )
 
-func LoadHomeData(engine *game.Engine, resourceSet *game.ResourceSet) game.Promise[*HomeData] {
+func LoadHomeData(engine *game.Engine, resourceSet *game.ResourceSet) async.Promise[*HomeData] {
 	scenePromise := resourceSet.OpenSceneByName("Home Screen")
 
-	result := async.NewPromise[*HomeData]()
+	promise := async.NewPromise[*HomeData]()
 	go func() {
 		var data HomeData
-		err := firstErr(
+		err := errors.Join(
 			scenePromise.Inject(&data.Scene),
 		)
 		if err != nil {
-			result.Fail(err)
+			promise.Fail(err)
 		} else {
-			result.Deliver(&data)
+			promise.Deliver(&data)
 		}
 	}()
-	return game.SafePromise(result, engine)
+	return promise
 }
 
 type HomeData struct {
 	Scene *game.SceneDefinition
-}
-
-func firstErr(errs ...error) error {
-	for _, err := range errs {
-		if err != nil {
-			return err
-		}
-	}
-	return nil
 }

@@ -321,7 +321,7 @@ func (c *homeScreenComponent) createScene() *model.HomeScene {
 	result := &model.HomeScene{}
 
 	promise := c.homeModel.Data()
-	sceneData, err := promise.Get()
+	sceneData, err := promise.Wait()
 	if err != nil {
 		log.Error("ERROR: %v", err) // TODO: Go to error screen
 		return nil
@@ -557,7 +557,7 @@ func (c *homeScreenComponent) onStartClicked() {
 	promise := data.LoadPlayData(c.engine, c.resourceSet, c.homeModel.Environment(), c.homeModel.Controller())
 	c.playModel.SetData(promise)
 
-	c.loadingModel.SetPromise(promise)
+	c.loadingModel.SetPromise(model.ToLoadingPromise(promise))
 	c.loadingModel.SetNextViewName(model.ViewNamePlay)
 	c.appModel.SetActiveView(model.ViewNameLoading)
 }
