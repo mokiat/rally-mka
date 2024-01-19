@@ -9,10 +9,8 @@ import (
 	"github.com/mokiat/lacking/ui"
 	co "github.com/mokiat/lacking/ui/component"
 	"github.com/mokiat/lacking/ui/layout"
-	"github.com/mokiat/lacking/ui/mvc"
 	"github.com/mokiat/lacking/ui/std"
 	"github.com/mokiat/rally-mka/internal/game/data"
-	"github.com/mokiat/rally-mka/internal/ui/action"
 	"github.com/mokiat/rally-mka/internal/ui/controller"
 	"github.com/mokiat/rally-mka/internal/ui/global"
 	"github.com/mokiat/rally-mka/internal/ui/model"
@@ -22,11 +20,14 @@ import (
 var PlayScreen = co.Define(&playScreenComponent{})
 
 type PlayScreenData struct {
-	Play *model.Play
+	AppModel *model.Application
+	Play     *model.Play
 }
 
 type playScreenComponent struct {
 	co.BaseComponent
+
+	appModel *model.Application
 
 	hideCursor bool
 	controller *controller.PlayController
@@ -43,6 +44,7 @@ var _ ui.ElementMouseHandler = (*playScreenComponent)(nil)
 func (c *playScreenComponent) OnCreate() {
 	context := co.TypedValue[global.Context](c.Scope())
 	screenData := co.GetData[PlayScreenData](c.Properties())
+	c.appModel = screenData.AppModel
 
 	// FIXME: This may actually panic if there is a third party
 	// waiting / reading on this and it happens to match the Get call.
@@ -168,9 +170,7 @@ func (c *playScreenComponent) onContinue() {
 
 func (c *playScreenComponent) onGoHome() {
 	c.exitMenu.Close()
-	mvc.Dispatch(c.Scope(), action.ChangeView{
-		ViewName: model.ViewNameHome,
-	})
+	c.appModel.SetActiveView(model.ViewNameHome)
 }
 
 func (c *playScreenComponent) onExit() {

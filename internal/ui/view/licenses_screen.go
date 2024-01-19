@@ -5,9 +5,7 @@ import (
 	"github.com/mokiat/lacking/ui"
 	co "github.com/mokiat/lacking/ui/component"
 	"github.com/mokiat/lacking/ui/layout"
-	"github.com/mokiat/lacking/ui/mvc"
 	"github.com/mokiat/lacking/ui/std"
-	"github.com/mokiat/rally-mka/internal/ui/action"
 	"github.com/mokiat/rally-mka/internal/ui/model"
 	"github.com/mokiat/rally-mka/internal/ui/widget"
 	"github.com/mokiat/rally-mka/resources"
@@ -15,14 +13,19 @@ import (
 
 var LicensesScreen = co.Define(&licensesScreenComponent{})
 
-type licensesScreenComponent struct {
-	co.BaseComponent
+type LicensesScreenData struct {
+	AppModel *model.Application
 }
 
-func (c *licensesScreenComponent) onBackClicked() {
-	mvc.Dispatch(c.Scope(), action.ChangeView{
-		ViewName: model.ViewNameHome,
-	})
+type licensesScreenComponent struct {
+	co.BaseComponent
+
+	appModel *model.Application
+}
+
+func (c *licensesScreenComponent) OnCreate() {
+	data := co.GetData[LicensesScreenData](c.Properties())
+	c.appModel = data.AppModel
 }
 
 func (c *licensesScreenComponent) Render() co.Instance {
@@ -139,4 +142,8 @@ func (c *licensesScreenComponent) Render() co.Instance {
 			}))
 		}))
 	})
+}
+
+func (c *licensesScreenComponent) onBackClicked() {
+	c.appModel.SetActiveView(model.ViewNameHome)
 }

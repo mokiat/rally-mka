@@ -5,19 +5,18 @@ import (
 	"github.com/mokiat/lacking/ui"
 	co "github.com/mokiat/lacking/ui/component"
 	"github.com/mokiat/lacking/ui/layout"
-	"github.com/mokiat/lacking/ui/mvc"
 	"github.com/mokiat/lacking/ui/std"
-	"github.com/mokiat/rally-mka/internal/ui/action"
 	"github.com/mokiat/rally-mka/internal/ui/model"
 	"github.com/mokiat/rally-mka/internal/ui/theme"
 	"github.com/mokiat/rally-mka/internal/ui/widget"
 )
 
-type LoadingScreenData struct {
-	Model *model.Loading
-}
-
 var LoadingScreen = co.Define(&loadingScreenComponent{})
+
+type LoadingScreenData struct {
+	AppModel *model.Application
+	Model    *model.Loading
+}
 
 type loadingScreenComponent struct {
 	co.BaseComponent
@@ -25,11 +24,11 @@ type loadingScreenComponent struct {
 
 func (c *loadingScreenComponent) OnCreate() {
 	screenData := co.GetData[LoadingScreenData](c.Properties())
+	appModel := screenData.AppModel
 	loadingModel := screenData.Model
 	loadingModel.Promise().OnReady(func() {
-		// TODO: Handle errors!
-		mvc.Dispatch(c.Scope(), action.ChangeView{
-			ViewName: loadingModel.NextViewName(),
+		co.Schedule(c.Scope(), func() {
+			appModel.SetActiveView(loadingModel.NextViewName())
 		})
 	})
 }

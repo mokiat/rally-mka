@@ -7,15 +7,14 @@ import (
 	"github.com/mokiat/lacking/ui"
 	co "github.com/mokiat/lacking/ui/component"
 	"github.com/mokiat/lacking/ui/layout"
-	"github.com/mokiat/lacking/ui/mvc"
 	"github.com/mokiat/lacking/ui/std"
 	"github.com/mokiat/rally-mka/internal/game/data"
-	"github.com/mokiat/rally-mka/internal/ui/action"
 	"github.com/mokiat/rally-mka/internal/ui/global"
 	"github.com/mokiat/rally-mka/internal/ui/model"
 )
 
 type IntroScreenData struct {
+	AppModel     *model.Application
 	Home         *model.Home
 	LoadingModel *model.Loading
 }
@@ -34,6 +33,7 @@ func (c *introScreenComponent) OnCreate() {
 	resourceSet := globalContext.ResourceSet
 
 	screenData := co.GetData[IntroScreenData](c.Properties())
+	appModel := screenData.AppModel
 	homeModel := screenData.Home
 	loadingModel := screenData.LoadingModel
 
@@ -43,15 +43,11 @@ func (c *introScreenComponent) OnCreate() {
 		promise := homeModel.Data()
 		if promise.Ready() {
 			// TODO: Handle errors!!!
-			mvc.Dispatch(c.Scope(), action.ChangeView{
-				ViewName: model.ViewNameHome,
-			})
+			appModel.SetActiveView(model.ViewNameHome)
 		} else {
 			loadingModel.SetPromise(promise)
 			loadingModel.SetNextViewName(model.ViewNameHome)
-			mvc.Dispatch(c.Scope(), action.ChangeView{
-				ViewName: model.ViewNameLoading,
-			})
+			appModel.SetActiveView(model.ViewNameLoading)
 		}
 	})
 }

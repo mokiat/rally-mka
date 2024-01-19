@@ -8,14 +8,6 @@ import (
 	"github.com/mokiat/rally-mka/internal/game/data"
 )
 
-var (
-	HomeChange            = mvc.NewChange("home")
-	HomeDataChange        = mvc.SubChange(HomeChange, "data")
-	HomeSceneChange       = mvc.SubChange(HomeChange, "scene")
-	HomeControllerChange  = mvc.SubChange(HomeChange, "controller")
-	HomeEnvironmentChange = mvc.SubChange(HomeChange, "environment")
-)
-
 type HomeScene struct {
 	Scene *game.Scene
 
@@ -28,16 +20,16 @@ type HomeScene struct {
 	NightSpotLight    *graphics.SpotLight
 }
 
-func newHome() *Home {
+func NewHome(eventBus *mvc.EventBus) *Home {
 	return &Home{
-		Observable:  mvc.NewObservable(),
+		eventBus:    eventBus,
 		controller:  data.ControllerKeyboard,
 		environment: data.EnvironmentDay,
 	}
 }
 
 type Home struct {
-	mvc.Observable
+	eventBus    *mvc.EventBus
 	sceneData   game.Promise[*data.HomeData]
 	scene       *HomeScene
 	controller  data.Controller
@@ -50,7 +42,6 @@ func (h *Home) Data() game.Promise[*data.HomeData] {
 
 func (h *Home) SetData(sceneData game.Promise[*data.HomeData]) {
 	h.sceneData = sceneData
-	h.SignalChange(HomeDataChange)
 }
 
 func (h *Home) Scene() *HomeScene {
@@ -59,7 +50,6 @@ func (h *Home) Scene() *HomeScene {
 
 func (h *Home) SetScene(scene *HomeScene) {
 	h.scene = scene
-	h.SignalChange(HomeSceneChange)
 }
 
 func (h *Home) Controller() data.Controller {
@@ -67,8 +57,10 @@ func (h *Home) Controller() data.Controller {
 }
 
 func (h *Home) SetController(controller data.Controller) {
-	h.controller = controller
-	h.SignalChange(HomeControllerChange)
+	if controller != h.controller {
+		h.controller = controller
+		h.eventBus.Notify(ControllerChangedEvent{})
+	}
 }
 
 func (h *Home) Environment() data.Environment {
@@ -76,6 +68,12 @@ func (h *Home) Environment() data.Environment {
 }
 
 func (h *Home) SetEnvironment(environment data.Environment) {
-	h.environment = environment
-	h.SignalChange(HomeEnvironmentChange)
+	if environment != h.environment {
+		h.environment = environment
+		h.eventBus.Notify(EnvironmentChangedEvent{})
+	}
 }
+
+type ControllerChangedEvent struct{}
+
+type EnvironmentChangedEvent struct{}

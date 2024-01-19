@@ -5,16 +5,16 @@ import (
 	"github.com/mokiat/lacking/ui"
 	co "github.com/mokiat/lacking/ui/component"
 	"github.com/mokiat/lacking/ui/mvc"
-	"github.com/mokiat/rally-mka/internal/ui/controller"
 	"github.com/mokiat/rally-mka/internal/ui/global"
-	"github.com/mokiat/rally-mka/internal/ui/model"
 	"github.com/mokiat/rally-mka/internal/ui/view"
 )
 
 func BootstrapApplication(window *ui.Window, gameController *game.Controller) {
 	engine := gameController.Engine()
+	eventBus := mvc.NewEventBus()
 
 	scope := co.RootScope(window)
+	scope = co.TypedValueScope(scope, eventBus)
 	scope = co.TypedValueScope(scope, global.Context{
 		Engine:      engine,
 		ResourceSet: engine.CreateResourceSet(),
@@ -26,21 +26,8 @@ var Bootstrap = co.Define(&bootstrapComponent{})
 
 type bootstrapComponent struct {
 	co.BaseComponent
-
-	appModel      *model.Application
-	appController *controller.Application
-	childrenScope co.Scope
-}
-
-func (c *bootstrapComponent) OnCreate() {
-	c.appModel = model.NewApplication()
-	c.appController = controller.NewApplication(c.appModel)
-	c.childrenScope = mvc.UseReducer(c.Scope(), c.appController)
 }
 
 func (c *bootstrapComponent) Render() co.Instance {
-	return co.New(view.Application, func() {
-		co.WithData(c.appModel)
-		co.WithScope(c.childrenScope)
-	})
+	return co.New(view.Application, nil)
 }

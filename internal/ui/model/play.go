@@ -6,19 +6,11 @@ import (
 	"github.com/mokiat/rally-mka/internal/game/data"
 )
 
-var (
-	PlayChange     = mvc.NewChange("play")
-	PlayDataChange = mvc.SubChange(PlayChange, "data")
-)
-
-func newPlay() *Play {
-	return &Play{
-		Observable: mvc.NewObservable(),
-	}
+func NewPlay(eventBus *mvc.EventBus) *Play {
+	return &Play{}
 }
 
 type Play struct {
-	mvc.Observable
 	sceneData game.Promise[*data.PlayData]
 }
 
@@ -28,5 +20,4 @@ func (h *Play) Data() game.Promise[*data.PlayData] {
 
 func (h *Play) SetData(sceneData game.Promise[*data.PlayData]) {
 	h.sceneData = sceneData
-	h.SignalChange(PlayDataChange)
 }

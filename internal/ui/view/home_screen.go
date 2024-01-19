@@ -15,19 +15,19 @@ import (
 	"github.com/mokiat/lacking/ui/mvc"
 	"github.com/mokiat/lacking/ui/std"
 	"github.com/mokiat/rally-mka/internal/game/data"
-	"github.com/mokiat/rally-mka/internal/ui/action"
 	"github.com/mokiat/rally-mka/internal/ui/global"
 	"github.com/mokiat/rally-mka/internal/ui/model"
 	"github.com/mokiat/rally-mka/internal/ui/widget"
 	"github.com/x448/float16"
 )
 
-var HomeScreen = mvc.Wrap(co.Define(&homeScreenComponent{}))
+var HomeScreen = mvc.EventListener(co.Define(&homeScreenComponent{}))
 
 type HomeScreenData struct {
-	Loading *model.Loading
-	Home    *model.Home
-	Play    *model.Play
+	AppModel *model.Application
+	Loading  *model.Loading
+	Home     *model.Home
+	Play     *model.Play
 }
 
 type homeScreenComponent struct {
@@ -36,6 +36,7 @@ type homeScreenComponent struct {
 	engine      *game.Engine
 	resourceSet *game.ResourceSet
 
+	appModel     *model.Application
 	loadingModel *model.Loading
 	homeModel    *model.Home
 	playModel    *model.Play
@@ -50,13 +51,10 @@ func (c *homeScreenComponent) OnCreate() {
 	data := co.GetData[HomeScreenData](c.Properties())
 	c.engine = globalContext.Engine
 	c.resourceSet = globalContext.ResourceSet
+	c.appModel = data.AppModel
 	c.loadingModel = data.Loading
 	c.homeModel = data.Home
 	c.playModel = data.Play
-
-	mvc.UseBinding(c.Scope(), c.homeModel, func(ch mvc.Change) bool {
-		return mvc.IsChange(ch, model.HomeChange)
-	})
 
 	c.scene = c.homeModel.Scene()
 	if c.scene == nil {
@@ -308,6 +306,17 @@ func (c *homeScreenComponent) Render() co.Instance {
 	})
 }
 
+func (c *homeScreenComponent) OnEvent(event mvc.Event) {
+	switch event.(type) {
+	case model.ActiveViewChangedEvent:
+		c.Invalidate()
+	case model.ControllerChangedEvent:
+		c.Invalidate()
+	case model.EnvironmentChangedEvent:
+		c.Invalidate()
+	}
+}
+
 func (c *homeScreenComponent) createScene() *model.HomeScene {
 	result := &model.HomeScene{}
 
@@ -550,13 +559,10 @@ func (c *homeScreenComponent) onStartClicked() {
 
 	c.loadingModel.SetPromise(promise)
 	c.loadingModel.SetNextViewName(model.ViewNamePlay)
-	mvc.Dispatch(c.Scope(), action.ChangeView{
-		ViewName: model.ViewNameLoading,
-	})
+	c.appModel.SetActiveView(model.ViewNameLoading)
 }
 
 func (c *homeScreenComponent) onBackClicked() {
-	// TODO: Add a `Property` concept instead of manual Invalidate.
 	c.showOptions = false
 	c.Invalidate()
 }
@@ -567,15 +573,11 @@ func (c *homeScreenComponent) onPlayClicked() {
 }
 
 func (c *homeScreenComponent) onLicensesClicked() {
-	mvc.Dispatch(c.Scope(), action.ChangeView{
-		ViewName: model.ViewNameLicenses,
-	})
+	c.appModel.SetActiveView(model.ViewNameLicenses)
 }
 
 func (c *homeScreenComponent) onCreditsClicked() {
-	mvc.Dispatch(c.Scope(), action.ChangeView{
-		ViewName: model.ViewNameCredits,
-	})
+	c.appModel.SetActiveView(model.ViewNameCredits)
 }
 
 func (c *homeScreenComponent) onExitClicked() {

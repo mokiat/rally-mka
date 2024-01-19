@@ -8,48 +8,53 @@ import (
 	"github.com/mokiat/lacking/ui"
 	co "github.com/mokiat/lacking/ui/component"
 	"github.com/mokiat/lacking/ui/layout"
-	"github.com/mokiat/lacking/ui/mvc"
 	"github.com/mokiat/lacking/ui/std"
-	"github.com/mokiat/rally-mka/internal/ui/action"
 	"github.com/mokiat/rally-mka/internal/ui/model"
 	"github.com/mokiat/rally-mka/internal/ui/theme"
 	"github.com/mokiat/rally-mka/internal/ui/widget"
 )
 
-var (
-	sections []creditsSection
-)
-
-func init() {
-	sections = append(sections, createSection("ART & PROGRAMMING",
-		"Momchil Atanasov",
-	))
-	sections = append(sections, createSection("NOTABLE TOOLING",
-		"Visual Studio Code",
-		"Blender",
-		"Affinity Designer",
-		"Procreate",
-		"GIMP",
-	))
-	sections = append(sections, createSection("SPECIAL THANKS",
-		"Go Developers for the brilliant programming language",
-		"\"GameDev БГ\" Discord server for provided support",
-		"Open-source developers for used libraries and tools",
-		"Grant Abbitt for video tutorials",
-		"Erin Catto for articles and videos",
-	))
-}
+var sections = func() []creditsSection {
+	return []creditsSection{
+		createSection("ART & PROGRAMMING",
+			"Momchil Atanasov",
+		),
+		createSection("NOTABLE TOOLING",
+			"Visual Studio Code",
+			"Blender",
+			"Affinity Designer",
+			"Procreate",
+			"GIMP",
+		),
+		createSection("SPECIAL THANKS",
+			"Go Developers for the brilliant programming language",
+			"\"GameDev БГ\" Discord server for provided support",
+			"Open-source developers for used libraries and tools",
+			"Grant Abbitt for video tutorials",
+			"Erin Catto for articles and videos",
+		),
+	}
+}()
 
 var CreditsScreen = co.Define(&creditsScreenComponent{})
 
+type CreditsScreenData struct {
+	AppModel *model.Application
+}
+
 type creditsScreenComponent struct {
 	co.BaseComponent
+
+	appModel *model.Application
 
 	fadeInVisible  bool
 	fadeOutVisible bool
 }
 
 func (c *creditsScreenComponent) OnCreate() {
+	data := co.GetData[CreditsScreenData](c.Properties())
+	c.appModel = data.AppModel
+
 	c.fadeInVisible = true
 	c.fadeOutVisible = false
 }
@@ -219,9 +224,7 @@ func (c *creditsScreenComponent) Render() co.Instance {
 }
 
 func (c *creditsScreenComponent) onBackClicked() {
-	mvc.Dispatch(c.Scope(), action.ChangeView{
-		ViewName: model.ViewNameHome,
-	})
+	c.appModel.SetActiveView(model.ViewNameHome)
 }
 
 func (c *creditsScreenComponent) onCreditsFinished() {
