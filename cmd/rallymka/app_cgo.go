@@ -36,5 +36,6 @@ func runApplication() error {
 	cfg.SetVSync(true)
 	cfg.SetIcon("ui/images/icon.png")
 	cfg.SetLocator(locator)
+	cfg.SetAudioEnabled(false)
 	return glapp.Run(cfg, app.NewLayeredController(gameController, uiController))
 }

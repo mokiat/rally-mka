@@ -12,6 +12,7 @@ import (
 	"github.com/mokiat/lacking/game/graphics"
 	"github.com/mokiat/lacking/game/hierarchy"
 	"github.com/mokiat/lacking/game/physics"
+	"github.com/mokiat/lacking/game/physics/acceleration"
 	"github.com/mokiat/lacking/game/physics/collision"
 	"github.com/mokiat/lacking/game/preset"
 	"github.com/mokiat/lacking/game/timestep"
@@ -58,8 +59,6 @@ type PlayController struct {
 func (c *PlayController) Start(environment data.Environment, controller data.Controller) {
 	physics.ImpulseDriftAdjustmentRatio = 0.06 // FIXME: Use default once multi-point collisions are fixed
 
-	// TODO: These subscriptions should be attached on the scene and/or the physics.
-
 	c.scene = c.engine.CreateScene()
 	c.scene.Initialize(c.playData.Scene)
 
@@ -69,6 +68,8 @@ func (c *PlayController) Start(environment data.Environment, controller data.Con
 	c.gfxScene = c.scene.Graphics()
 	c.physicsScene = c.scene.Physics()
 	c.ecsScene = c.scene.ECS()
+
+	c.physicsScene.CreateGlobalAccelerator(acceleration.NewGravityDirection())
 
 	c.vehicleDefinition = c.createVehicleDefinition()
 
@@ -253,17 +254,11 @@ func (c *PlayController) OnKeyboardEvent(event ui.KeyboardEvent) bool {
 }
 
 func (c *PlayController) onPreUpdate(elapsedTime time.Duration) {
-	// TODO: This check will not be necessary if subscription is on Scene.
-	if !c.scene.IsFrozen() {
-		c.carSystem.Update(elapsedTime.Seconds())
-	}
+	c.carSystem.Update(elapsedTime.Seconds())
 }
 
 func (c *PlayController) onPostUpdate(elapsedTime time.Duration) {
-	// TODO: This check will not be necessary if subscription is on Scene.
-	if !c.scene.IsFrozen() {
-		c.followCameraSystem.Update(elapsedTime.Seconds())
-	}
+	c.followCameraSystem.Update(elapsedTime.Seconds())
 }
 
 func (c *PlayController) createVehicleDefinition() *preset.CarDefinition {
