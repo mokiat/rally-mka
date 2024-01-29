@@ -46,6 +46,10 @@ tasks:
     cmds:
       - go tool pprof 'http://localhost:6060/debug/pprof/profile?seconds=30'
 
+  profile-cpu-dl:
+    cmds:
+      - curl -o default.pgo 'http://localhost:6060/debug/pprof/profile?seconds=30'
+
   profile-alloc:
     cmds:
       - go tool pprof 'http://localhost:6060/debug/pprof/allocs?seconds=30'
