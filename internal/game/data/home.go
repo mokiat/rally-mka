@@ -8,12 +8,14 @@ import (
 )
 
 func LoadHomeData(engine *game.Engine, resourceSet *game.ResourceSet) async.Promise[*HomeData] {
-	scenePromise := resourceSet.OpenSceneByName("Home Screen")
+	backgroundPromise := resourceSet.OpenModelByName("Home-Screen")
+	scenePromise := resourceSet.OpenModelByName("HomeScreen")
 
 	promise := async.NewPromise[*HomeData]()
 	go func() {
 		var data HomeData
 		err := errors.Join(
+			backgroundPromise.Inject(&data.Background),
 			scenePromise.Inject(&data.Scene),
 		)
 		if err != nil {
@@ -26,5 +28,6 @@ func LoadHomeData(engine *game.Engine, resourceSet *game.ResourceSet) async.Prom
 }
 
 type HomeData struct {
-	Scene *game.SceneDefinition
+	Background *game.ModelDefinition
+	Scene      *game.ModelDefinition
 }

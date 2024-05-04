@@ -60,7 +60,24 @@ func (c *PlayController) Start(environment data.Environment, controller data.Con
 	physics.ImpulseDriftAdjustmentRatio = 0.06 // FIXME: Use default once multi-point collisions are fixed
 
 	c.scene = c.engine.CreateScene()
-	c.scene.Initialize(c.playData.Scene)
+
+	c.scene.CreateModel(game.ModelInfo{
+		Name:       "Background",
+		Definition: c.playData.Background,
+		Position:   dprec.ZeroVec3(),
+		Rotation:   dprec.IdentityQuat(),
+		Scale:      dprec.NewVec3(1.0, 1.0, 1.0),
+		IsDynamic:  true,
+	})
+
+	c.scene.CreateModel(game.ModelInfo{
+		Name:       "Forest",
+		Definition: c.playData.Scene,
+		Position:   dprec.ZeroVec3(),
+		Rotation:   dprec.IdentityQuat(),
+		Scale:      dprec.NewVec3(1.0, 1.0, 1.0),
+		IsDynamic:  false,
+	})
 
 	c.preUpdateSubscription = c.scene.SubscribePreUpdate(c.onPreUpdate)
 	c.postUpdateSubscription = c.scene.SubscribePostUpdate(c.onPostUpdate)

@@ -23,7 +23,7 @@ func runApplication() error {
 		return fmt.Errorf("failed to initialize registry: %w", err)
 	}
 	resourceLocator := ui.WrappedLocator(resource.NewFSLocator(resources.UI))
-	gameController := game.NewController(registry, jsgame.NewShaderCollection())
+	gameController := game.NewController(registry, jsgame.NewShaderCollection(), nil) // FIXME
 	uiController := ui.NewController(resourceLocator, jsui.NewShaderCollection(), func(w *ui.Window) {
 		gameui.BootstrapApplication(w, gameController)
 	})

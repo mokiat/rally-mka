@@ -24,17 +24,18 @@ const (
 )
 
 func LoadPlayData(engine *game.Engine, resourceSet *game.ResourceSet, environment Environment, controller Controller) async.Promise[*PlayData] {
-	var sceneName string
+	var backgroundName string
 	switch environment {
 	case EnvironmentDay:
-		sceneName = "Forest-Day"
+		backgroundName = "Forest-Day"
 	case EnvironmentNight:
-		sceneName = "Forest-Night"
+		backgroundName = "Forest-Night"
 	default:
 		panic(fmt.Errorf("unknown environment %q", environment))
 	}
 
-	scenePromise := resourceSet.OpenSceneByName(sceneName)
+	backgroundPromise := resourceSet.OpenModelByName(backgroundName)
+	scenePromise := resourceSet.OpenModelByName("Forest")
 	vehiclePromise := resourceSet.OpenModelByName("SUV")
 
 	promise := async.NewPromise[*PlayData]()
@@ -43,6 +44,7 @@ func LoadPlayData(engine *game.Engine, resourceSet *game.ResourceSet, environmen
 		data.Environment = environment
 		data.Controller = controller
 		err := errors.Join(
+			backgroundPromise.Inject(&data.Background),
 			scenePromise.Inject(&data.Scene),
 			vehiclePromise.Inject(&data.Vehicle),
 		)
@@ -56,8 +58,10 @@ func LoadPlayData(engine *game.Engine, resourceSet *game.ResourceSet, environmen
 }
 
 type PlayData struct {
-	Scene       *game.SceneDefinition
-	Vehicle     *game.ModelDefinition
+	Background *game.ModelDefinition
+	Scene      *game.ModelDefinition
+	Vehicle    *game.ModelDefinition
+
 	Environment Environment
 	Controller  Controller
 }

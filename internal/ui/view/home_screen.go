@@ -9,6 +9,7 @@ import (
 	"github.com/mokiat/lacking/game"
 	"github.com/mokiat/lacking/game/graphics"
 	"github.com/mokiat/lacking/game/hierarchy"
+	"github.com/mokiat/lacking/render"
 	"github.com/mokiat/lacking/ui"
 	co "github.com/mokiat/lacking/ui/component"
 	"github.com/mokiat/lacking/ui/layout"
@@ -328,13 +329,36 @@ func (c *homeScreenComponent) createScene() *model.HomeScene {
 	}
 
 	scene := c.engine.CreateScene()
-	scene.Initialize(sceneData.Scene)
+	backgroundModel := scene.CreateModel(game.ModelInfo{
+		Name:       "Background",
+		Definition: sceneData.Background,
+		Position:   dprec.ZeroVec3(),
+		Rotation:   dprec.IdentityQuat(),
+		Scale:      dprec.NewVec3(1.0, 1.0, 1.0),
+		IsDynamic:  true,
+	})
+	backgroundNode := backgroundModel.Root()
+
+	daySkyNode := backgroundNode.FindNode("Sky-Day")
+	result.DaySky = (daySkyNode.Target().(game.SkyNodeTarget)).Sky
+
+	nightSkyNode := backgroundNode.FindNode("Sky-Night")
+	result.NightSky = (nightSkyNode.Target().(game.SkyNodeTarget)).Sky
+
+	sceneModel := scene.CreateModel(game.ModelInfo{
+		Name:       "HomeScreen",
+		Definition: sceneData.Scene,
+		Position:   dprec.ZeroVec3(),
+		Rotation:   dprec.IdentityQuat(),
+		Scale:      dprec.NewVec3(1.0, 1.0, 1.0),
+		IsDynamic:  false,
+	})
+	scene.Root().AppendChild(sceneModel.Root())
 	result.Scene = scene
 
 	camera := c.createCamera(scene.Graphics())
 	scene.Graphics().SetActiveCamera(camera)
 
-	result.DaySkyColor = sprec.NewVec3(20.0, 25.0, 30.0)
 	result.DayAmbientLight = c.createDayAmbientLight(scene.Graphics())
 	result.DayDirectionalLight = scene.Graphics().CreateDirectionalLight(graphics.DirectionalLightInfo{
 		EmitColor: dprec.NewVec3(10, 10, 6),
@@ -351,7 +375,6 @@ func (c *homeScreenComponent) createScene() *model.HomeScene {
 		UseOnlyParentPosition: true,
 	})
 
-	result.NightSkyColor = sprec.NewVec3(0.01, 0.01, 0.01)
 	result.NightAmbientLight = c.createNightAmbientLight(scene.Graphics())
 	result.NightSpotLight = scene.Graphics().CreateSpotLight(graphics.SpotLightInfo{
 		EmitColor:          dprec.NewVec3(5000.0, 5000.0, 7500.0),
@@ -365,11 +388,6 @@ func (c *homeScreenComponent) createScene() *model.HomeScene {
 	nightSpotLightNode.SetTarget(game.SpotLightNodeTarget{
 		Light: result.NightSpotLight,
 	})
-
-	sceneModel := scene.FindModel("Content")
-	// TODO: Remove manual attachment, once this is configurable from
-	// the packing.
-	scene.Root().AppendChild(sceneModel.Root())
 
 	if cameraNode := scene.Root().FindNode("Camera"); cameraNode != nil {
 		cameraNode.SetTarget(game.CameraNodeTarget{
@@ -406,13 +424,11 @@ func (c *homeScreenComponent) createDayAmbientLight(scene *graphics.Scene) *grap
 	reflectionData.SetUint16(4, float16.Fromfloat32(30.0).Bits())
 	reflectionData.SetUint16(6, float16.Fromfloat32(1.0).Bits())
 
-	reflectionTexture := c.engine.Graphics().CreateCubeTexture(graphics.CubeTextureDefinition{
+	reflectionTexture := c.engine.Graphics().API().CreateColorTextureCube(render.ColorTextureCubeInfo{
 		Dimension:       1,
-		Filtering:       graphics.FilterNearest,
-		InternalFormat:  graphics.InternalFormatRGBA16F,
-		DataFormat:      graphics.DataFormatRGBA16F,
-		GammaCorrection: false,
 		GenerateMipmaps: false,
+		GammaCorrection: false,
+		Format:          render.DataFormatRGBA16F,
 		FrontSideData:   reflectionData,
 		BackSideData:    reflectionData,
 		LeftSideData:    reflectionData,
@@ -421,13 +437,11 @@ func (c *homeScreenComponent) createDayAmbientLight(scene *graphics.Scene) *grap
 		BottomSideData:  reflectionData,
 	})
 
-	refractionTexture := c.engine.Graphics().CreateCubeTexture(graphics.CubeTextureDefinition{
+	refractionTexture := c.engine.Graphics().API().CreateColorTextureCube(render.ColorTextureCubeInfo{
 		Dimension:       1,
-		Filtering:       graphics.FilterNearest,
-		InternalFormat:  graphics.InternalFormatRGBA16F,
-		DataFormat:      graphics.DataFormatRGBA16F,
-		GammaCorrection: false,
 		GenerateMipmaps: false,
+		GammaCorrection: false,
+		Format:          render.DataFormatRGBA16F,
 		FrontSideData:   reflectionData,
 		BackSideData:    reflectionData,
 		LeftSideData:    reflectionData,
@@ -452,13 +466,11 @@ func (c *homeScreenComponent) createNightAmbientLight(scene *graphics.Scene) *gr
 	reflectionData.SetUint16(4, float16.Fromfloat32(0.1).Bits())
 	reflectionData.SetUint16(6, float16.Fromfloat32(1.0).Bits())
 
-	reflectionTexture := c.engine.Graphics().CreateCubeTexture(graphics.CubeTextureDefinition{
+	reflectionTexture := c.engine.Graphics().API().CreateColorTextureCube(render.ColorTextureCubeInfo{
 		Dimension:       1,
-		Filtering:       graphics.FilterNearest,
-		InternalFormat:  graphics.InternalFormatRGBA16F,
-		DataFormat:      graphics.DataFormatRGBA16F,
-		GammaCorrection: false,
 		GenerateMipmaps: false,
+		GammaCorrection: false,
+		Format:          render.DataFormatRGBA16F,
 		FrontSideData:   reflectionData,
 		BackSideData:    reflectionData,
 		LeftSideData:    reflectionData,
@@ -467,13 +479,11 @@ func (c *homeScreenComponent) createNightAmbientLight(scene *graphics.Scene) *gr
 		BottomSideData:  reflectionData,
 	})
 
-	refractionTexture := c.engine.Graphics().CreateCubeTexture(graphics.CubeTextureDefinition{
+	refractionTexture := c.engine.Graphics().API().CreateColorTextureCube(render.ColorTextureCubeInfo{
 		Dimension:       1,
-		Filtering:       graphics.FilterNearest,
-		InternalFormat:  graphics.InternalFormatRGBA16F,
-		DataFormat:      graphics.DataFormatRGBA16F,
-		GammaCorrection: false,
 		GenerateMipmaps: false,
+		GammaCorrection: false,
+		Format:          render.DataFormatRGBA16F,
 		FrontSideData:   reflectionData,
 		BackSideData:    reflectionData,
 		LeftSideData:    reflectionData,
@@ -531,11 +541,12 @@ func (c *homeScreenComponent) onDayClicked() {
 	c.homeModel.SetEnvironment(data.EnvironmentDay)
 
 	// Disable night lighting
+	c.scene.NightSky.SetActive(false)
 	c.scene.NightAmbientLight.SetActive(false)
 	c.scene.NightSpotLight.SetActive(false)
 
 	// Enable day lighting
-	c.scene.Scene.Graphics().Sky().SetBackgroundColor(c.scene.DaySkyColor)
+	c.scene.DaySky.SetActive(true)
 	c.scene.DayAmbientLight.SetActive(true)
 	c.scene.DayDirectionalLight.SetActive(true)
 }
@@ -544,11 +555,12 @@ func (c *homeScreenComponent) onNightClicked() {
 	c.homeModel.SetEnvironment(data.EnvironmentNight)
 
 	// Disable day lighting
+	c.scene.DaySky.SetActive(false)
 	c.scene.DayAmbientLight.SetActive(false)
 	c.scene.DayDirectionalLight.SetActive(false)
 
 	// Enable night lighting
-	c.scene.Scene.Graphics().Sky().SetBackgroundColor(c.scene.NightSkyColor)
+	c.scene.NightSky.SetActive(true)
 	c.scene.NightAmbientLight.SetActive(true)
 	c.scene.NightSpotLight.SetActive(true)
 }
