@@ -99,14 +99,14 @@ func (c *PlayController) Start(environment data.Environment, controller data.Con
 	switch environment {
 	case data.EnvironmentDay:
 		sunLight = c.scene.Graphics().CreateDirectionalLight(graphics.DirectionalLightInfo{
-			EmitColor: dprec.NewVec3(0.5, 0.5, 0.3),
-			EmitRange: 16000, // FIXME
+			EmitColor:  dprec.NewVec3(0.5, 0.5, 0.3),
+			CastShadow: true, // FIXME
 		})
 
 	case data.EnvironmentNight:
 		sunLight = c.scene.Graphics().CreateDirectionalLight(graphics.DirectionalLightInfo{
-			EmitColor: dprec.NewVec3(0.001, 0.001, 0.001),
-			EmitRange: 16000, // FIXME
+			EmitColor:  dprec.NewVec3(0.001, 0.001, 0.001),
+			CastShadow: false,
 		})
 	}
 
@@ -179,6 +179,7 @@ func (c *PlayController) Start(environment data.Environment, controller data.Con
 	c.followCamera.SetAutoExposure(false)
 	c.followCamera.SetExposure(15.0)
 	c.followCamera.SetAutoFocus(false)
+	c.followCamera.SetCascadeDistances([]float32{16.0, 160.0, 1600.0})
 	c.gfxScene.SetActiveCamera(c.followCamera)
 
 	followCameraNode := hierarchy.NewNode()
@@ -193,6 +194,7 @@ func (c *PlayController) Start(environment data.Environment, controller data.Con
 	c.bonnetCamera.SetFoV(sprec.Degrees(80))
 	c.bonnetCamera.SetAutoExposure(false)
 	c.bonnetCamera.SetExposure(15.0)
+	c.bonnetCamera.SetCascadeDistances([]float32{16.0, 160.0, 1600.0})
 	c.bonnetCamera.SetAutoFocus(false)
 
 	bonnetCameraNode := hierarchy.NewNode()

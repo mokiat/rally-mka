@@ -2,16 +2,14 @@ module github.com/mokiat/rally-mka
 
 go 1.22
 
-toolchain go1.22.5
-
 require (
 	github.com/mokiat/gblob v0.3.0
 	github.com/mokiat/gog v0.13.1
 	github.com/mokiat/gomath v0.9.0
-	github.com/mokiat/lacking v0.19.0
-	github.com/mokiat/lacking-js v0.19.0
-	github.com/mokiat/lacking-native v0.19.0
-	github.com/mokiat/lacking-studio v0.19.0
+	github.com/mokiat/lacking v0.20.0
+	github.com/mokiat/lacking-js v0.20.0
+	github.com/mokiat/lacking-native v0.20.0
+	github.com/mokiat/lacking-studio v0.20.0
 	github.com/x448/float16 v0.8.4
 )
 
@@ -26,13 +24,13 @@ require (
 	github.com/mdouchement/hdr v0.2.4 // indirect
 	github.com/mokiat/goexr v0.1.0 // indirect
 	github.com/mokiat/wasmal v0.1.0 // indirect
-	github.com/mokiat/wasmgl v0.6.0 // indirect
-	github.com/qmuntal/gltf v0.26.0 // indirect
+	github.com/mokiat/wasmgl v0.7.0 // indirect
+	github.com/qmuntal/gltf v0.27.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/urfave/cli/v2 v2.27.4 // indirect
 	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect
-	golang.org/x/exp v0.0.0-20240808152545-0cdaa3abc0fa // indirect
-	golang.org/x/image v0.19.0 // indirect
+	golang.org/x/exp v0.0.0-20240904232852-e7e105dedf7e // indirect
+	golang.org/x/image v0.20.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect
-	golang.org/x/text v0.17.0 // indirect
+	golang.org/x/text v0.18.0 // indirect
 )

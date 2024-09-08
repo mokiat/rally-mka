@@ -1,13 +1,13 @@
-//go:build !js
+//go:build js
 
 package main
 
 import (
 	"fmt"
 
-	glapp "github.com/mokiat/lacking-native/app"
-	glgame "github.com/mokiat/lacking-native/game"
-	glui "github.com/mokiat/lacking-native/ui"
+	jsapp "github.com/mokiat/lacking-js/app"
+	jsgame "github.com/mokiat/lacking-js/game"
+	jsui "github.com/mokiat/lacking-js/ui"
 	"github.com/mokiat/lacking/app"
 	"github.com/mokiat/lacking/game"
 	"github.com/mokiat/lacking/game/asset"
@@ -18,7 +18,7 @@ import (
 )
 
 func runApplication() error {
-	registryStorage, err := asset.NewFSStorage("./assets")
+	registryStorage, err := asset.NewWebStorage(".")
 	if err != nil {
 		return fmt.Errorf("failed to initialize storage: %w", err)
 	}
@@ -30,20 +30,15 @@ func runApplication() error {
 		return fmt.Errorf("failed to initialize registry: %w", err)
 	}
 
-	locator := ui.WrappedLocator(resource.NewFSLocator(resources.UI))
-
-	gameController := game.NewController(registry, glgame.NewShaderCollection(), glgame.NewShaderBuilder())
-	uiController := ui.NewController(locator, glui.NewShaderCollection(), func(w *ui.Window) {
+	resourceLocator := ui.WrappedLocator(resource.NewFSLocator(resources.UI))
+	gameController := game.NewController(registry, jsgame.NewShaderCollection(), jsgame.NewShaderBuilder())
+	uiController := ui.NewController(resourceLocator, jsui.NewShaderCollection(), func(w *ui.Window) {
 		gameui.BootstrapApplication(w, gameController)
 	})
 
-	cfg := glapp.NewConfig("Rally MKA", 1024, 576)
+	cfg := jsapp.NewConfig("screen")
+	cfg.AddGLExtension("EXT_color_buffer_float")
 	cfg.SetFullscreen(false)
-	cfg.SetMaximized(true)
-	cfg.SetMinSize(1024, 576)
-	cfg.SetVSync(true)
-	cfg.SetIcon("ui/images/icon.png")
-	cfg.SetLocator(locator)
 	cfg.SetAudioEnabled(false)
-	return glapp.Run(cfg, app.NewLayeredController(gameController, uiController))
+	return jsapp.Run(cfg, app.NewLayeredController(gameController, uiController))
 }

@@ -361,8 +361,8 @@ func (c *homeScreenComponent) createScene() *model.HomeScene {
 
 	result.DayAmbientLight = c.createDayAmbientLight(scene.Graphics())
 	result.DayDirectionalLight = scene.Graphics().CreateDirectionalLight(graphics.DirectionalLightInfo{
-		EmitColor: dprec.NewVec3(10, 10, 6),
-		EmitRange: 16000, // FIXME
+		EmitColor:  dprec.NewVec3(10, 10, 6),
+		CastShadow: true,
 	})
 	dayDirectionalLightNode := hierarchy.NewNode()
 	dayDirectionalLightNode.SetPosition(dprec.NewVec3(-100.0, 100.0, 0.0))
@@ -399,9 +399,12 @@ func (c *homeScreenComponent) createScene() *model.HomeScene {
 
 	const animationName = "Action"
 	if animation := sceneModel.FindAnimation(animationName); animation != nil {
-		playback := scene.PlayAnimation(animation)
+		playback := animation.Playback()
 		playback.SetLoop(true)
-		playback.SetSpeed(0.3)
+		slowPlayback := game.NewAdjustedAnimation(playback)
+		slowPlayback.SetSpeed(0.3)
+		sceneModel.BindAnimationSource(slowPlayback)
+		scene.PlayAnimationTree(slowPlayback)
 	}
 	return result
 }
