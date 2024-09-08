@@ -36,7 +36,7 @@ tasks:
       GOOS: js
       GOARCH: wasm
     cmds:
-      - go build -o './assets/web/main.wasm' './cmd/rallymka'
+      - go build -o './assets/web/main.wasm' './cmd/game'
 
   web:
     cmds:
