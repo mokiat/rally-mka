@@ -18,12 +18,20 @@ import (
 )
 
 func runApplication() error {
-	registry, err := asset.NewWebRegistry(".")
+	registryStorage, err := asset.NewWebStorage(".")
+	if err != nil {
+		return fmt.Errorf("failed to initialize storage: %w", err)
+	}
+
+	registryFormatter := asset.NewBlobFormatter()
+
+	registry, err := asset.NewRegistry(registryStorage, registryFormatter)
 	if err != nil {
 		return fmt.Errorf("failed to initialize registry: %w", err)
 	}
+
 	resourceLocator := ui.WrappedLocator(resource.NewFSLocator(resources.UI))
-	gameController := game.NewController(registry, jsgame.NewShaderCollection())
+	gameController := game.NewController(registry, jsgame.NewShaderCollection(), jsgame.NewShaderBuilder())
 	uiController := ui.NewController(resourceLocator, jsui.NewShaderCollection(), func(w *ui.Window) {
 		gameui.BootstrapApplication(w, gameController)
 	})

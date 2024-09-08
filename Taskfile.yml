@@ -5,11 +5,15 @@ tasks:
   licenses:
     cmds:
       - rm ./resources/licenses.txt
-      - go run github.com/google/go-licenses@v1.6.0 report --ignore github.com/mokiat/rally-mka --template ./resources/licenses.tmpl ./cmd/rallymka ./cmd/rallypack | fold -w 80 -s > ./resources/licenses.txt
+      - go run github.com/google/go-licenses@v1.6.0 report --ignore github.com/mokiat/game --template ./resources/licenses.tmpl ./cmd/game ./cmd/studio | fold -w 80 -s > ./resources/licenses.txt
+
+  preview:
+    cmds:
+      - go run './cmd/studio' preview ./ {{.CLI_ARGS}}
 
   pack:
     cmds:
-      - go run './cmd/rallypack'
+      - go run './cmd/studio' pack ./ {{.CLI_ARGS}}
 
   webpack:
     cmds:
@@ -25,11 +29,7 @@ tasks:
 
   run:
     cmds:
-      - go run './cmd/rallymka'
-
-  debug:
-    cmds:
-      - go run -tags debug './cmd/rallymka'
+      - go run './cmd/game'
 
   wasm:
     env:
@@ -44,11 +44,13 @@ tasks:
 
   profile-cpu:
     cmds:
-      - go tool pprof 'http://localhost:6060/debug/pprof/profile?seconds=30'
+      - curl -o default.pgo 'http://localhost:6060/debug/pprof/profile?seconds=30'
+      - go tool pprof default.pgo
 
-  profile-cpu-dl:
+  profile-cpu-web:
     cmds:
       - curl -o default.pgo 'http://localhost:6060/debug/pprof/profile?seconds=30'
+      - go tool pprof -http=localhost:9090 default.pgo
 
   profile-alloc:
     cmds:
@@ -62,7 +64,7 @@ tasks:
     cmds:
       - go tool pprof 'http://localhost:6060/debug/pprof/heap'
 
-  trace:
+  profile-trace:
     cmds:
       - curl -o trace.out 'http://localhost:6060/debug/pprof/trace?seconds=30'
       - go tool trace trace.out

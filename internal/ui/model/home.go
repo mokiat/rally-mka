@@ -1,7 +1,6 @@
 package model
 
 import (
-	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/lacking/game"
 	"github.com/mokiat/lacking/game/graphics"
 	"github.com/mokiat/lacking/ui/mvc"
@@ -12,11 +11,11 @@ import (
 type HomeScene struct {
 	Scene *game.Scene
 
-	DaySkyColor         sprec.Vec3
+	DaySky              *graphics.Sky
 	DayAmbientLight     *graphics.AmbientLight
 	DayDirectionalLight *graphics.DirectionalLight
 
-	NightSkyColor     sprec.Vec3
+	NightSky          *graphics.Sky
 	NightAmbientLight *graphics.AmbientLight
 	NightSpotLight    *graphics.SpotLight
 }
