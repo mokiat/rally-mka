@@ -7,8 +7,8 @@ require (
 	github.com/mokiat/gog v0.13.1
 	github.com/mokiat/gomath v0.9.0
 	github.com/mokiat/lacking v0.20.0
-	github.com/mokiat/lacking-js v0.20.0
-	github.com/mokiat/lacking-native v0.20.0
+	github.com/mokiat/lacking-js v0.20.1
+	github.com/mokiat/lacking-native v0.20.1
 	github.com/mokiat/lacking-studio v0.20.0
 	github.com/x448/float16 v0.8.4
 )
