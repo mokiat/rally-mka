@@ -417,6 +417,7 @@ func (c *homeScreenComponent) createCamera(scene *graphics.Scene) *graphics.Came
 	result.SetExposure(0.1)
 	result.SetAutoFocus(false)
 	result.SetAutoExposureSpeed(0.1)
+	result.SetCascadeDistances([]float32{64.0})
 	return result
 }
 
