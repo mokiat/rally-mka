@@ -123,6 +123,18 @@ func (c *playScreenComponent) Render() co.Instance {
 			}))
 		}
 
+		co.WithChild("speedometer", co.New(widget.Speedometer, func() {
+			co.WithLayoutData(layout.Data{
+				Left:   opt.V(0),
+				Bottom: opt.V(0),
+			})
+			co.WithData(widget.SpeedometerData{
+				Source: c.controller,
+			})
+		}))
+
+		// TODO: Why is this dashboard element needed? Only for the padding?
+		// But there is already padding applied to the anchor data of the children.
 		co.WithChild("dashboard", co.New(std.Element, func() {
 			co.WithLayoutData(layout.Data{
 				Left:   opt.V(0),
@@ -137,17 +149,6 @@ func (c *playScreenComponent) Render() co.Instance {
 				},
 				Layout: layout.Anchor(),
 			})
-
-			co.WithChild("speedometer", co.New(widget.Speedometer, func() {
-				co.WithLayoutData(layout.Data{
-					Left:   opt.V(20),
-					Bottom: opt.V(0),
-				})
-				co.WithData(widget.SpeedometerData{
-					MaxVelocity: 200.0,
-					Source:      c.controller,
-				})
-			}))
 
 			co.WithChild("gearshifter", co.New(widget.GearShifter, func() {
 				co.WithLayoutData(layout.Data{
