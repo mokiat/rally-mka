@@ -10,6 +10,8 @@ import (
 	"github.com/mokiat/lacking/ui/std"
 )
 
+const speedometerUpdateInterval = 300 * time.Millisecond
+
 type SpeedometerSource interface {
 	Velocity() float64
 }
@@ -100,7 +102,7 @@ func (c *speedometerComponent) updateVelocity(deltaTime time.Duration) {
 	if c.updateAfter > 0 {
 		return
 	}
-	c.updateAfter = 500 * time.Millisecond
+	c.updateAfter = speedometerUpdateInterval
 
 	c.speed = int(c.source.Velocity() * 3.6) // from m/s to km/h
 }
