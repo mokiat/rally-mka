@@ -1,8 +1,10 @@
 version: '3'
 
 tasks:
-
   licenses:
+    desc: Generate a report of all licenses used in the project.
+    env:
+      GOWORK: off
     cmds:
       - rm ./resources/licenses.txt
       - go run github.com/google/go-licenses@v1.6.0 report --ignore github.com/mokiat/game --template ./resources/licenses.tmpl ./cmd/game ./cmd/studio | fold -w 80 -s > ./resources/licenses.txt
@@ -10,6 +12,10 @@ tasks:
   preview:
     cmds:
       - go run './cmd/studio' preview ./ {{.CLI_ARGS}}
+
+  editor:
+    cmds:
+      - go run './cmd/studio' editor ./ {{.CLI_ARGS}}
 
   pack:
     cmds:
