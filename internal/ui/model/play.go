@@ -1,23 +1,21 @@
 package model
 
 import (
-	"github.com/mokiat/lacking/ui/mvc"
-	"github.com/mokiat/lacking/util/async"
 	"github.com/mokiat/rally-mka/internal/game/data"
 )
 
-func NewPlay(eventBus *mvc.EventBus) *Play {
-	return &Play{}
+func NewPlayModel() *PlayModel {
+	return &PlayModel{}
 }
 
-type Play struct {
-	sceneData async.Promise[*data.PlayData]
+type PlayModel struct {
+	sceneData *data.PlayData
 }
 
-func (h *Play) Data() async.Promise[*data.PlayData] {
+func (h *PlayModel) Data() *data.PlayData {
 	return h.sceneData
 }
 
-func (h *Play) SetData(sceneData async.Promise[*data.PlayData]) {
+func (h *PlayModel) SetData(sceneData *data.PlayData) {
 	h.sceneData = sceneData
 }
