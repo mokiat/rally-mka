@@ -14,9 +14,10 @@ import (
 )
 
 type IntroScreenData struct {
-	AppModel     *model.Application
-	Home         *model.Home
-	LoadingModel *model.Loading
+	AppModel     *model.ApplicationModel
+	ErrorMdoel   *model.ErrorModel
+	LoadingModel *model.LoadingModel
+	HomeModel    *model.HomeModel
 }
 
 var IntroScreen = co.Define(&introScreenComponent{})
@@ -34,21 +35,24 @@ func (c *introScreenComponent) OnCreate() {
 
 	screenData := co.GetData[IntroScreenData](c.Properties())
 	appModel := screenData.AppModel
-	homeModel := screenData.Home
+	errorModel := screenData.ErrorMdoel
+	homeModel := screenData.HomeModel
 	loadingModel := screenData.LoadingModel
 
-	homeModel.SetData(data.LoadHomeData(engine, resourceSet))
+	promise := model.NewLoadingPromise(
+		co.Window(c.Scope()),
+		data.LoadHomeData(engine, resourceSet),
+		homeModel.SetData,
+		errorModel.SetError,
+	)
+	loadingModel.SetState(model.LoadingState{
+		Promise:         promise,
+		SuccessViewName: model.ViewNameHome,
+		ErrorViewName:   model.ViewNameError,
+	})
 
 	co.After(c.Scope(), time.Second, func() {
-		promise := homeModel.Data()
-		if promise.Ready() {
-			// TODO: Handle errors!!!
-			appModel.SetActiveView(model.ViewNameHome)
-		} else {
-			loadingModel.SetPromise(model.ToLoadingPromise(promise))
-			loadingModel.SetNextViewName(model.ViewNameHome)
-			appModel.SetActiveView(model.ViewNameLoading)
-		}
+		appModel.SetActiveView(model.ViewNameLoading)
 	})
 }
 
