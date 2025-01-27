@@ -1,7 +1,6 @@
 package view
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/mokiat/gog/opt"
@@ -20,14 +19,14 @@ import (
 var PlayScreen = co.Define(&playScreenComponent{})
 
 type PlayScreenData struct {
-	AppModel *model.Application
-	Play     *model.Play
+	AppModel  *model.ApplicationModel
+	PlayModel *model.PlayModel
 }
 
 type playScreenComponent struct {
 	co.BaseComponent
 
-	appModel *model.Application
+	appModel *model.ApplicationModel
 
 	hideCursor bool
 	controller *controller.PlayController
@@ -45,18 +44,13 @@ func (c *playScreenComponent) OnCreate() {
 	context := co.TypedValue[global.Context](c.Scope())
 	screenData := co.GetData[PlayScreenData](c.Properties())
 	c.appModel = screenData.AppModel
-	playModel := screenData.Play
+	playModel := screenData.PlayModel
 
-	// FIXME: This may actually panic if there is a third party
-	// waiting / reading on this and it happens to match the Get call.
-	playData, err := playModel.Data().Wait()
-	if err != nil {
-		panic(fmt.Errorf("failed to get data: %w", err))
-	}
+	playData := playModel.Data()
 	c.controller = controller.NewPlayController(co.Window(c.Scope()).Window, context.Engine, playData)
-	c.controller.Start(playData.Environment, playData.Controller)
+	c.controller.Start(playData.Lighting, playData.Input)
 
-	c.hideCursor = playData.Controller != data.ControllerMouse
+	c.hideCursor = playData.Input != data.InputMouse
 	co.Window(c.Scope()).SetCursorVisible(!c.hideCursor)
 }
 
