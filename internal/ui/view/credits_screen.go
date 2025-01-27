@@ -25,13 +25,16 @@ var sections = func() []creditsSection {
 			"Affinity Designer",
 			"Procreate",
 			"GIMP",
+			"RenderDoc",
 		),
 		createSection("SPECIAL THANKS",
 			"Go Developers for the brilliant programming language",
-			"\"GameDev БГ\" Discord server for provided support",
 			"Open-source developers for used libraries and tools",
-			"Grant Abbitt for video tutorials",
+			"\"GameDev БГ\" Discord server for provided support",
+			"\"learnopengl.com\" for tutorials",
 			"Erin Catto for articles and videos",
+			"Peter Burroughs for video tutorials",
+			"Grant Abbitt for video tutorials",
 		),
 	}
 }()
@@ -39,13 +42,13 @@ var sections = func() []creditsSection {
 var CreditsScreen = co.Define(&creditsScreenComponent{})
 
 type CreditsScreenData struct {
-	AppModel *model.Application
+	AppModel *model.ApplicationModel
 }
 
 type creditsScreenComponent struct {
 	co.BaseComponent
 
-	appModel *model.Application
+	appModel *model.ApplicationModel
 
 	fadeInVisible  bool
 	fadeOutVisible bool
@@ -106,7 +109,7 @@ func (c *creditsScreenComponent) Render() co.Instance {
 
 			co.WithChild("scroll-pane", co.New(widget.AutoScroll, func() {
 				co.WithData(widget.AutoScrollData{
-					Velocity: 50.0,
+					Velocity: 75.0,
 				})
 				co.WithCallbackData(widget.AutoScrollCallbackData{
 					OnFinished: c.onCreditsFinished,
@@ -177,7 +180,7 @@ func (c *creditsScreenComponent) Render() co.Instance {
 
 					co.WithChild("thank-you-spacing", co.New(std.Spacing, func() {
 						co.WithData(std.SpacingData{
-							Size: ui.NewSize(10, 300),
+							Size: ui.NewSize(10, 200),
 						})
 					}))
 
