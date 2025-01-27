@@ -1,49 +1,49 @@
 package data
 
 import (
-	"errors"
+	"cmp"
 	"fmt"
 
 	"github.com/mokiat/lacking/game"
 	"github.com/mokiat/lacking/util/async"
 )
 
-type Controller string
+type Input string
 
 const (
-	ControllerKeyboard Controller = "keyboard"
-	ControllerMouse    Controller = "mouse"
-	ControllerGamepad  Controller = "gamepad"
+	InputKeyboard Input = "keyboard"
+	InputMouse    Input = "mouse"
+	InputGamepad  Input = "gamepad"
 )
 
-type Environment string
+type Lighting string
 
 const (
-	EnvironmentDay   Environment = "day"
-	EnvironmentNight Environment = "night"
+	LightingDay   Lighting = "day"
+	LightingNight Lighting = "night"
 )
 
-func LoadPlayData(engine *game.Engine, resourceSet *game.ResourceSet, environment Environment, controller Controller) async.Promise[*PlayData] {
+func LoadPlayData(engine *game.Engine, resourceSet *game.ResourceSet, lighting Lighting, input Input) async.Promise[*PlayData] {
 	var backgroundName string
-	switch environment {
-	case EnvironmentDay:
+	switch lighting {
+	case LightingDay:
 		backgroundName = "Forest-Day"
-	case EnvironmentNight:
+	case LightingNight:
 		backgroundName = "Forest-Night"
 	default:
-		panic(fmt.Errorf("unknown environment %q", environment))
+		panic(fmt.Errorf("unknown lighting mode %q", lighting))
 	}
 
 	backgroundPromise := resourceSet.OpenModelByName(backgroundName)
-	scenePromise := resourceSet.OpenModelByName("Forest")
-	vehiclePromise := resourceSet.OpenModelByName("SUV")
+	scenePromise := resourceSet.OpenModelByName("Tiles")
+	vehiclePromise := resourceSet.OpenModelByName("Vehicle")
 
 	promise := async.NewPromise[*PlayData]()
 	go func() {
 		var data PlayData
-		data.Environment = environment
-		data.Controller = controller
-		err := errors.Join(
+		data.Lighting = lighting
+		data.Input = input
+		err := cmp.Or(
 			backgroundPromise.Inject(&data.Background),
 			scenePromise.Inject(&data.Scene),
 			vehiclePromise.Inject(&data.Vehicle),
@@ -62,6 +62,6 @@ type PlayData struct {
 	Scene      *game.ModelDefinition
 	Vehicle    *game.ModelDefinition
 
-	Environment Environment
-	Controller  Controller
+	Lighting Lighting
+	Input    Input
 }
