@@ -14,8 +14,8 @@ import (
 var LoadingScreen = co.Define(&loadingScreenComponent{})
 
 type LoadingScreenData struct {
-	AppModel *model.Application
-	Model    *model.Loading
+	AppModel     *model.ApplicationModel
+	LoadingModel *model.LoadingModel
 }
 
 type loadingScreenComponent struct {
@@ -25,11 +25,14 @@ type loadingScreenComponent struct {
 func (c *loadingScreenComponent) OnCreate() {
 	screenData := co.GetData[LoadingScreenData](c.Properties())
 	appModel := screenData.AppModel
-	loadingModel := screenData.Model
-	loadingModel.Promise().OnReady(func() {
-		co.Schedule(c.Scope(), func() {
-			appModel.SetActiveView(loadingModel.NextViewName())
-		})
+	loadingModel := screenData.LoadingModel
+
+	state := loadingModel.State()
+	state.Promise.OnSuccess(func() {
+		appModel.SetActiveView(state.SuccessViewName)
+	})
+	state.Promise.OnError(func() {
+		appModel.SetActiveView(state.ErrorViewName)
 	})
 }
 
