@@ -12,18 +12,20 @@ var Application = mvc.EventListener(co.Define(&applicationComponent{}))
 type applicationComponent struct {
 	co.BaseComponent
 
-	appModel     *model.Application
-	homeModel    *model.Home
-	loadingModel *model.Loading
-	playModel    *model.Play
+	appModel     *model.ApplicationModel
+	errorModel   *model.ErrorModel
+	loadingModel *model.LoadingModel
+	homeModel    *model.HomeModel
+	playModel    *model.PlayModel
 }
 
 func (c *applicationComponent) OnCreate() {
 	eventBus := co.TypedValue[*mvc.EventBus](c.Scope())
-	c.appModel = model.NewApplication(eventBus)
-	c.homeModel = model.NewHome(eventBus)
-	c.loadingModel = model.NewLoading(eventBus)
-	c.playModel = model.NewPlay(eventBus)
+	c.appModel = model.NewApplicationModel(eventBus)
+	c.errorModel = model.NewErrorModel()
+	c.loadingModel = model.NewLoadingModel()
+	c.homeModel = model.NewHomeModel()
+	c.playModel = model.NewPlayModel()
 }
 
 func (c *applicationComponent) Render() co.Instance {
@@ -35,28 +37,20 @@ func (c *applicationComponent) Render() co.Instance {
 		co.WithChild(model.ViewNameIntro, co.New(IntroScreen, func() {
 			co.WithData(IntroScreenData{
 				AppModel:     c.appModel,
-				Home:         c.homeModel,
+				ErrorMdoel:   c.errorModel,
 				LoadingModel: c.loadingModel,
+				HomeModel:    c.homeModel,
+			})
+		}))
+		co.WithChild(model.ViewNameError, co.New(ErrorScreen, func() {
+			co.WithData(ErrorScreenData{
+				ErrorModel: c.errorModel,
 			})
 		}))
 		co.WithChild(model.ViewNameLoading, co.New(LoadingScreen, func() {
 			co.WithData(LoadingScreenData{
-				AppModel: c.appModel,
-				Model:    c.loadingModel,
-			})
-		}))
-		co.WithChild(model.ViewNameHome, co.New(HomeScreen, func() {
-			co.WithData(HomeScreenData{
-				AppModel: c.appModel,
-				Loading:  c.loadingModel,
-				Home:     c.homeModel,
-				Play:     c.playModel,
-			})
-		}))
-		co.WithChild(model.ViewNamePlay, co.New(PlayScreen, func() {
-			co.WithData(PlayScreenData{
-				AppModel: c.appModel,
-				Play:     c.playModel,
+				AppModel:     c.appModel,
+				LoadingModel: c.loadingModel,
 			})
 		}))
 		co.WithChild(model.ViewNameLicenses, co.New(LicensesScreen, func() {
@@ -67,6 +61,21 @@ func (c *applicationComponent) Render() co.Instance {
 		co.WithChild(model.ViewNameCredits, co.New(CreditsScreen, func() {
 			co.WithData(CreditsScreenData{
 				AppModel: c.appModel,
+			})
+		}))
+		co.WithChild(model.ViewNameHome, co.New(HomeScreen, func() {
+			co.WithData(HomeScreenData{
+				AppModel:     c.appModel,
+				ErrorModel:   c.errorModel,
+				LoadingModel: c.loadingModel,
+				HomeModel:    c.homeModel,
+				PlayModel:    c.playModel,
+			})
+		}))
+		co.WithChild(model.ViewNamePlay, co.New(PlayScreen, func() {
+			co.WithData(PlayScreenData{
+				AppModel:  c.appModel,
+				PlayModel: c.playModel,
 			})
 		}))
 	})
