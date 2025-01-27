@@ -9,7 +9,8 @@ import (
 )
 
 type ButtonData struct {
-	Text string
+	Text     string
+	Selected bool
 }
 
 var defaultButtonData = ButtonData{
@@ -32,7 +33,8 @@ type buttonComponent struct {
 
 	font     *ui.Font
 	fontSize float32
-	text     string
+	text     []rune
+	selected bool
 }
 
 func (c *buttonComponent) OnUpsert() {
@@ -40,7 +42,8 @@ func (c *buttonComponent) OnUpsert() {
 	c.fontSize = 26.0
 
 	data := co.GetOptionalData(c.Properties(), defaultButtonData)
-	c.text = data.Text
+	c.text = []rune(data.Text)
+	c.selected = data.Selected
 
 	callbackData := co.GetOptionalCallbackData(c.Properties(), defaultButtonCallbackData)
 	c.SetOnClickFunc(callbackData.OnClick)
@@ -53,8 +56,10 @@ func (c *buttonComponent) Render() co.Instance {
 		Top:    2,
 		Bottom: 2,
 	}
-	txtSize := c.font.TextSize(c.text, c.fontSize)
-
+	txtSize := sprec.Vec2{
+		X: c.font.LineWidth(c.text, c.fontSize),
+		Y: c.font.LineHeight(c.fontSize),
+	}
 	return co.New(std.Element, func() {
 		co.WithLayoutData(c.Properties().LayoutData())
 		co.WithData(std.ElementData{
@@ -81,14 +86,30 @@ func (c *buttonComponent) OnRender(element *ui.Element, canvas *ui.Canvas) {
 	}
 
 	drawBounds := canvas.DrawBounds(element, true)
-	textPosition := drawBounds.Position
+
+	canvas.Push()
+	canvas.Translate(drawBounds.Position)
+
 	canvas.Reset()
-	canvas.FillText(c.text, sprec.NewVec2(
-		float32(textPosition.X),
-		float32(textPosition.Y),
-	), ui.Typography{
+	canvas.FillTextLine(c.text, sprec.ZeroVec2(), ui.Typography{
 		Font:  c.font,
 		Size:  c.fontSize,
 		Color: fontColor,
 	})
+	if c.selected {
+		canvas.Reset()
+		canvas.SetStrokeColor(fontColor)
+		canvas.SetStrokeSize(2.0)
+		canvas.MoveTo(sprec.Vec2{
+			X: 0,
+			Y: drawBounds.Height() + 1,
+		})
+		canvas.LineTo(sprec.Vec2{
+			X: drawBounds.Width(),
+			Y: drawBounds.Height() + 1,
+		})
+		canvas.Stroke()
+	}
+
+	canvas.Pop()
 }
