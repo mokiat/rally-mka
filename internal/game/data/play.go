@@ -6,6 +6,7 @@ import (
 
 	"github.com/mokiat/lacking/game"
 	"github.com/mokiat/lacking/util/async"
+	"github.com/mokiat/rally-mka/internal/game/level"
 )
 
 type Input string
@@ -23,7 +24,7 @@ const (
 	LightingNight Lighting = "night"
 )
 
-func LoadPlayData(engine *game.Engine, resourceSet *game.ResourceSet, lighting Lighting, input Input) async.Promise[*PlayData] {
+func LoadPlayData(engine *game.Engine, resourceSet *game.ResourceSet, lighting Lighting, input Input, board *level.Board) async.Promise[*PlayData] {
 	var backgroundName string
 	switch lighting {
 	case LightingDay:
@@ -43,6 +44,7 @@ func LoadPlayData(engine *game.Engine, resourceSet *game.ResourceSet, lighting L
 		var data PlayData
 		data.Lighting = lighting
 		data.Input = input
+		data.Board = board
 		err := cmp.Or(
 			backgroundPromise.Inject(&data.Background),
 			scenePromise.Inject(&data.Scene),
@@ -64,4 +66,5 @@ type PlayData struct {
 
 	Lighting Lighting
 	Input    Input
+	Board    *level.Board
 }
