@@ -1,6 +1,8 @@
 package widget
 
 import (
+	"time"
+
 	"github.com/mokiat/gog/opt"
 	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/lacking/ui"
@@ -9,8 +11,9 @@ import (
 )
 
 type ButtonData struct {
-	Text     string
-	Selected bool
+	Text        string
+	Selected    bool
+	AppearAfter time.Duration
 }
 
 var defaultButtonData = ButtonData{
@@ -31,10 +34,16 @@ type buttonComponent struct {
 	co.BaseComponent
 	std.BaseButtonComponent
 
-	font     *ui.Font
-	fontSize float32
-	text     []rune
-	selected bool
+	font        *ui.Font
+	fontSize    float32
+	text        []rune
+	selected    bool
+	appearAfter time.Duration
+}
+
+func (c *buttonComponent) OnCreate() {
+	data := co.GetOptionalData(c.Properties(), defaultButtonData)
+	c.appearAfter = data.AppearAfter
 }
 
 func (c *buttonComponent) OnUpsert() {
@@ -74,6 +83,8 @@ func (c *buttonComponent) Render() co.Instance {
 }
 
 func (c *buttonComponent) OnRender(element *ui.Element, canvas *ui.Canvas) {
+	c.appearAfter -= canvas.ElapsedTime()
+
 	var fontColor ui.Color
 
 	switch c.State() {
@@ -83,6 +94,12 @@ func (c *buttonComponent) OnRender(element *ui.Element, canvas *ui.Canvas) {
 		fontColor = ui.RGB(0x00, 0x33, 0x00)
 	default:
 		fontColor = ui.White()
+	}
+
+	const appearDuration = time.Second
+	if c.appearAfter > 0 {
+		appearProgress := max(0.0, 1.0-c.appearAfter.Seconds()/appearDuration.Seconds())
+		fontColor.A = byte(255 * appearProgress)
 	}
 
 	drawBounds := canvas.DrawBounds(element, true)
@@ -112,4 +129,8 @@ func (c *buttonComponent) OnRender(element *ui.Element, canvas *ui.Canvas) {
 	}
 
 	canvas.Pop()
+
+	if c.appearAfter > 0 {
+		element.Invalidate()
+	}
 }
