@@ -48,7 +48,7 @@ func (c *playScreenComponent) OnCreate() {
 
 	playData := playModel.Data()
 	c.controller = controller.NewPlayController(co.Window(c.Scope()).Window, context.Engine, playData)
-	c.controller.Start(playData.Lighting, playData.Input)
+	c.controller.Start(playData.Lighting, playData.Input, playData.Board)
 
 	c.hideCursor = playData.Input != data.InputMouse
 	co.Window(c.Scope()).SetCursorVisible(!c.hideCursor)

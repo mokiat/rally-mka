@@ -28,9 +28,9 @@ func LoadPlayData(engine *game.Engine, resourceSet *game.ResourceSet, lighting L
 	var backgroundName string
 	switch lighting {
 	case LightingDay:
-		backgroundName = "Forest-Day"
+		backgroundName = "PlayScreen-Day"
 	case LightingNight:
-		backgroundName = "Forest-Night"
+		backgroundName = "PlayScreen-Night"
 	default:
 		panic(fmt.Errorf("unknown lighting mode %q", lighting))
 	}
