@@ -8,7 +8,6 @@ import (
 )
 
 func LoadHomeData(engine *game.Engine, resourceSet *game.ResourceSet) async.Promise[*HomeData] {
-	backgroundPromise := resourceSet.OpenModelByName("Home-Screen")
 	scenePromise := resourceSet.OpenModelByName("HomeScreen")
 	vehiclePromise := resourceSet.OpenModelByName("Vehicle")
 
@@ -16,7 +15,6 @@ func LoadHomeData(engine *game.Engine, resourceSet *game.ResourceSet) async.Prom
 	go func() {
 		var data HomeData
 		err := cmp.Or(
-			backgroundPromise.Inject(&data.Background),
 			scenePromise.Inject(&data.Scene),
 			vehiclePromise.Inject(&data.Vehicle),
 		)
@@ -30,7 +28,6 @@ func LoadHomeData(engine *game.Engine, resourceSet *game.ResourceSet) async.Prom
 }
 
 type HomeData struct {
-	Background *game.ModelDefinition
-	Scene      *game.ModelDefinition
-	Vehicle    *game.ModelDefinition
+	Scene   *game.ModelDefinition
+	Vehicle *game.ModelDefinition
 }

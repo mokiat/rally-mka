@@ -79,8 +79,9 @@ type HomeScene struct {
 	DayAmbientLight     *graphics.AmbientLight
 	DayDirectionalLight *graphics.DirectionalLight
 
-	NightSky          *graphics.Sky
-	NightAmbientLight *graphics.AmbientLight
+	NightSky              *graphics.Sky
+	NightAmbientLight     *graphics.AmbientLight
+	NightDirectionalLight *graphics.DirectionalLight
 }
 
 type HomeScreenMode uint8

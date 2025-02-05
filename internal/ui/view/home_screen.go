@@ -4,13 +4,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/mokiat/gblob"
 	"github.com/mokiat/gog/opt"
 	"github.com/mokiat/gomath/dprec"
 	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/lacking/game"
 	"github.com/mokiat/lacking/game/graphics"
-	"github.com/mokiat/lacking/render"
+	"github.com/mokiat/lacking/game/hierarchy"
 	"github.com/mokiat/lacking/ui"
 	co "github.com/mokiat/lacking/ui/component"
 	"github.com/mokiat/lacking/ui/layout"
@@ -19,12 +18,11 @@ import (
 	"github.com/mokiat/rally-mka/internal/ui/global"
 	"github.com/mokiat/rally-mka/internal/ui/model"
 	"github.com/mokiat/rally-mka/internal/ui/widget"
-	"github.com/x448/float16"
 )
 
 const (
-	buttonAppearAfter     = time.Second + 100*time.Millisecond
-	buttonAppearIncrement = 100 * time.Millisecond
+	buttonAppearAfter     = time.Second + buttonAppearIncrement
+	buttonAppearIncrement = 50 * time.Millisecond
 )
 
 var HomeScreen = co.Define(&homeScreenComponent{})
@@ -425,22 +423,9 @@ func (c *homeScreenComponent) withLevelModeContent() {
 }
 
 func (c *homeScreenComponent) createScene() *model.HomeScene {
-	result := &model.HomeScene{}
-
 	sceneData := c.homeModel.Data()
 
 	scene := c.engine.CreateScene()
-	backgroundModel := scene.CreateModel(game.ModelInfo{
-		Name:       "Background",
-		Definition: sceneData.Background,
-		IsDynamic:  true,
-	})
-
-	daySkyNode := backgroundModel.FindNode("Sky-Day")
-	result.DaySky = (daySkyNode.Target().(game.SkyNodeTarget)).Sky
-
-	nightSkyNode := backgroundModel.FindNode("Sky-Night")
-	result.NightSky = (nightSkyNode.Target().(game.SkyNodeTarget)).Sky
 
 	sceneModel := scene.CreateModel(game.ModelInfo{
 		Name:       "HomeScreen",
@@ -448,31 +433,24 @@ func (c *homeScreenComponent) createScene() *model.HomeScene {
 		IsDynamic:  false,
 	})
 	scene.Root().AppendChild(sceneModel.Root())
-	result.Scene = scene
 
-	camera := c.createCamera(scene.Graphics())
-	scene.Graphics().SetActiveCamera(camera)
+	daySkyNode := sceneModel.FindNode("Day-Sky")
+	dayAmbientLightNode := sceneModel.FindNode("Day-AmbientLight")
+	dayDirectionalLightNode := sceneModel.FindNode("Day-DirectionalLight")
+
+	nightSkyNode := sceneModel.FindNode("Night-Sky")
+	nightAmbientLightNode := sceneModel.FindNode("Night-AmbientLight")
+	nightDirectionalLightNode := sceneModel.FindNode("Night-DirectionalLight")
 
 	scene.CreateModel(game.ModelInfo{
 		Name:       "Vehicle",
 		Definition: sceneData.Vehicle,
-		Position:   opt.V(dprec.NewVec3(0.0, 0.0, 0.4)),
+		Position:   opt.V(dprec.NewVec3(0.0, -0.05, 0.4)),
 		IsDynamic:  false,
 	})
 
-	// TODO: Move these to the scene data
-	result.DayAmbientLight = c.createDayAmbientLight(scene.Graphics())
-	result.DayDirectionalLight = scene.Graphics().CreateDirectionalLight(graphics.DirectionalLightInfo{
-		Position: dprec.NewVec3(-100.0, 100.0, 0.0),
-		Rotation: dprec.QuatProd(
-			dprec.RotationQuat(dprec.Degrees(-90), dprec.BasisYVec3()),
-			dprec.RotationQuat(dprec.Degrees(-45), dprec.BasisXVec3()),
-		),
-		EmitColor:  dprec.NewVec3(1, 1, 0.6),
-		CastShadow: true,
-	})
-
-	result.NightAmbientLight = c.createNightAmbientLight(scene.Graphics())
+	camera := c.createCamera(scene.Graphics())
+	scene.Graphics().SetActiveCamera(camera)
 
 	if cameraNode := scene.Root().FindNode("Camera"); cameraNode != nil {
 		cameraNode.SetTarget(game.CameraNodeTarget{
@@ -487,7 +465,15 @@ func (c *homeScreenComponent) createScene() *model.HomeScene {
 		sceneModel.BindAnimationSource(playback)
 		scene.PlayAnimationTree(playback)
 	}
-	return result
+	return &model.HomeScene{
+		Scene:                 scene,
+		DaySky:                skyFromNode(daySkyNode),
+		DayAmbientLight:       ambientLightFromNode(dayAmbientLightNode),
+		DayDirectionalLight:   game.DirectionalLightFromNode(dayDirectionalLightNode),
+		NightSky:              skyFromNode(nightSkyNode),
+		NightAmbientLight:     ambientLightFromNode(nightAmbientLightNode),
+		NightDirectionalLight: game.DirectionalLightFromNode(nightDirectionalLightNode),
+	}
 }
 
 func (c *homeScreenComponent) createCamera(scene *graphics.Scene) *graphics.Camera {
@@ -495,111 +481,11 @@ func (c *homeScreenComponent) createCamera(scene *graphics.Scene) *graphics.Came
 	result.SetFoVMode(graphics.FoVModeHorizontalPlus)
 	result.SetFoV(sprec.Degrees(30))
 	result.SetAutoExposure(false)
-	result.SetExposure(1.0)
+	result.SetExposure(1.5)
 	result.SetAutoFocus(false)
 	result.SetAutoExposureSpeed(0.1)
 	result.SetCascadeDistances([]float32{16.0})
 	return result
-}
-
-func (c *homeScreenComponent) createDayAmbientLight(scene *graphics.Scene) *graphics.AmbientLight {
-	reflectionData := gblob.LittleEndianBlock(make([]byte, 4*2))
-	reflectionData.SetUint16(0, float16.Fromfloat32(2.0).Bits())
-	reflectionData.SetUint16(2, float16.Fromfloat32(2.5).Bits())
-	reflectionData.SetUint16(4, float16.Fromfloat32(3.0).Bits())
-	reflectionData.SetUint16(6, float16.Fromfloat32(1.0).Bits())
-
-	reflectionTexture := c.engine.Graphics().API().CreateColorTextureCube(render.ColorTextureCubeInfo{
-		GenerateMipmaps: false,
-		GammaCorrection: false,
-		Format:          render.DataFormatRGBA16F,
-		MipmapLayers: []render.MipmapCubeLayer{
-			{
-				Dimension:      1,
-				FrontSideData:  reflectionData,
-				BackSideData:   reflectionData,
-				LeftSideData:   reflectionData,
-				RightSideData:  reflectionData,
-				TopSideData:    reflectionData,
-				BottomSideData: reflectionData,
-			},
-		},
-	})
-
-	refractionTexture := c.engine.Graphics().API().CreateColorTextureCube(render.ColorTextureCubeInfo{
-		GenerateMipmaps: false,
-		GammaCorrection: false,
-		Format:          render.DataFormatRGBA16F,
-		MipmapLayers: []render.MipmapCubeLayer{
-			{
-				Dimension:      1,
-				FrontSideData:  reflectionData,
-				BackSideData:   reflectionData,
-				LeftSideData:   reflectionData,
-				RightSideData:  reflectionData,
-				TopSideData:    reflectionData,
-				BottomSideData: reflectionData,
-			},
-		},
-	})
-
-	return scene.CreateAmbientLight(graphics.AmbientLightInfo{
-		ReflectionTexture: reflectionTexture,
-		RefractionTexture: refractionTexture,
-		Position:          dprec.ZeroVec3(),
-		InnerRadius:       5000,
-		OuterRadius:       5000,
-	})
-}
-
-func (c *homeScreenComponent) createNightAmbientLight(scene *graphics.Scene) *graphics.AmbientLight {
-	reflectionData := gblob.LittleEndianBlock(make([]byte, 4*2))
-	reflectionData.SetUint16(0, float16.Fromfloat32(0.1).Bits())
-	reflectionData.SetUint16(2, float16.Fromfloat32(0.1).Bits())
-	reflectionData.SetUint16(4, float16.Fromfloat32(0.1).Bits())
-	reflectionData.SetUint16(6, float16.Fromfloat32(1.0).Bits())
-
-	reflectionTexture := c.engine.Graphics().API().CreateColorTextureCube(render.ColorTextureCubeInfo{
-		GenerateMipmaps: false,
-		GammaCorrection: false,
-		Format:          render.DataFormatRGBA16F,
-		MipmapLayers: []render.MipmapCubeLayer{
-			{
-				Dimension:      1,
-				FrontSideData:  reflectionData,
-				BackSideData:   reflectionData,
-				LeftSideData:   reflectionData,
-				RightSideData:  reflectionData,
-				TopSideData:    reflectionData,
-				BottomSideData: reflectionData,
-			},
-		},
-	})
-
-	refractionTexture := c.engine.Graphics().API().CreateColorTextureCube(render.ColorTextureCubeInfo{
-		GenerateMipmaps: false,
-		GammaCorrection: false,
-		Format:          render.DataFormatRGBA16F,
-		MipmapLayers: []render.MipmapCubeLayer{
-			{
-				Dimension:      1,
-				FrontSideData:  reflectionData,
-				BackSideData:   reflectionData,
-				LeftSideData:   reflectionData,
-				RightSideData:  reflectionData,
-				TopSideData:    reflectionData,
-				BottomSideData: reflectionData,
-			},
-		},
-	})
-
-	return scene.CreateAmbientLight(graphics.AmbientLightInfo{
-		ReflectionTexture: reflectionTexture,
-		RefractionTexture: refractionTexture,
-		Position:          dprec.ZeroVec3(),
-		InnerRadius:       5000,
-		OuterRadius:       5000,
-	})
 }
 
 func (c *homeScreenComponent) controllerDescription(controller data.Input) string {
@@ -636,6 +522,7 @@ func (c *homeScreenComponent) onDayClicked() {
 	// Disable night lighting
 	c.scene.NightSky.SetActive(false)
 	c.scene.NightAmbientLight.SetActive(false)
+	c.scene.NightDirectionalLight.SetActive(false)
 
 	// Enable day lighting
 	c.scene.DaySky.SetActive(true)
@@ -656,6 +543,7 @@ func (c *homeScreenComponent) onNightClicked() {
 	// Enable night lighting
 	c.scene.NightSky.SetActive(true)
 	c.scene.NightAmbientLight.SetActive(true)
+	c.scene.NightDirectionalLight.SetActive(true)
 
 	c.Invalidate()
 }
@@ -717,4 +605,20 @@ func (c *homeScreenComponent) onStartClicked() {
 		ErrorViewName:   model.ViewNameError,
 	})
 	c.appModel.SetActiveView(model.ViewNameLoading)
+}
+
+func skyFromNode(node *hierarchy.Node) *graphics.Sky {
+	target, ok := node.Target().(game.SkyNodeTarget)
+	if !ok {
+		return nil
+	}
+	return target.Sky
+}
+
+func ambientLightFromNode(node *hierarchy.Node) *graphics.AmbientLight {
+	target, ok := node.Target().(game.AmbientLightNodeTarget)
+	if !ok {
+		return nil
+	}
+	return target.Light
 }
