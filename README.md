@@ -25,7 +25,7 @@ This section describes how to setup the project on your machine and compile it y
 
 ### Prerequisites
 
-- You need [Go 1.20](https://golang.org/dl/) or newer.
+- You need [Go 1.23](https://golang.org/dl/) or newer.
 - You need the [Git LFS](https://git-lfs.github.com/) plugin. As the project contains large images and models, this is the official way on how not to clog a repository.
 - Follow the instructions on the [GLFW for Go](https://github.com/go-gl/glfw) repository and make sure you can run the [GLFW examples](https://github.com/go-gl/example) on your platform.
 - Make sure you have [Task](https://taskfile.dev/) installed, as this project uses Taskfiles.
