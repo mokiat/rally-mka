@@ -1,6 +1,8 @@
 package widget
 
 import (
+	"time"
+
 	"github.com/mokiat/gog/opt"
 	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/lacking/ui"
@@ -8,13 +10,14 @@ import (
 	"github.com/mokiat/lacking/ui/std"
 )
 
+const speedometerUpdateInterval = 300 * time.Millisecond
+
 type SpeedometerSource interface {
 	Velocity() float64
 }
 
 type SpeedometerData struct {
-	MaxVelocity float64
-	Source      SpeedometerSource
+	Source SpeedometerSource
 }
 
 var Speedometer = co.Define(&speedometerComponent{})
@@ -22,19 +25,33 @@ var Speedometer = co.Define(&speedometerComponent{})
 type speedometerComponent struct {
 	co.BaseComponent
 
-	speedometerImage *ui.Image
-	needleImage      *ui.Image
+	panelImage      *ui.Image
+	blankDigitImage *ui.Image
+	digitImages     [10]*ui.Image
 
-	maxVelocity float64
-	source      SpeedometerSource
+	source SpeedometerSource
+
+	speed       int
+	updateAfter time.Duration
 }
 
 func (c *speedometerComponent) OnUpsert() {
-	c.speedometerImage = co.OpenImage(c.Scope(), "ui/images/speedometer.png")
-	c.needleImage = co.OpenImage(c.Scope(), "ui/images/needle.png")
+	c.panelImage = co.OpenImage(c.Scope(), "ui/images/speed-panel.png")
+	c.blankDigitImage = co.OpenImage(c.Scope(), "ui/images/digit-blank.png")
+	c.digitImages = [10]*ui.Image{
+		co.OpenImage(c.Scope(), "ui/images/digit-0.png"),
+		co.OpenImage(c.Scope(), "ui/images/digit-1.png"),
+		co.OpenImage(c.Scope(), "ui/images/digit-2.png"),
+		co.OpenImage(c.Scope(), "ui/images/digit-3.png"),
+		co.OpenImage(c.Scope(), "ui/images/digit-4.png"),
+		co.OpenImage(c.Scope(), "ui/images/digit-5.png"),
+		co.OpenImage(c.Scope(), "ui/images/digit-6.png"),
+		co.OpenImage(c.Scope(), "ui/images/digit-7.png"),
+		co.OpenImage(c.Scope(), "ui/images/digit-8.png"),
+		co.OpenImage(c.Scope(), "ui/images/digit-9.png"),
+	}
 
 	data := co.GetData[SpeedometerData](c.Properties())
-	c.maxVelocity = data.MaxVelocity
 	c.source = data.Source
 }
 
@@ -43,48 +60,96 @@ func (c *speedometerComponent) Render() co.Instance {
 		co.WithLayoutData(c.Properties().LayoutData())
 		co.WithData(std.ElementData{
 			Essence:   c,
-			IdealSize: opt.V(ui.NewSize(300, 150)),
+			IdealSize: opt.V(ui.NewSize(320, 128)),
 		})
 		co.WithChildren(c.Properties().Children())
 	})
 }
 
 func (c *speedometerComponent) OnRender(element *ui.Element, canvas *ui.Canvas) {
+	c.updateVelocity(canvas.ElapsedTime())
+
 	drawBounds := canvas.DrawBounds(element, false)
 
 	canvas.Push()
+	canvas.Translate(drawBounds.Position)
+
 	canvas.Reset()
 	canvas.Rectangle(
-		drawBounds.Position,
+		sprec.ZeroVec2(),
 		drawBounds.Size,
 	)
 	canvas.Fill(ui.Fill{
 		Rule:        ui.FillRuleSimple,
 		Color:       ui.White(),
-		Image:       c.speedometerImage,
-		ImageOffset: drawBounds.Position,
+		Image:       c.panelImage,
+		ImageOffset: sprec.ZeroVec2(),
 		ImageSize:   drawBounds.Size,
 	})
 
-	needleSize := sprec.NewVec2(34.0, 150.0)
-	canvas.Translate(sprec.NewVec2(
-		drawBounds.Width()/2.0,
-		drawBounds.Height()-20.0,
-	))
-	velocity := c.source.Velocity() * 3.6 // from m/s to km/h
-
-	canvas.Rotate(sprec.Degrees(-90 + 180.0*(float32(velocity/c.maxVelocity))))
-	canvas.Reset()
-	canvas.Rectangle(sprec.NewVec2(-needleSize.X/2.0, 20-needleSize.Y), needleSize)
-	canvas.Fill(ui.Fill{
-		Rule:        ui.FillRuleSimple,
-		Color:       ui.White(),
-		Image:       c.needleImage,
-		ImageOffset: sprec.NewVec2(-needleSize.X/2.0, 20-needleSize.Y),
-		ImageSize:   needleSize,
-	})
+	canvas.Push()
+	canvas.Translate(sprec.NewVec2(40.0, 70.0))
+	c.drawNumber(canvas, c.speed, 3)
+	canvas.Pop()
 
 	canvas.Pop()
 
 	element.Invalidate() // force redraw
+}
+
+func (c *speedometerComponent) updateVelocity(deltaTime time.Duration) {
+	c.updateAfter -= deltaTime
+	if c.updateAfter > 0 {
+		return
+	}
+	c.updateAfter = speedometerUpdateInterval
+
+	c.speed = int(c.source.Velocity() * 3.6) // from m/s to km/h
+}
+
+func (c *speedometerComponent) drawNumber(canvas *ui.Canvas, number int, digits int) {
+	const digitOffset = 32.0 + 8.0
+	canvas.Push()
+	canvas.Translate(sprec.NewVec2(float32(digits-1)*digitOffset, 0.0))
+	denominator := 1
+	for i := range digits {
+		normalized := number / denominator
+		if (normalized > 0) || (i == 0) {
+			c.drawDigit(canvas, normalized%10)
+		} else {
+			c.drawDigit(canvas, -1)
+		}
+		canvas.Translate(sprec.NewVec2(-digitOffset, 0.0))
+		denominator *= 10
+	}
+	canvas.Pop()
+}
+
+func (c *speedometerComponent) drawDigit(canvas *ui.Canvas, digit int) {
+	var image *ui.Image
+	switch {
+	case digit >= 0 && digit <= 9:
+		image = c.digitImages[digit]
+	default:
+		image = c.blankDigitImage
+	}
+
+	size := sprec.Vec2{
+		X: 32.0,
+		Y: 64.0,
+	}
+	offset := sprec.Vec2{
+		X: -size.X / 2.0,
+		Y: -size.Y / 2.0,
+	}
+
+	canvas.Reset()
+	canvas.Rectangle(offset, size)
+	canvas.Fill(ui.Fill{
+		Rule:        ui.FillRuleSimple,
+		Color:       ui.White(),
+		Image:       image,
+		ImageOffset: offset,
+		ImageSize:   size,
+	})
 }

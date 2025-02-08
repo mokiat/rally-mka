@@ -1,22 +1,22 @@
 package data
 
 import (
-	"errors"
+	"cmp"
 
 	"github.com/mokiat/lacking/game"
 	"github.com/mokiat/lacking/util/async"
 )
 
 func LoadHomeData(engine *game.Engine, resourceSet *game.ResourceSet) async.Promise[*HomeData] {
-	backgroundPromise := resourceSet.OpenModelByName("Home-Screen")
 	scenePromise := resourceSet.OpenModelByName("HomeScreen")
+	vehiclePromise := resourceSet.OpenModelByName("Vehicle")
 
 	promise := async.NewPromise[*HomeData]()
 	go func() {
 		var data HomeData
-		err := errors.Join(
-			backgroundPromise.Inject(&data.Background),
+		err := cmp.Or(
 			scenePromise.Inject(&data.Scene),
+			vehiclePromise.Inject(&data.Vehicle),
 		)
 		if err != nil {
 			promise.Fail(err)
@@ -28,6 +28,6 @@ func LoadHomeData(engine *game.Engine, resourceSet *game.ResourceSet) async.Prom
 }
 
 type HomeData struct {
-	Background *game.ModelDefinition
-	Scene      *game.ModelDefinition
+	Scene   *game.ModelDefinition
+	Vehicle *game.ModelDefinition
 }

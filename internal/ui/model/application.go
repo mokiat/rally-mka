@@ -6,6 +6,7 @@ import (
 
 const (
 	ViewNameIntro    ViewName = "intro"
+	ViewNameError    ViewName = "error"
 	ViewNameHome     ViewName = "home"
 	ViewNamePlay     ViewName = "play"
 	ViewNameLoading  ViewName = "loading"
@@ -15,25 +16,25 @@ const (
 
 type ViewName = string
 
-func NewApplication(eventBus *mvc.EventBus) *Application {
-	return &Application{
+func NewApplicationModel(eventBus *mvc.EventBus) *ApplicationModel {
+	return &ApplicationModel{
 		eventBus: eventBus,
 
 		activeView: ViewNameIntro,
 	}
 }
 
-type Application struct {
+type ApplicationModel struct {
 	eventBus *mvc.EventBus
 
 	activeView ViewName
 }
 
-func (a *Application) ActiveView() ViewName {
+func (a *ApplicationModel) ActiveView() ViewName {
 	return a.activeView
 }
 
-func (a *Application) SetActiveView(view ViewName) {
+func (a *ApplicationModel) SetActiveView(view ViewName) {
 	if view != a.activeView {
 		a.activeView = view
 		a.eventBus.Notify(ActiveViewChangedEvent{})

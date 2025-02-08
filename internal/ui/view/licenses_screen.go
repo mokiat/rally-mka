@@ -14,13 +14,13 @@ import (
 var LicensesScreen = co.Define(&licensesScreenComponent{})
 
 type LicensesScreenData struct {
-	AppModel *model.Application
+	AppModel *model.ApplicationModel
 }
 
 type licensesScreenComponent struct {
 	co.BaseComponent
 
-	appModel *model.Application
+	appModel *model.ApplicationModel
 }
 
 func (c *licensesScreenComponent) OnCreate() {

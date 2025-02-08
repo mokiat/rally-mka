@@ -1,31 +1,23 @@
 package model
 
-import "github.com/mokiat/lacking/ui/mvc"
-
-func NewLoading(eventBus *mvc.EventBus) *Loading {
-	return &Loading{
-		promise:      nil,
-		nextViewName: ViewNameIntro,
-	}
+func NewLoadingModel() *LoadingModel {
+	return &LoadingModel{}
 }
 
-type Loading struct {
-	promise      LoadingPromise
-	nextViewName ViewName
+type LoadingModel struct {
+	state LoadingState
 }
 
-func (l *Loading) Promise() LoadingPromise {
-	return l.promise
+func (l *LoadingModel) State() LoadingState {
+	return l.state
 }
 
-func (l *Loading) SetPromise(promise LoadingPromise) {
-	l.promise = promise
+func (l *LoadingModel) SetState(state LoadingState) {
+	l.state = state
 }
 
-func (l *Loading) NextViewName() ViewName {
-	return l.nextViewName
-}
-
-func (l *Loading) SetNextViewName(name ViewName) {
-	l.nextViewName = name
+type LoadingState struct {
+	Promise         LoadingPromise
+	SuccessViewName ViewName
+	ErrorViewName   ViewName
 }
