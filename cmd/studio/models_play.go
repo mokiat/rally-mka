@@ -49,7 +49,7 @@ var _ = func() any {
 		dsl.SetCastShadow(dsl.Const(true)),
 	)
 
-	return dsl.CreateModel("PlayScreen-Day",
+	return dsl.Save("PlayScreen-Day.dat", dsl.CreateModel(
 		dsl.AddNode(dsl.CreateNode("sky",
 			dsl.SetTarget(sky),
 		)),
@@ -63,7 +63,7 @@ var _ = func() any {
 				dprec.RotationQuat(dprec.Degrees(-45), dprec.BasisXVec3()),
 			))),
 		)),
-	)
+	))
 }()
 
 // Night Scene
@@ -104,12 +104,12 @@ var _ = func() any {
 		dsl.SetRefractionTexture(refractionTexture),
 	)
 
-	return dsl.CreateModel("PlayScreen-Night",
+	return dsl.Save("PlayScreen-Night.dat", dsl.CreateModel(
 		dsl.AddNode(dsl.CreateNode("Sky",
 			dsl.SetTarget(sky),
 		)),
 		dsl.AddNode(dsl.CreateNode("AmbientLight",
 			dsl.SetTarget(ambientLight),
 		)),
-	)
+	))
 }()

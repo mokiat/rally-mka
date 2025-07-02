@@ -1,7 +1,6 @@
 package data
 
 import (
-	"cmp"
 	"fmt"
 
 	"github.com/mokiat/lacking/game"
@@ -28,41 +27,25 @@ func LoadPlayData(engine *game.Engine, resourceSet *game.ResourceSet, lighting L
 	var backgroundName string
 	switch lighting {
 	case LightingDay:
-		backgroundName = "PlayScreen-Day"
+		backgroundName = "PlayScreen-Day.dat"
 	case LightingNight:
-		backgroundName = "PlayScreen-Night"
+		backgroundName = "PlayScreen-Night.dat"
 	default:
 		panic(fmt.Errorf("unknown lighting mode %q", lighting))
 	}
 
-	backgroundPromise := resourceSet.OpenModelByName(backgroundName)
-	scenePromise := resourceSet.OpenModelByName("Tiles")
-	vehiclePromise := resourceSet.OpenModelByName("Vehicle")
-
-	promise := async.NewPromise[*PlayData]()
-	go func() {
-		var data PlayData
-		data.Lighting = lighting
-		data.Input = input
-		data.Board = board
-		err := cmp.Or(
-			backgroundPromise.Inject(&data.Background),
-			scenePromise.Inject(&data.Scene),
-			vehiclePromise.Inject(&data.Vehicle),
-		)
-		if err != nil {
-			promise.Fail(err)
-		} else {
-			promise.Deliver(&data)
-		}
-	}()
-	return promise
+	var data PlayData
+	return async.InjectionPromise(async.JoinOperations(
+		resourceSet.FetchResource(backgroundName, &data.Background),
+		resourceSet.FetchResource("Tiles.dat", &data.Scene),
+		resourceSet.FetchResource("Vehicle.dat", &data.Vehicle),
+	), &data)
 }
 
 type PlayData struct {
-	Background *game.ModelDefinition
-	Scene      *game.ModelDefinition
-	Vehicle    *game.ModelDefinition
+	Background *game.ModelTemplate
+	Scene      *game.ModelTemplate
+	Vehicle    *game.ModelTemplate
 
 	Lighting Lighting
 	Input    Input

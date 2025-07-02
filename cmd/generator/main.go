@@ -2,17 +2,17 @@ package main
 
 import (
 	"fmt"
+	"log/slog"
 	"math/rand/v2"
 	"os"
 	"time"
 
-	"github.com/mokiat/lacking/debug/log"
 	"github.com/mokiat/rally-mka/internal/game/level"
 )
 
 func main() {
 	if err := runApp(); err != nil {
-		log.Error("Error: %v", err)
+		slog.Error("Crashed", slog.String("error", err.Error()))
 		os.Exit(1)
 	}
 }
@@ -33,7 +33,7 @@ func runApp() error {
 		elapsedTime := time.Since(startTime)
 		if elapsedTime > worstDuration {
 			worstDuration = elapsedTime
-			log.Info("Generated board in %s", elapsedTime)
+			slog.Info("Generated board", slog.String("duration", elapsedTime.String()))
 			data, err := level.SerializeBoard(board)
 			if err != nil {
 				return err

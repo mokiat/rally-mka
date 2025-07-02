@@ -69,16 +69,15 @@ var _ = func() any {
 	)
 
 	waterfallShader := `
-		textures {
-			water sampler2D,
-		}
+		texture water sampler2D
+
 		func #fragment() {
-			var uv vec2 = #uv
-			uv.y += #time * 1.5 + sin(#uv.x * #uv.y) * 0.1
+			var uv vec2 = #varyingUV
+			uv.y += #time * 1.5 + sin(#varyingUV.x * #varyingUV.y) * 0.1
 
 			var color vec4 = sample(water, uv)
 			color *= 0.6
-			var alpha float = 1.0 - #uv.y + sin(#uv.x * sin(#uv.y * 100.0) * 100.0)
+			var alpha float = 1.0 - #varyingUV.y + sin(#varyingUV.x * sin(#varyingUV.y * 100.0) * 100.0)
 			if alpha < 0.7 {
 				discard
 			}
@@ -86,7 +85,7 @@ var _ = func() any {
 		}
 	`
 
-	return dsl.CreateModel("HomeScreen",
+	return dsl.Save("HomeScreen.dat", dsl.CreateModel(
 		dsl.AppendModel(dsl.OpenGLTFModel("resources/models/home.glb")),
 		dsl.EditMaterial("Waterfall",
 			dsl.Clear(),
@@ -126,5 +125,5 @@ var _ = func() any {
 				))),
 			)),
 		)),
-	)
+	))
 }()

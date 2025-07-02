@@ -6,7 +6,7 @@ import (
 
 // Vehicle
 var _ = func() any {
-	return dsl.CreateModel("Vehicle",
+	return dsl.Save("Vehicle.dat", dsl.CreateModel(
 		dsl.AppendModel(dsl.OpenGLTFModel("resources/models/vehicle.glb")),
-	)
+	))
 }()

@@ -427,10 +427,10 @@ func (c *homeScreenComponent) createScene() *model.HomeScene {
 
 	scene := c.engine.CreateScene()
 
-	sceneModel := scene.CreateModel(game.ModelInfo{
-		Name:       "HomeScreen",
-		Definition: sceneData.Scene,
-		IsDynamic:  false,
+	sceneModel := scene.InstantiateModel(game.ModelInfo{
+		Name:      opt.V("HomeScreen"),
+		Template:  sceneData.Scene,
+		IsDynamic: false,
 	})
 	scene.Root().AppendChild(sceneModel.Root())
 
@@ -442,11 +442,11 @@ func (c *homeScreenComponent) createScene() *model.HomeScene {
 	nightAmbientLightNode := sceneModel.FindNode("Night-AmbientLight")
 	nightDirectionalLightNode := sceneModel.FindNode("Night-DirectionalLight")
 
-	scene.CreateModel(game.ModelInfo{
-		Name:       "Vehicle",
-		Definition: sceneData.Vehicle,
-		Position:   opt.V(dprec.NewVec3(0.0, -0.05, 0.4)),
-		IsDynamic:  false,
+	scene.InstantiateModel(game.ModelInfo{
+		Name:      opt.V("Vehicle"),
+		Template:  sceneData.Vehicle,
+		Position:  opt.V(dprec.NewVec3(0.0, -0.05, 0.4)),
+		IsDynamic: false,
 	})
 
 	camera := c.createCamera(scene.Graphics())
@@ -459,7 +459,7 @@ func (c *homeScreenComponent) createScene() *model.HomeScene {
 	}
 
 	const animationName = "Action"
-	if animation := sceneModel.FindAnimation(animationName); animation != nil {
+	if animation := sceneModel.FindRecording(animationName); animation != nil {
 		playback := animation.Playback()
 		playback.SetLoop(true)
 		sceneModel.BindAnimationSource(playback)
