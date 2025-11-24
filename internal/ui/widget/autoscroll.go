@@ -25,7 +25,7 @@ var defaultAutoScrollCallbackData = AutoScrollCallbackData{
 	OnFinished: func() {},
 }
 
-var AutoScroll = co.Define(&autoScrollComponent{})
+var AutoScroll = co.Define[*autoScrollComponent]()
 
 type autoScrollComponent struct {
 	co.BaseComponent

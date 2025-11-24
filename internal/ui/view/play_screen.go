@@ -16,7 +16,7 @@ import (
 	"github.com/mokiat/rally-mka/internal/ui/widget"
 )
 
-var PlayScreen = co.Define(&playScreenComponent{})
+var PlayScreen = co.Define[*playScreenComponent]()
 
 type PlayScreenData struct {
 	AppModel  *model.ApplicationModel
@@ -33,8 +33,7 @@ type playScreenComponent struct {
 
 	debugVisible bool
 
-	rootElement *ui.Element
-	exitMenu    co.Overlay
+	exitMenu co.Overlay
 }
 
 var _ ui.ElementKeyboardHandler = (*playScreenComponent)(nil)
@@ -97,11 +96,10 @@ func (c *playScreenComponent) OnKeyboardEvent(element *ui.Element, event ui.Keyb
 func (c *playScreenComponent) Render() co.Instance {
 	return co.New(std.Element, func() {
 		co.WithData(std.ElementData{
-			Reference: &c.rootElement,
-			Essence:   c,
-			Focusable: opt.V(true),
-			Focused:   opt.V(true),
-			Layout:    layout.Anchor(),
+			Essence:      c,
+			CanAutoFocus: opt.V(true),
+			Focused:      opt.V(true),
+			Layout:       layout.Anchor(),
 		})
 
 		if c.debugVisible {
@@ -142,7 +140,7 @@ func (c *playScreenComponent) Render() co.Instance {
 func (c *playScreenComponent) onContinue() {
 	c.exitMenu.Close()
 	c.controller.Resume()
-	co.Window(c.Scope()).GrantFocus(c.rootElement)
+	co.Window(c.Scope()).GrantFocus(c.Element())
 	co.Window(c.Scope()).SetCursorVisible(!c.hideCursor)
 }
 

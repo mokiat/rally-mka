@@ -39,7 +39,7 @@ var sections = func() []creditsSection {
 	}
 }()
 
-var CreditsScreen = co.Define(&creditsScreenComponent{})
+var CreditsScreen = co.Define[*creditsScreenComponent]()
 
 type CreditsScreenData struct {
 	AppModel *model.ApplicationModel

@@ -1,6 +1,6 @@
 module github.com/mokiat/rally-mka
 
-go 1.23
+go 1.25
 
 require (
 	github.com/mokiat/gog v0.15.0

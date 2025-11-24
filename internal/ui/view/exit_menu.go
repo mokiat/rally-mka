@@ -9,7 +9,7 @@ import (
 	"github.com/mokiat/rally-mka/internal/ui/widget"
 )
 
-var ExitMenu = co.Define(&exitMenuComponent{})
+var ExitMenu = co.Define[*exitMenuComponent]()
 
 type ExitMenuCallback struct {
 	OnContinue std.OnActionFunc
@@ -47,10 +47,10 @@ func (c *exitMenuComponent) OnKeyboardEvent(element *ui.Element, event ui.Keyboa
 func (c *exitMenuComponent) Render() co.Instance {
 	return co.New(std.Element, func() {
 		co.WithData(std.ElementData{
-			Essence:   c,
-			Focusable: opt.V(true),
-			Focused:   opt.V(true),
-			Layout:    layout.Fill(),
+			Essence:      c,
+			CanAutoFocus: opt.V(true),
+			Focused:      opt.V(true),
+			Layout:       layout.Fill(),
 		})
 
 		co.WithChild("background", co.New(std.Container, func() {

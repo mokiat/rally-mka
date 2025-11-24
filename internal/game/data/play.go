@@ -34,7 +34,11 @@ func LoadPlayData(engine *game.Engine, resourceSet *game.ResourceSet, lighting L
 		panic(fmt.Errorf("unknown lighting mode %q", lighting))
 	}
 
-	var data PlayData
+	data := PlayData{
+		Lighting: lighting,
+		Input:    input,
+		Board:    board,
+	}
 	return async.InjectionPromise(async.JoinOperations(
 		resourceSet.FetchResource(backgroundName, &data.Background),
 		resourceSet.FetchResource("Tiles.dat", &data.Scene),

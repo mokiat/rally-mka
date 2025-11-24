@@ -28,7 +28,7 @@ var defaultButtonCallbackData = ButtonCallbackData{
 	OnClick: func() {},
 }
 
-var Button = co.Define(&buttonComponent{})
+var Button = co.Define[*buttonComponent]()
 
 type buttonComponent struct {
 	co.BaseComponent
