@@ -221,10 +221,14 @@ func (s *CarSystem) updateMouse(elapsedSeconds float64, entity Entity) {
 	line := shape3d.NewSegment(start, end)
 	surface := shape3d.NewSurface(position, dprec.BasisYVec3())
 
-	intersection, ok := shape3d.CheckSegmentSurfaceIntersection(line, surface)
+	var collection shape3d.SmallestIntersection
+	shape3d.CheckSegmentSurfaceIntersection(line, surface, collection.AddIntersection)
+	intersection, ok := collection.Intersection()
 	if !ok {
 		sphere := shape3d.NewSphere(position, 1000.0)
-		intersection, ok = shape3d.CheckSegmentSphereIntersection(line, sphere)
+		collection.Reset()
+		shape3d.CheckSegmentSphereIntersection(line.Flipped(), sphere, collection.AddIntersection)
+		intersection, ok = collection.Intersection()
 	}
 	if ok {
 		delta := dprec.Vec3Diff(intersection.TargetContact, position)

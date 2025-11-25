@@ -77,9 +77,10 @@ func (c *PlayController) Start(environment data.Lighting, controller data.Input,
 	c.scene = preset.NewScene(c.engine.CreateScene(game.SceneInfo{}))
 
 	c.scene.InstantiateModel(game.ModelInfo{
-		Name:      opt.V("Background"),
-		Template:  c.playData.Background,
-		IsDynamic: false,
+		Name:             opt.V("Background"),
+		Template:         c.playData.Background,
+		IsDynamic:        false,
+		DiscardHierarchy: true,
 	})
 
 	centerPosition := tilePosition(board.Center())
@@ -94,11 +95,12 @@ func (c *PlayController) Start(environment data.Lighting, controller data.Input,
 			tilePosition := tilePosition(tileCoord)
 			position := dprec.Vec3Diff(tilePosition, centerPosition)
 			c.scene.InstantiateModel(game.ModelInfo{
-				SubTreeNode: opt.V(nodeName),
-				Position:    opt.V(position),
-				Rotation:    opt.V(tile.RotationQuat()),
-				Template:    c.playData.Scene,
-				IsDynamic:   false,
+				SubTreeNode:      opt.V(nodeName),
+				Position:         opt.V(position),
+				Rotation:         opt.V(tile.RotationQuat()),
+				Template:         c.playData.Scene,
+				IsDynamic:        false,
+				DiscardHierarchy: true,
 			})
 		}
 	}
