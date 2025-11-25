@@ -4,6 +4,9 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"net/http"
+	_ "net/http/pprof"
 
 	glapp "github.com/mokiat/lacking-native/app"
 	glgame "github.com/mokiat/lacking-native/game"
@@ -18,6 +21,10 @@ import (
 )
 
 func runApplication() error {
+	go func() {
+		log.Println(http.ListenAndServe("localhost:6060", nil))
+	}()
+
 	storage, err := chunked.NewFileStorage("./assets")
 	if err != nil {
 		return fmt.Errorf("failed to initialize storage: %w", err)
@@ -31,12 +38,12 @@ func runApplication() error {
 	})
 
 	cfg := glapp.NewConfig("Rally MKA", 1024, 576)
-	cfg.SetFullscreen(true)
-	cfg.SetMaximized(false)
+	cfg.SetFullscreen(false)
+	cfg.SetMaximized(true)
 	cfg.SetMinSize(1024, 576)
 	cfg.SetVSync(true)
 	cfg.SetIcon("ui/images/icon.png")
 	cfg.SetLocator(locator)
-	cfg.SetAudioEnabled(false)
+	cfg.SetAudioEnabled(true)
 	return glapp.Run(cfg, app.NewLayeredController(gameController, uiController))
 }

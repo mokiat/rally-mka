@@ -55,13 +55,13 @@ tasks:
 
   profile-cpu:
     cmds:
-      - curl -o default.pgo 'http://localhost:6060/debug/pprof/profile?seconds=30'
-      - go tool pprof default.pgo
+      - curl -o cpu.pprof 'http://localhost:6060/debug/pprof/profile?seconds=30'
+      - go tool pprof cpu.pprof
 
   profile-cpu-web:
     cmds:
-      - curl -o default.pgo 'http://localhost:6060/debug/pprof/profile?seconds=30'
-      - go tool pprof -http=localhost:9090 default.pgo
+      - curl -o cpu.pprof 'http://localhost:6060/debug/pprof/profile?seconds=30'
+      - go tool pprof -http=localhost:9090 cpu.pprof
 
   profile-alloc:
     cmds:

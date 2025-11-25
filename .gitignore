@@ -13,3 +13,4 @@
 # Go
 trace.out
 default.pgo
+cpu.pprof
