@@ -7,7 +7,7 @@ tasks:
       GOWORK: off
     cmds:
       - rm ./resources/licenses.txt
-      - go run github.com/google/go-licenses@v1.6.0 report --ignore github.com/mokiat/game --template ./resources/licenses.tmpl ./cmd/game ./cmd/studio | fold -w 80 -s > ./resources/licenses.txt
+      - go run github.com/google/go-licenses@v1.6.0 report --ignore github.com/mokiat/rally-mka --template ./resources/licenses.tmpl ./cmd/game ./cmd/studio | fold -w 80 -s > ./resources/licenses.txt
 
   clean:
     desc: Clean up the assets directory.
