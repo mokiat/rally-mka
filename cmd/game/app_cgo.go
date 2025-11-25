@@ -10,7 +10,7 @@ import (
 	glui "github.com/mokiat/lacking-native/ui"
 	"github.com/mokiat/lacking/app"
 	"github.com/mokiat/lacking/game"
-	"github.com/mokiat/lacking/game/asset"
+	"github.com/mokiat/lacking/storage/chunked"
 	"github.com/mokiat/lacking/ui"
 	"github.com/mokiat/lacking/util/resource"
 	gameui "github.com/mokiat/rally-mka/internal/ui"
@@ -18,21 +18,14 @@ import (
 )
 
 func runApplication() error {
-	registryStorage, err := asset.NewFSStorage("./assets")
+	storage, err := chunked.NewFileStorage("./assets")
 	if err != nil {
 		return fmt.Errorf("failed to initialize storage: %w", err)
 	}
 
-	registryFormatter := asset.NewBlobFormatter()
-
-	registry, err := asset.NewRegistry(registryStorage, registryFormatter)
-	if err != nil {
-		return fmt.Errorf("failed to initialize registry: %w", err)
-	}
-
 	locator := ui.WrappedLocator(resource.NewFSLocator(resources.UI))
 
-	gameController := game.NewController(registry, glgame.NewShaderCollection(), glgame.NewShaderBuilder())
+	gameController := game.NewController(storage, glgame.NewShaderCollection(), glgame.NewShaderBuilder())
 	uiController := ui.NewController(locator, glui.NewShaderCollection(), func(w *ui.Window) {
 		gameui.BootstrapApplication(w, gameController)
 	})

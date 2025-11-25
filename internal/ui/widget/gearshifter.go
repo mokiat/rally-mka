@@ -16,7 +16,7 @@ type GearShifterData struct {
 	Source GearShifterSource
 }
 
-var GearShifter = co.Define(&gearShifterComponent{})
+var GearShifter = co.Define[*gearShifterComponent]()
 
 type gearShifterComponent struct {
 	co.BaseComponent

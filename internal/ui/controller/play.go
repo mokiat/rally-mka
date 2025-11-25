@@ -10,17 +10,15 @@ import (
 	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/lacking/app"
 	"github.com/mokiat/lacking/game"
-	"github.com/mokiat/lacking/game/ecs"
 	"github.com/mokiat/lacking/game/graphics"
 	"github.com/mokiat/lacking/game/hierarchy"
 	"github.com/mokiat/lacking/game/physics"
 	"github.com/mokiat/lacking/game/physics/acceleration"
-	"github.com/mokiat/lacking/game/physics/collision"
-	"github.com/mokiat/lacking/game/preset"
-	"github.com/mokiat/lacking/game/timestep"
 	"github.com/mokiat/lacking/ui"
+	"github.com/mokiat/lacking/util/shape3d"
 	"github.com/mokiat/rally-mka/internal/game/data"
 	"github.com/mokiat/rally-mka/internal/game/level"
+	"github.com/mokiat/rally-mka/internal/game/preset"
 )
 
 const (
@@ -42,13 +40,11 @@ type PlayController struct {
 	engine   *game.Engine
 	playData *data.PlayData
 
-	preUpdateSubscription  *timestep.UpdateSubscription
-	postUpdateSubscription *timestep.UpdateSubscription
-
-	scene        *game.Scene
+	scene        *preset.Scene
+	hierScene    *hierarchy.Scene
 	gfxScene     *graphics.Scene
 	physicsScene *physics.Scene
-	ecsScene     *ecs.Scene
+	ecsScene     *preset.ECSScene
 
 	followCameraSystem *preset.FollowCameraSystem
 	followCamera       *graphics.Camera
@@ -78,12 +74,13 @@ func tilePosition(coord level.Coord) dprec.Vec3 {
 func (c *PlayController) Start(environment data.Lighting, controller data.Input, board *level.Board) {
 	physics.ImpulseDriftAdjustmentRatio = 0.06 // FIXME: Use default once multi-point collisions are fixed
 
-	c.scene = c.engine.CreateScene()
+	c.scene = preset.NewScene(c.engine.CreateScene(game.SceneInfo{}))
 
-	c.scene.CreateModel(game.ModelInfo{
-		Name:       "Background",
-		Definition: c.playData.Background,
-		IsDynamic:  true,
+	c.scene.InstantiateModel(game.ModelInfo{
+		Name:             opt.V("Background"),
+		Template:         c.playData.Background,
+		IsDynamic:        false,
+		DiscardHierarchy: true,
 	})
 
 	centerPosition := tilePosition(board.Center())
@@ -97,19 +94,20 @@ func (c *PlayController) Start(environment data.Lighting, controller data.Input,
 			}
 			tilePosition := tilePosition(tileCoord)
 			position := dprec.Vec3Diff(tilePosition, centerPosition)
-			c.scene.CreateModel(game.ModelInfo{
-				RootNode:   opt.V(nodeName),
-				Position:   opt.V(position),
-				Rotation:   opt.V(tile.RotationQuat()),
-				Definition: c.playData.Scene,
-				IsDynamic:  false,
+			c.scene.InstantiateModel(game.ModelInfo{
+				SubTreeNode:      opt.V(nodeName),
+				Position:         opt.V(position),
+				Rotation:         opt.V(tile.RotationQuat()),
+				Template:         c.playData.Scene,
+				IsDynamic:        false,
+				DiscardHierarchy: true,
 			})
 		}
 	}
 
-	c.preUpdateSubscription = c.scene.SubscribePreUpdate(c.onPreUpdate)
-	c.postUpdateSubscription = c.scene.SubscribePostUpdate(c.onPostUpdate)
+	c.scene.SubscribeFixedUpdate(c.onFixedUpdate)
 
+	c.hierScene = c.scene.Hierarchy()
 	c.gfxScene = c.scene.Graphics()
 	c.physicsScene = c.scene.Physics()
 	c.ecsScene = c.scene.ECS()
@@ -121,12 +119,12 @@ func (c *PlayController) Start(environment data.Lighting, controller data.Input,
 	c.followCameraSystem = preset.NewFollowCameraSystem(c.ecsScene, c.window)
 	c.followCameraSystem.UseDefaults()
 
-	c.carSystem = preset.NewCarSystem(c.ecsScene, c.gfxScene)
+	c.carSystem = preset.NewCarSystem(c.scene)
 
-	carModel := c.scene.CreateModel(game.ModelInfo{
-		Name:       "Vehicle",
-		Definition: c.playData.Vehicle,
-		IsDynamic:  true,
+	carModel := c.scene.InstantiateModel(game.ModelInfo{
+		Name:      opt.V("Vehicle"),
+		Template:  c.playData.Vehicle,
+		IsDynamic: true,
 	})
 	c.vehicle = c.vehicleDefinition.ApplyToModel(c.scene, preset.CarApplyInfo{
 		Model:    carModel,
@@ -134,17 +132,15 @@ func (c *PlayController) Start(environment data.Lighting, controller data.Input,
 		Rotation: dprec.RotationQuat(dprec.Degrees(90), dprec.BasisYVec3()),
 	})
 
-	var vehicleNodeComponent *preset.NodeComponent
-	ecs.FetchComponent(c.vehicle.Entity(), &vehicleNodeComponent)
+	vehicleNodeComponent := c.vehicle.Entity().RefNodeComponent()
 	vehicleNode := vehicleNodeComponent.Node
 
-	var vehicleCarComponent *preset.CarComponent
-	ecs.FetchComponent(c.vehicle.Entity(), &vehicleCarComponent)
+	vehicleCarComponent := c.vehicle.Entity().RefCarComponent()
 	vehicleCarComponent.LightsOn = (environment == data.LightingNight)
 
 	switch controller {
 	case data.InputKeyboard:
-		ecs.AttachComponent(c.vehicle.Entity(), &preset.CarKeyboardControl{
+		c.vehicle.Entity().SetCarKeyboardComponent(preset.CarKeyboardComponent{
 			AccelerateKey: ui.KeyCodeArrowUp,
 			DecelerateKey: ui.KeyCodeArrowDown,
 			TurnLeftKey:   ui.KeyCodeArrowLeft,
@@ -159,13 +155,13 @@ func (c *PlayController) Start(environment data.Lighting, controller data.Input,
 			SteeringRestoreSpeed:    6.0,
 		})
 	case data.InputMouse:
-		ecs.AttachComponent(c.vehicle.Entity(), &preset.CarMouseControl{
+		c.vehicle.Entity().SetCarMouseComponent(preset.CarMouseComponent{
 			AccelerationChangeSpeed: 2.0,
 			DecelerationChangeSpeed: 4.0,
 			Destination:             dprec.ZeroVec3(),
 		})
 	case data.InputGamepad:
-		ecs.AttachComponent(c.vehicle.Entity(), &preset.CarGamepadControl{
+		c.vehicle.Entity().SetCarGamepadComponent(preset.CarGamepadComponent{
 			Gamepad: c.window.Gamepads()[0],
 		})
 	}
@@ -179,12 +175,9 @@ func (c *PlayController) Start(environment data.Lighting, controller data.Input,
 	c.followCamera.SetCascadeDistances([]float32{16.0, 64.0, 256.0})
 	c.gfxScene.SetActiveCamera(c.followCamera)
 
-	followCameraNode := hierarchy.NewNode()
+	followCameraNode := c.hierScene.Wrap(c.hierScene.CreateNode())
 	followCameraNode.SetPosition(dprec.NewVec3(0.0, 20.0, 10.0))
-	followCameraNode.SetTarget(game.CameraNodeTarget{
-		Camera: c.followCamera,
-	})
-	c.scene.Root().AppendChild(followCameraNode)
+	c.scene.CameraBindingSet().Bind(followCameraNode.ID(), c.followCamera)
 
 	c.bonnetCamera = c.gfxScene.CreateCamera()
 	c.bonnetCamera.SetFoVMode(graphics.FoVModeHorizontalPlus)
@@ -194,22 +187,20 @@ func (c *PlayController) Start(environment data.Lighting, controller data.Input,
 	c.bonnetCamera.SetAutoFocus(false)
 	c.bonnetCamera.SetCascadeDistances([]float32{16.0, 64.0, 256.0})
 
-	bonnetCameraNode := hierarchy.NewNode()
-	bonnetCameraNode.SetTarget(game.CameraNodeTarget{
-		Camera: c.bonnetCamera,
-	})
+	bonnetCameraNode := c.hierScene.Wrap(c.hierScene.CreateNode())
+	c.scene.CameraBindingSet().Bind(bonnetCameraNode.ID(), c.bonnetCamera)
 	bonnetCameraNode.SetRotation(dprec.RotationQuat(dprec.Degrees(180), dprec.BasisYVec3()))
 	bonnetCameraNode.SetPosition(dprec.NewVec3(0.0, 0.75, 0.35))
-	vehicleNode.AppendChild(bonnetCameraNode)
+	vehicleNode.AppendChild(bonnetCameraNode, false)
 
 	followCameraEntity := c.ecsScene.CreateEntity()
-	ecs.AttachComponent(followCameraEntity, &preset.NodeComponent{
+	followCameraEntity.SetNodeComponent(preset.NodeComponent{
 		Node: followCameraNode,
 	})
-	ecs.AttachComponent(followCameraEntity, &preset.ControlledComponent{
+	followCameraEntity.SetControlledComponent(preset.ControlledComponent{
 		Inputs: preset.ControlInputKeyboard | preset.ControlInputMouse | preset.ControlInputGamepad0,
 	})
-	ecs.AttachComponent(followCameraEntity, &preset.FollowCameraComponent{
+	followCameraEntity.SetFollowCameraComponent(preset.FollowCameraComponent{
 		Target:         vehicleNode,
 		AnchorPosition: dprec.Vec3Sum(vehicleNode.Position(), dprec.NewVec3(0.0, 0.0, -anchorDistance)),
 		AnchorDistance: anchorDistance,
@@ -224,8 +215,6 @@ func (c *PlayController) Start(environment data.Lighting, controller data.Input,
 }
 
 func (c *PlayController) Stop() {
-	c.preUpdateSubscription.Delete()
-	c.postUpdateSubscription.Delete()
 	c.scene.Delete()
 }
 
@@ -256,8 +245,7 @@ func (c *PlayController) IsDrive() bool {
 	if c.vehicle == nil {
 		return true
 	}
-	var carComp *preset.CarComponent
-	ecs.FetchComponent(c.vehicle.Entity(), &carComp)
+	carComp := c.vehicle.Entity().RefCarComponent()
 	return carComp.Gear == preset.CarGearForward
 }
 
@@ -269,12 +257,9 @@ func (c *PlayController) OnKeyboardEvent(event ui.KeyboardEvent) bool {
 	return c.carSystem.OnKeyboardEvent(event)
 }
 
-func (c *PlayController) onPreUpdate(elapsedTime time.Duration) {
-	c.carSystem.Update(elapsedTime.Seconds())
-}
-
-func (c *PlayController) onPostUpdate(elapsedTime time.Duration) {
-	c.followCameraSystem.Update(elapsedTime.Seconds())
+func (c *PlayController) onFixedUpdate(elapsedTime time.Duration) {
+	c.carSystem.OnFixedUpdate(elapsedTime.Seconds())
+	c.followCameraSystem.OnFixedUpdate(elapsedTime.Seconds())
 }
 
 func (c *PlayController) createVehicleDefinition() *preset.CarDefinition {
@@ -287,8 +272,8 @@ func (c *PlayController) createVehicleDefinition() *preset.CarDefinition {
 		AngularDragFactor:      0.0,
 		RestitutionCoefficient: 0.0,
 		CollisionGroup:         collisionGroup,
-		CollisionBoxes: []collision.Box{
-			collision.NewBox(
+		CollisionBoxes: []shape3d.Box{
+			shape3d.NewBox(
 				dprec.NewVec3(0.0, 0.34, -0.3),
 				dprec.IdentityQuat(),
 				dprec.NewVec3(1.6, 1.18, 3.64),
@@ -303,8 +288,8 @@ func (c *PlayController) createVehicleDefinition() *preset.CarDefinition {
 		AngularDragFactor:      0.0,
 		RestitutionCoefficient: 0.0,
 		CollisionGroup:         collisionGroup,
-		CollisionSpheres: []collision.Sphere{
-			collision.NewSphere(dprec.ZeroVec3(), 0.25),
+		CollisionSpheres: []shape3d.Sphere{
+			shape3d.NewSphere(dprec.ZeroVec3(), 0.25),
 		},
 	})
 

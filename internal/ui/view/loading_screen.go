@@ -11,7 +11,7 @@ import (
 	"github.com/mokiat/rally-mka/internal/ui/widget"
 )
 
-var LoadingScreen = co.Define(&loadingScreenComponent{})
+var LoadingScreen = co.Define[*loadingScreenComponent]()
 
 type LoadingScreenData struct {
 	AppModel     *model.ApplicationModel

@@ -12,7 +12,7 @@ import (
 	"github.com/mokiat/rally-mka/internal/game/level"
 )
 
-var Level = co.Define(&levelComponent{})
+var Level = co.Define[*levelComponent]()
 
 type LevelData struct {
 	Board *level.Board

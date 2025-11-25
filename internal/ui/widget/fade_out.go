@@ -26,7 +26,7 @@ var defaultFadeOutCallbackData = FadeOutCallbackData{
 	OnFinished: func() {},
 }
 
-var FadeOut = co.Define(&fadeOutComponent{})
+var FadeOut = co.Define[*fadeOutComponent]()
 
 type fadeOutComponent struct {
 	co.BaseComponent
@@ -53,8 +53,8 @@ func (c *fadeOutComponent) Render() co.Instance {
 	return co.New(std.Element, func() {
 		co.WithLayoutData(c.Properties().LayoutData())
 		co.WithData(std.ElementData{
-			Essence:   c,
-			Focusable: opt.V(false),
+			Essence:      c,
+			CanAutoFocus: opt.V(false),
 		})
 		co.WithChildren(c.Properties().Children())
 	})

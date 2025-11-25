@@ -26,30 +26,29 @@ var _ = func() any {
 	)
 
 	tilingShader := `
-		textures {
-			terrain sampler2D,
-			noise sampler2D,
-		}
+		texture terrain sampler2D
+		texture noise sampler2D
+
 		func #fragment() {
 			var noiseScale vec2
 			noiseScale.x = 0.1
 			noiseScale.y = 0.1
-			var noiseSample vec4 = sample(noise, #uv * noiseScale)
+			var noiseSample vec4 = sample(noise, #varyingUV * noiseScale)
 
 			var cs float = 0.8660 // cos 30
 			var sn float = 0.5 // sin 30
 			var uv2 vec2
-			uv2.x = #uv.x * cs - #uv.y * sn + 0.5
-			uv2.y = #uv.x * sn + #uv.y * cs + 0.5
+			uv2.x = #varyingUV.x * cs - #varyingUV.y * sn + 0.5
+			uv2.y = #varyingUV.x * sn + #varyingUV.y * cs + 0.5
 
-			var color1 vec4 = sample(terrain, #uv)
+			var color1 vec4 = sample(terrain, #varyingUV)
 			var color2 vec4 = sample(terrain, uv2)
 
 			#color = mix(color1, color2, smoothstep(0.0, 1.0, noiseSample.r + 0.3))
 		}
 	`
 
-	return dsl.CreateModel("Tiles",
+	return dsl.Save("Tiles.dat", dsl.CreateModel(
 		dsl.AppendModel(model),
 		dsl.EditMaterial("Grass",
 			dsl.Clear(),
@@ -85,5 +84,5 @@ var _ = func() any {
 				dsl.SetMipmapping(dsl.Const(true)),
 			)),
 		),
-	)
+	))
 }()

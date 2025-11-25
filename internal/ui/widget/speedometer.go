@@ -20,7 +20,7 @@ type SpeedometerData struct {
 	Source SpeedometerSource
 }
 
-var Speedometer = co.Define(&speedometerComponent{})
+var Speedometer = co.Define[*speedometerComponent]()
 
 type speedometerComponent struct {
 	co.BaseComponent

@@ -9,7 +9,6 @@ import (
 	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/lacking/game"
 	"github.com/mokiat/lacking/game/graphics"
-	"github.com/mokiat/lacking/game/hierarchy"
 	"github.com/mokiat/lacking/ui"
 	co "github.com/mokiat/lacking/ui/component"
 	"github.com/mokiat/lacking/ui/layout"
@@ -25,7 +24,7 @@ const (
 	buttonAppearIncrement = 50 * time.Millisecond
 )
 
-var HomeScreen = co.Define(&homeScreenComponent{})
+var HomeScreen = co.Define[*homeScreenComponent]()
 
 type HomeScreenData struct {
 	AppModel     *model.ApplicationModel
@@ -425,14 +424,16 @@ func (c *homeScreenComponent) withLevelModeContent() {
 func (c *homeScreenComponent) createScene() *model.HomeScene {
 	sceneData := c.homeModel.Data()
 
-	scene := c.engine.CreateScene()
-
-	sceneModel := scene.CreateModel(game.ModelInfo{
-		Name:       "HomeScreen",
-		Definition: sceneData.Scene,
-		IsDynamic:  false,
+	scene := c.engine.CreateScene(game.SceneInfo{
+		IncludeECS:     opt.V(false),
+		IncludePhysics: opt.V(false),
 	})
-	scene.Root().AppendChild(sceneModel.Root())
+
+	sceneModel := scene.InstantiateModel(game.ModelInfo{
+		Name:      opt.V("HomeScreen"),
+		Template:  sceneData.Scene,
+		IsDynamic: false,
+	})
 
 	daySkyNode := sceneModel.FindNode("Day-Sky")
 	dayAmbientLightNode := sceneModel.FindNode("Day-AmbientLight")
@@ -442,37 +443,34 @@ func (c *homeScreenComponent) createScene() *model.HomeScene {
 	nightAmbientLightNode := sceneModel.FindNode("Night-AmbientLight")
 	nightDirectionalLightNode := sceneModel.FindNode("Night-DirectionalLight")
 
-	scene.CreateModel(game.ModelInfo{
-		Name:       "Vehicle",
-		Definition: sceneData.Vehicle,
-		Position:   opt.V(dprec.NewVec3(0.0, -0.05, 0.4)),
-		IsDynamic:  false,
+	scene.InstantiateModel(game.ModelInfo{
+		Name:      opt.V("Vehicle"),
+		Template:  sceneData.Vehicle,
+		Position:  opt.V(dprec.NewVec3(0.0, -0.05, 0.4)),
+		IsDynamic: false,
 	})
 
 	camera := c.createCamera(scene.Graphics())
 	scene.Graphics().SetActiveCamera(camera)
 
-	if cameraNode := scene.Root().FindNode("Camera"); cameraNode != nil {
-		cameraNode.SetTarget(game.CameraNodeTarget{
-			Camera: camera,
-		})
+	if cameraNode := scene.Hierarchy().FindNode("Camera"); !cameraNode.IsNil() {
+		scene.CameraBindingSet().Bind(cameraNode, camera)
 	}
 
 	const animationName = "Action"
-	if animation := sceneModel.FindAnimation(animationName); animation != nil {
-		playback := animation.Playback()
-		playback.SetLoop(true)
-		sceneModel.BindAnimationSource(playback)
-		scene.PlayAnimationTree(playback)
+	if recording := sceneModel.FindRecording(animationName); recording != nil {
+		playback := recording.Playback(true)
+		player := sceneModel.BindAnimation(playback)
+		scene.PlayAnimation(player)
 	}
 	return &model.HomeScene{
-		Scene:                 scene,
-		DaySky:                skyFromNode(daySkyNode),
-		DayAmbientLight:       ambientLightFromNode(dayAmbientLightNode),
-		DayDirectionalLight:   game.DirectionalLightFromNode(dayDirectionalLightNode),
-		NightSky:              skyFromNode(nightSkyNode),
-		NightAmbientLight:     ambientLightFromNode(nightAmbientLightNode),
-		NightDirectionalLight: game.DirectionalLightFromNode(nightDirectionalLightNode),
+		Scene:                     scene,
+		DaySkyNode:                scene.Hierarchy().Wrap(daySkyNode),
+		DayAmbientLightNode:       scene.Hierarchy().Wrap(dayAmbientLightNode),
+		DayDirectionalLightNode:   scene.Hierarchy().Wrap(dayDirectionalLightNode),
+		NightSkyNode:              scene.Hierarchy().Wrap(nightSkyNode),
+		NightAmbientLightNode:     scene.Hierarchy().Wrap(nightAmbientLightNode),
+		NightDirectionalLightNode: scene.Hierarchy().Wrap(nightDirectionalLightNode),
 	}
 }
 
@@ -520,14 +518,14 @@ func (c *homeScreenComponent) onDayClicked() {
 	c.homeModel.SetLighting(data.LightingDay)
 
 	// Disable night lighting
-	c.scene.NightSky.SetActive(false)
-	c.scene.NightAmbientLight.SetActive(false)
-	c.scene.NightDirectionalLight.SetActive(false)
+	c.scene.NightSkyNode.SetVisible(false)
+	c.scene.NightAmbientLightNode.SetVisible(false)
+	c.scene.NightDirectionalLightNode.SetVisible(false)
 
 	// Enable day lighting
-	c.scene.DaySky.SetActive(true)
-	c.scene.DayAmbientLight.SetActive(true)
-	c.scene.DayDirectionalLight.SetActive(true)
+	c.scene.DaySkyNode.SetVisible(true)
+	c.scene.DayAmbientLightNode.SetVisible(true)
+	c.scene.DayDirectionalLightNode.SetVisible(true)
 
 	c.Invalidate()
 }
@@ -536,14 +534,14 @@ func (c *homeScreenComponent) onNightClicked() {
 	c.homeModel.SetLighting(data.LightingNight)
 
 	// Disable day lighting
-	c.scene.DaySky.SetActive(false)
-	c.scene.DayAmbientLight.SetActive(false)
-	c.scene.DayDirectionalLight.SetActive(false)
+	c.scene.DaySkyNode.SetVisible(false)
+	c.scene.DayAmbientLightNode.SetVisible(false)
+	c.scene.DayDirectionalLightNode.SetVisible(false)
 
 	// Enable night lighting
-	c.scene.NightSky.SetActive(true)
-	c.scene.NightAmbientLight.SetActive(true)
-	c.scene.NightDirectionalLight.SetActive(true)
+	c.scene.NightSkyNode.SetVisible(true)
+	c.scene.NightAmbientLightNode.SetVisible(true)
+	c.scene.NightDirectionalLightNode.SetVisible(true)
 
 	c.Invalidate()
 }
@@ -605,20 +603,4 @@ func (c *homeScreenComponent) onStartClicked() {
 		ErrorViewName:   model.ViewNameError,
 	})
 	c.appModel.SetActiveView(model.ViewNameLoading)
-}
-
-func skyFromNode(node *hierarchy.Node) *graphics.Sky {
-	target, ok := node.Target().(game.SkyNodeTarget)
-	if !ok {
-		return nil
-	}
-	return target.Sky
-}
-
-func ambientLightFromNode(node *hierarchy.Node) *graphics.AmbientLight {
-	target, ok := node.Target().(game.AmbientLightNodeTarget)
-	if !ok {
-		return nil
-	}
-	return target.Light
 }

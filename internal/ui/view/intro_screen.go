@@ -20,7 +20,7 @@ type IntroScreenData struct {
 	HomeModel    *model.HomeModel
 }
 
-var IntroScreen = co.Define(&introScreenComponent{})
+var IntroScreen = co.Define[*introScreenComponent]()
 
 type introScreenComponent struct {
 	co.BaseComponent

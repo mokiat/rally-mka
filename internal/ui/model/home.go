@@ -2,7 +2,7 @@ package model
 
 import (
 	"github.com/mokiat/lacking/game"
-	"github.com/mokiat/lacking/game/graphics"
+	"github.com/mokiat/lacking/game/hierarchy"
 	"github.com/mokiat/rally-mka/internal/game/data"
 )
 
@@ -75,13 +75,13 @@ func (h *HomeModel) SetLevel(level data.Level) {
 type HomeScene struct {
 	Scene *game.Scene
 
-	DaySky              *graphics.Sky
-	DayAmbientLight     *graphics.AmbientLight
-	DayDirectionalLight *graphics.DirectionalLight
+	DaySkyNode              hierarchy.Node
+	DayAmbientLightNode     hierarchy.Node
+	DayDirectionalLightNode hierarchy.Node
 
-	NightSky              *graphics.Sky
-	NightAmbientLight     *graphics.AmbientLight
-	NightDirectionalLight *graphics.DirectionalLight
+	NightSkyNode              hierarchy.Node
+	NightAmbientLightNode     hierarchy.Node
+	NightDirectionalLightNode hierarchy.Node
 }
 
 type HomeScreenMode uint8

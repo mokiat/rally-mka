@@ -1,16 +1,15 @@
 package main
 
 import (
+	"log/slog"
 	"os"
-
-	"github.com/mokiat/lacking/debug/log"
 )
 
 func main() {
-	log.Info("Started")
+	slog.Info("Started")
 	if err := runApplication(); err != nil {
-		log.Error("Crashed: %v", err)
+		slog.Error("Crashed", slog.String("error", err.Error()))
 		os.Exit(1)
 	}
-	log.Info("Stopped")
+	slog.Info("Stopped")
 }

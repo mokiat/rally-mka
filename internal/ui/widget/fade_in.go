@@ -26,7 +26,7 @@ var defaultFadeInCallbackData = FadeInCallbackData{
 	OnFinished: func() {},
 }
 
-var FadeIn = co.Define(&fadeInComponent{})
+var FadeIn = co.Define[*fadeInComponent]()
 
 type fadeInComponent struct {
 	co.BaseComponent
@@ -53,8 +53,8 @@ func (c *fadeInComponent) Render() co.Instance {
 	return co.New(std.Element, func() {
 		co.WithLayoutData(c.Properties().LayoutData())
 		co.WithData(std.ElementData{
-			Essence:   c,
-			Focusable: opt.V(false),
+			Essence:      c,
+			CanAutoFocus: opt.V(false),
 		})
 		co.WithChildren(c.Properties().Children())
 	})

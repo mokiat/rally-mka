@@ -18,7 +18,7 @@ type ErrorScreenData struct {
 	ErrorModel *model.ErrorModel
 }
 
-var ErrorScreen = co.Define(&errorScreenComponent{})
+var ErrorScreen = co.Define[*errorScreenComponent]()
 
 var _ ui.ElementKeyboardHandler = (*errorScreenComponent)(nil)
 
@@ -61,10 +61,10 @@ func (c *errorScreenComponent) Render() co.Instance {
 				Bottom: opt.V(0),
 			})
 			co.WithData(std.ElementData{
-				Essence:   c,
-				Enabled:   opt.V(true),
-				Focusable: opt.V(true),
-				Focused:   opt.V(true),
+				Essence:      c,
+				Enabled:      opt.V(true),
+				CanAutoFocus: opt.V(true),
+				Focused:      opt.V(true),
 			})
 		}))
 
