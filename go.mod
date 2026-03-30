@@ -1,6 +1,6 @@
 module github.com/mokiat/rally-mka
 
-go 1.25
+go 1.25.0
 
 require (
 	github.com/mokiat/gog v0.21.0
@@ -39,13 +39,13 @@ require (
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xrash/smetrics v0.0.0-20250705151800-55b8f293f342 // indirect
 	go.opencensus.io v0.24.0 // indirect
-	golang.org/x/image v0.33.0 // indirect
-	golang.org/x/mod v0.30.0 // indirect
-	golang.org/x/net v0.47.0 // indirect
-	golang.org/x/sync v0.18.0 // indirect
-	golang.org/x/sys v0.38.0 // indirect
-	golang.org/x/text v0.31.0 // indirect
-	golang.org/x/tools v0.39.0 // indirect
+	golang.org/x/image v0.38.0 // indirect
+	golang.org/x/mod v0.33.0 // indirect
+	golang.org/x/net v0.50.0 // indirect
+	golang.org/x/sync v0.20.0 // indirect
+	golang.org/x/sys v0.41.0 // indirect
+	golang.org/x/text v0.35.0 // indirect
+	golang.org/x/tools v0.42.0 // indirect
 	k8s.io/klog/v2 v2.90.1 // indirect
 )
 
